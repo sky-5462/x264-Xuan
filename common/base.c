@@ -689,7 +689,8 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
     if( !profile )
         return 0;
 
-    const int qp_bd_offset = 6 * (param->i_bitdepth-8);
+    const int qp_bd_offset = 0;
+    // const int qp_bd_offset = 6 * (param->i_bitdepth-8);
     int p = profile_string_to_int( profile );
     if( p < 0 )
     {
