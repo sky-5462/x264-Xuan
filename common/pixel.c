@@ -27,8 +27,7 @@
 
 #include "common.h"
 
-#   include "x86/pixel.h"
-#   include "x86/predict.h"
+#include "x86/pixel.h"
 
 /****************************************************************************
  * pixel_ssd_WxH

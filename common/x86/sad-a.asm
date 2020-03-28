@@ -54,7 +54,7 @@ SECTION .text
 ; SAD
 ;=============================================================================
 INIT_XMM avx2
-cglobal pixel_sad_4x4, 4, 4
+cglobal pixel_sad_4x4, 0, 0
     vmovd          m0, [r0]
     vmovd          m1, [r2]
     lea            r6d, [r1 + r1 * 2]
@@ -76,48 +76,7 @@ cglobal pixel_sad_4x4, 4, 4
     ret
 
 INIT_XMM avx2
-cglobal pixel_sad_4x8, 4, 4
-    vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-    vpsadbw        m2, m0, m1
-    vmovd          m0, [r0 + r1]
-    vmovd          m1, [r2 + r3]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          m0, [r0 + r6]
-    vmovd          m1, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-
-    vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          m0, [r0 + r1]
-    vmovd          m1, [r2 + r3]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          m0, [r0 + r6]
-    vmovd          m1, [r2 + r4]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          eax, m2
-    ret
-
-INIT_XMM avx2
-cglobal pixel_sad_4x16, 4, 4
+cglobal pixel_sad_4x8, 0, 0
     vmovd          m0, [r0]
     vmovd          m1, [r2]
     lea            r6d, [r1 + r1 * 2]
@@ -152,6 +111,47 @@ cglobal pixel_sad_4x16, 4, 4
     vpaddw         m2, m2, m3
     vmovd          m0, [r0 + r6]
     vmovd          m1, [r2 + r4]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          eax, m2
+    ret
+
+INIT_XMM avx2
+cglobal pixel_sad_4x16, 0, 0
+    vmovd          m0, [r0]
+    vmovd          m1, [r2]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+    vpsadbw        m2, m0, m1
+    vmovd          m0, [r0 + r1]
+    vmovd          m1, [r2 + r3]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          m0, [r0 + r1 * 2]
+    vmovd          m1, [r2 + r3 * 2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          m0, [r0 + r6]
+    vmovd          m1, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+
+    vmovd          m0, [r0]
+    vmovd          m1, [r2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          m0, [r0 + r1]
+    vmovd          m1, [r2 + r3]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          m0, [r0 + r1 * 2]
+    vmovd          m1, [r2 + r3 * 2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          m0, [r0 + r6]
+    vmovd          m1, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
     vpsadbw        m3, m0, m1
@@ -197,7 +197,7 @@ cglobal pixel_sad_4x16, 4, 4
     ret
 
 INIT_XMM avx2
-cglobal pixel_sad_8x4, 4, 4
+cglobal pixel_sad_8x4, 0, 0
     vmovq          m0, [r0]
     vmovq          m1, [r2]
     lea            r6d, [r1 + r1 * 2]
@@ -219,48 +219,7 @@ cglobal pixel_sad_8x4, 4, 4
     ret
 
 INIT_XMM avx2
-cglobal pixel_sad_8x8, 4, 4
-    vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-    vpsadbw        m2, m0, m1
-    vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-
-    vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
-    vpsadbw        m3, m0, m1
-    vpaddw         m2, m2, m3
-    vmovd          eax, m2
-    ret
-
-INIT_XMM avx2
-cglobal pixel_sad_8x16, 4, 4
+cglobal pixel_sad_8x8, 0, 0
     vmovq          m0, [r0]
     vmovq          m1, [r2]
     lea            r6d, [r1 + r1 * 2]
@@ -295,6 +254,47 @@ cglobal pixel_sad_8x16, 4, 4
     vpaddw         m2, m2, m3
     vmovq          m0, [r0 + r6]
     vmovq          m1, [r2 + r4]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovd          eax, m2
+    ret
+
+INIT_XMM avx2
+cglobal pixel_sad_8x16, 0, 0
+    vmovq          m0, [r0]
+    vmovq          m1, [r2]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+    vpsadbw        m2, m0, m1
+    vmovq          m0, [r0 + r1]
+    vmovq          m1, [r2 + r3]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovq          m0, [r0 + r1 * 2]
+    vmovq          m1, [r2 + r3 * 2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovq          m0, [r0 + r6]
+    vmovq          m1, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+
+    vmovq          m0, [r0]
+    vmovq          m1, [r2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovq          m0, [r0 + r1]
+    vmovq          m1, [r2 + r3]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovq          m0, [r0 + r1 * 2]
+    vmovq          m1, [r2 + r3 * 2]
+    vpsadbw        m3, m0, m1
+    vpaddw         m2, m2, m3
+    vmovq          m0, [r0 + r6]
+    vmovq          m1, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
     vpsadbw        m3, m0, m1
@@ -339,106 +339,186 @@ cglobal pixel_sad_8x16, 4, 4
     vmovd          eax, m2
     ret
 
-INIT_XMM avx2
-cglobal pixel_sad_16x8, 4, 4
-    vmovdqu        m0, [r0]
-    vpsadbw        m2, m0, [r2]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpaddw         m2, m2, m3
+INIT_YMM avx2
+cglobal pixel_sad_16x8, 0, 0
+    cmp            r1d, 16
+    jne            .rollback
 
-    vmovdqu        m0, [r0]
-    vpsadbw        m3, m0, [r2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
-    vpaddw         m2, m2, m3
+    lea            r6d, [r3 + r3 * 2]
+    lea            r1, [r2 + r3 * 4]
+    vmovdqu        m0, [r2]
+    vinserti128    m0, m0, [r2 + r3], 1
+    vpsadbw        m0, [r0]
+    vmovdqu        m1, [r2 + r3 * 2]
+    vinserti128    m1, m1, [r2 + r6], 1
+    vpsadbw        m1, [r0 + 32]
+    vmovdqu        m2, [r1]
+    vinserti128    m2, m2, [r1 + r3], 1
+    vpsadbw        m2, [r0 + 64]
+    vmovdqu        m3, [r1 + r3 * 2]
+    vinserti128    m3, m3, [r1 + r6], 1
+    vpsadbw        m3, [r0 + 96]
 
-    vpunpckhqdq    m0, m2, m2
+    vpaddw         m0, m0, m1
+    vpaddw         m2, m2, m3
     vpaddw         m0, m0, m2
-    vmovd          eax, m0
-    ret
+    vextracti128   xm1, m0, 1
+    vpaddw         xm0, xm0, xm1
+    vpunpckhqdq    xm1, xm0, xm0
+    vpaddw         xm0, xm0, xm1
+    vmovd          eax, xm0
+    RET
 
-INIT_XMM avx2
-cglobal pixel_sad_16x16, 4, 4
-    vmovdqu        m0, [r0]
-    vpsadbw        m2, m0, [r2]
+ALIGN 16
+.rollback:
+    vmovdqu        xm1, [r0]
+    vpsadbw        xm1, xm1, [r2]
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpaddw         m2, m2, m3
+    vpaddw         xm1, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm2
 
-    vmovdqu        m0, [r0]
-    vpsadbw        m3, m0, [r2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpaddw         m2, m2, m3
+    vmovdqu        xm0, [r0]
+    vpsadbw        xm0, xm0, [r2]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
+    vpaddw         xm0, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm0
+    vpaddw         xm1, xm2
 
-    vmovdqu        m0, [r0]
-    vpsadbw        m3, m0, [r2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpaddw         m2, m2, m3
+    vpunpckhqdq    xm0, xm1, xm1
+    vpaddw         xm0, xm0, xm1
+    vmovd          eax, xm0
+    ret
 
-    vmovdqu        m0, [r0]
-    vpsadbw        m3, m0, [r2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1]
-    vpsadbw        m3, m0, [r2 + r3]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r1 * 2]
-    vpsadbw        m3, m0, [r2 + r3 * 2]
-    vpaddw         m2, m2, m3
-    vmovdqu        m0, [r0 + r6]
-    vpsadbw        m3, m0, [r2 + r4]
-    vpaddw         m2, m2, m3
+INIT_YMM avx2
+cglobal pixel_sad_16x16, 0, 0
+    cmp            r1d, 16
+    jne            .rollback
 
-    vpunpckhqdq    m0, m2, m2
+    lea            r6d, [r3 + r3 * 2]
+    lea            r1, [r2 + r3 * 4]
+    vmovdqu        m0, [r2]
+    vinserti128    m0, m0, [r2 + r3], 1
+    vpsadbw        m0, [r0]
+    vmovdqu        m1, [r2 + r3 * 2]
+    vinserti128    m1, m1, [r2 + r6], 1
+    vpsadbw        m1, [r0 + 32]
+    vmovdqu        m2, [r1]
+    vinserti128    m2, m2, [r1 + r3], 1
+    vpsadbw        m2, [r0 + 64]
+    vmovdqu        m3, [r1 + r3 * 2]
+    vinserti128    m3, m3, [r1 + r6], 1
+    vpsadbw        m3, [r0 + 96]
+    vpaddw         m0, m0, m1
+    vpaddw         m2, m2, m3
+    vpaddw         m4, m0, m2
+
+    add            r0, 128
+    lea            r2, [r2 + r3 * 8]
+    lea            r1, [r1 + r3 * 8]
+    vmovdqu        m0, [r2]
+    vinserti128    m0, m0, [r2 + r3], 1
+    vpsadbw        m0, [r0]
+    vmovdqu        m1, [r2 + r3 * 2]
+    vinserti128    m1, m1, [r2 + r6], 1
+    vpsadbw        m1, [r0 + 32]
+    vmovdqu        m2, [r1]
+    vinserti128    m2, m2, [r1 + r3], 1
+    vpsadbw        m2, [r0 + 64]
+    vmovdqu        m3, [r1 + r3 * 2]
+    vinserti128    m3, m3, [r1 + r6], 1
+    vpsadbw        m3, [r0 + 96]
+    vpaddw         m0, m0, m1
+    vpaddw         m2, m2, m3
     vpaddw         m0, m0, m2
-    vmovd          eax, m0
+
+    vpaddw         m0, m0, m4
+    vextracti128   xm1, m0, 1
+    vpaddw         xm0, xm0, xm1
+    vpunpckhqdq    xm1, xm0, xm0
+    vpaddw         xm0, xm0, xm1
+    vmovd          eax, xm0
+    RET
+
+ALIGN 16
+.rollback:
+    vmovdqu        xm1, [r0]
+    vpsadbw        xm1, xm1, [r2]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpaddw         xm1, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm2
+
+    vmovdqu        xm0, [r0]
+    vpsadbw        xm0, xm0, [r2]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpaddw         xm0, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm0
+    vpaddw         xm1, xm2
+
+    vmovdqu        xm0, [r0]
+    vpsadbw        xm0, xm0, [r2]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpaddw         xm0, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm0
+    vpaddw         xm1, xm2
+
+    vmovdqu        xm0, [r0]
+    vpsadbw        xm0, xm0, [r2]
+    vmovdqu        xm2, [r0 + r1]
+    vpsadbw        xm2, xm2, [r2 + r3]
+    vmovdqu        xm3, [r0 + r1 * 2]
+    vpsadbw        xm3, xm3, [r2 + r3 * 2]
+    vmovdqu        xm4, [r0 + r6]
+    vpsadbw        xm4, xm4, [r2 + r4]
+    vpaddw         xm0, xm3
+    vpaddw         xm2, xm4
+    vpaddw         xm1, xm0
+    vpaddw         xm1, xm2
+
+    vpunpckhqdq    xm0, xm1, xm1
+    vpaddw         xm0, xm0, xm1
+    vmovd          eax, xm0
     ret
 
 
@@ -446,7 +526,7 @@ cglobal pixel_sad_16x16, 4, 4
 ; VSAD
 ;=============================================================================
 INIT_XMM avx2
-cglobal pixel_vsad, 4, 4
+cglobal pixel_vsad, 0, 0
     vmovdqu        m1, [r0]
     vmovdqu        m2, [r0 + r1]
     lea            r0, [r0 + r1 * 2]
@@ -476,7 +556,7 @@ ALIGN 16
 ; INTRA_SAD
 ;=============================================================================
 INIT_YMM avx2
-cglobal intra_sad_x3_4x4, 4, 4
+cglobal intra_sad_x3_4x4, 0, 0
     vpbroadcastq   m5, [intra_sad_4x4_shuf_h]
     vpbroadcastd   m0, [r1 - 32]                 ; v
     vmovd          xm1, [r1 - 1]
@@ -507,7 +587,7 @@ cglobal intra_sad_x3_4x4, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal intra_sad_x3_8x8, 4, 4
+cglobal intra_sad_x3_8x8, 0, 0
     vmovdqu        m5, [intra_sad_8x8_shuf_h]
     vpbroadcastq   m0, [r1 + 16]                 ; V
     vpbroadcastq   m1, [r1 + 7]                  ; H
@@ -549,11 +629,11 @@ cglobal intra_sad_x3_8x8, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal intra_sad_x3_8x8c, 4, 4
+cglobal intra_sad_x3_8x8c, 0, 0
 %if WIN64
     vmovdqu        [rsp + 8], xm6
 %endif
-    vbroadcasti128 m5, [intra_sad_8x8c_shuf_dc]
+    vpbroadcastq   m5, [intra_sad_8x8c_shuf_dc]
     vpbroadcastq   m0, [r1 - 32]                  ; V
     vmovd          xm1, [r1 + 92]
     vpinsrb        xm1, xm1, [r1 - 1], 0
@@ -614,7 +694,7 @@ cglobal intra_sad_x3_8x8c, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal intra_sad_x3_8x16c, 4, 4
+cglobal intra_sad_x3_8x16c, 0, 0
 %if WIN64
     vmovdqu        [rsp + 8], xm6
     vmovdqu        [rsp + 24], xm7
@@ -737,7 +817,7 @@ cglobal intra_sad_x3_8x16c, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal intra_sad_x3_16x16, 4, 4
+cglobal intra_sad_x3_16x16, 0, 0
 %if WIN64
     vmovdqu        [rsp + 8], xm6
     vmovdqu        [rsp + 24], xm7
@@ -867,7 +947,7 @@ cglobal intra_sad_x3_16x16, 4, 4
 ; SAD x3/x4
 ;=============================================================================
 INIT_XMM avx2
-cglobal pixel_sad_x3_4x4, 4, 4
+cglobal pixel_sad_x3_4x4, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -918,7 +998,7 @@ cglobal pixel_sad_x3_4x4, 4, 4
     ret
 
 INIT_XMM avx2
-cglobal pixel_sad_x3_4x8, 4, 4
+cglobal pixel_sad_x3_4x8, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1013,7 +1093,7 @@ cglobal pixel_sad_x3_4x8, 4, 4
     ret
 
 INIT_YMM avx2
-cglobal pixel_sad_x3_8x4, 4, 4
+cglobal pixel_sad_x3_8x4, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1052,7 +1132,7 @@ cglobal pixel_sad_x3_8x4, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x3_8x8, 4, 4
+cglobal pixel_sad_x3_8x8, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1121,7 +1201,7 @@ cglobal pixel_sad_x3_8x8, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x3_8x16, 4, 4
+cglobal pixel_sad_x3_8x16, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1251,7 +1331,7 @@ cglobal pixel_sad_x3_8x16, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x3_16x8, 4, 4
+cglobal pixel_sad_x3_16x8, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1321,7 +1401,7 @@ cglobal pixel_sad_x3_16x8, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x3_16x16, 4, 4
+cglobal pixel_sad_x3_16x16, 0, 0
 %if WIN64
     mov            r4d, [rsp + 40]
     mov            r5, [rsp + 48]
@@ -1453,12 +1533,12 @@ cglobal pixel_sad_x3_16x16, 4, 4
 
 
 INIT_XMM avx2
-cglobal pixel_sad_x4_4x4, 4, 4
+cglobal pixel_sad_x4_4x4, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovd          m0, [r0]
     vmovd          m1, [r1]
@@ -1521,12 +1601,12 @@ cglobal pixel_sad_x4_4x4, 4, 4
     ret
 
 INIT_XMM avx2
-cglobal pixel_sad_x4_4x8, 4, 4
+cglobal pixel_sad_x4_4x8, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovd          m0, [r0]
     vmovd          m1, [r1]
@@ -1646,12 +1726,12 @@ cglobal pixel_sad_x4_4x8, 4, 4
     ret
 
 INIT_YMM avx2
-cglobal pixel_sad_x4_8x4, 4, 4
+cglobal pixel_sad_x4_8x4, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovdqu        m0, [r0]
     vmovq          xm1, [r1]
@@ -1698,12 +1778,12 @@ cglobal pixel_sad_x4_8x4, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x4_8x8, 4, 4
+cglobal pixel_sad_x4_8x8, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovdqu        m0, [r0]
     vmovq          xm1, [r1]
@@ -1789,12 +1869,12 @@ cglobal pixel_sad_x4_8x8, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x4_8x16, 4, 4
+cglobal pixel_sad_x4_8x16, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovdqu        m0, [r0]
     vmovq          xm1, [r1]
@@ -1960,12 +2040,12 @@ cglobal pixel_sad_x4_8x16, 4, 4
 
 
 INIT_YMM avx2
-cglobal pixel_sad_x4_16x8, 4, 4
+cglobal pixel_sad_x4_16x8, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovdqu        m0, [r0]
     vmovdqu        xm1, [r1]
@@ -2051,12 +2131,12 @@ cglobal pixel_sad_x4_16x8, 4, 4
     RET
 
 INIT_YMM avx2
-cglobal pixel_sad_x4_16x16, 4, 4
+cglobal pixel_sad_x4_16x16, 0, 0
 %if WIN64
     mov            r4, [rsp + 40]
     mov            r5d, [rsp + 48]
 %endif
-    lea            r6, [r5 + r5 * 2]
+    lea            r6d, [r5 + r5 * 2]
 
     vmovdqu        m0, [r0]
     vmovdqu        xm1, [r1]
