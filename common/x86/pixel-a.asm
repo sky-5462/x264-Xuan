@@ -34,23 +34,19 @@
 SECTION_RODATA 32
 hmul_16p:  times 16 db 1
            times 8 db 1, -1
-hmul_8p:   times 8 db 1
-           times 4 db 1, -1
-           times 8 db 1
-           times 4 db 1, -1
 mask_ff:   times 16 db 0xff
            times 16 db 0
-mask_ac4:  times 2 dw 0, -1, -1, -1, 0, -1, -1, -1
-mask_ac4b: times 2 dw 0, -1, 0, -1, -1, -1, -1, -1
-mask_ac8:  times 2 dw 0, -1, -1, -1, -1, -1, -1, -1
-ssim_c1:   times 4 dd 416          ; .01*.01*255*255*64
-ssim_c2:   times 4 dd 235963       ; .03*.03*255*255*64*63
-hmul_4p:   times 4 db 1, 1, 1, 1, 1, -1, 1, -1
-mask_10:   times 4 dw 0, -1
-pb_pppm:   times 4 db 1,1,1,-1
-intrax3_shuf: db 7,6,7,6,5,4,5,4,3,2,3,2,1,0,1,0
+hmul_8p:   times 8 db 1
+           times 4 db 1, -1
+hmul_4p:   db 1, 1, 1, 1, 1, -1, 1, -1
+ssim_c1:   dd 416          ; .01*.01*255*255*64
+ssim_c2:   dd 235963       ; .03*.03*255*255*64*63
+intra_sa8d_8x8_shuf_h:      times 16 db 7
+                            times 16 db 3
+intra_satd_4x4_shuf:        times 8 db 0
+                            times 8 db 1
+pw_76543210:                dw 0, 1, 2, 3, 4, 5, 6, 7
 
-ALIGN 32
 intrax9a_ddlr1: db  6, 7, 8, 9, 7, 8, 9,10, 4, 5, 6, 7, 3, 4, 5, 6
 intrax9a_ddlr2: db  8, 9,10,11, 9,10,11,12, 2, 3, 4, 5, 1, 2, 3, 4
 intrax9a_hdu1:  db 15, 4, 5, 6,14, 3,15, 4,14, 2,13, 1,13, 1,12, 0
@@ -73,6 +69,8 @@ intrax9b_vh2:   db  6, 7, 8, 9, 2, 2, 2, 2, 6, 7, 8, 9, 1, 1, 1, 1
 intrax9b_dc:    db  6, 7, 8, 9, 4, 3, 2, 1,-1,-1,-1,-1,-1,-1,-1,-1
 intrax9b_lut:   db 0x60,0x64,0x80,0x00,0x04,0x20,0x40,0x24,0x44,0,0,0,0,0,0,0
 intrax9_edge:   db  0, 0, 1, 2, 3, 7, 8, 9,10,11,12,13,14,15,15,15
+intra_satd_8x8c_shuf_dc:    times 4 db 0
+                            times 4 db 8
 
 ALIGN 32
 intra8x9_h1:   db  7, 7, 7, 7, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5
@@ -103,13 +101,6 @@ intra8x9_hu1:  db 13,12,11,10, 9, 8, 7, 6, 9, 8, 7, 6, 5, 4, 3, 2
 intra8x9_hu2:  db 11,10, 9, 8, 7, 6, 5, 4, 7, 6, 5, 4, 3, 2, 1, 0
 intra8x9_hu3:  db  5, 4, 3, 2, 1, 0,15,15, 1, 0,15,15,15,15,15,15
 intra8x9_hu4:  db  3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15
-
-ALIGN 32
-sw_f0:     dq 0xfff0, 0
-pd_f0:     times 4 dd 0xffff0000
-pd_2:      times 4 dd 2
-
-pw_76543210: dw 0, 1, 2, 3, 4, 5, 6, 7
 
 ALIGN 32
 ads_shuf_000:      db  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -370,31 +361,13 @@ ads_shuf_254:      db  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 0
 ads_shuf_255:      db  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 
 
-ALIGN 32
-intra_sa8d_8x8_shuf_h:      times 16 db 7
-                            times 16 db 3
-intra_satd_4x4_shuf:        times 8 db 0
-                            times 8 db 1
-intra_satd_8x8c_shuf_dc:    times 4 db 0
-                            times 4 db 8
-                            times 4 db 0
-                            times 4 db 8
-
 SECTION .text
 
-cextern pb_0
 cextern pb_1
 cextern pw_1
 cextern pw_8
-cextern pw_16
-cextern pw_32
 cextern pw_00ff
-cextern pw_ppppmmmm
-cextern pw_ppmmppmm
-cextern pw_pmpmpmpm
-cextern pw_pmmpzzzz
 cextern hsub_mul
-cextern popcnt_table
 
 ;=============================================================================
 ; SSD

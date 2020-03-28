@@ -39,12 +39,10 @@ intra_sad_8x8c_shuf_h:      times 8 db 0
                             times 8 db 2
                             times 8 db 1
                             times 8 db 3
-intra_sad_8x8c_shuf_dc:     times 4 db 0
-                            times 4 db 8
-                            times 4 db 0
-                            times 4 db 8
 intra_sad_8x16c_shuf_h:     db 0,0,2,2,8,8,10,10,1,1,3,3,9,9,11,11
 intra_sad_8x16c_shuf_dc:    db 0,0,0,0,8,8,8,8,-1,-1,-1,-1,-1,-1,-1,-1
+intra_sad_8x8c_shuf_dc:     times 4 db 0
+                            times 4 db 8
 intra_sad_4x4_shuf_h:       times 4 db 0
                             times 4 db 1
 
