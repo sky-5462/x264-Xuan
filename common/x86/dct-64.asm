@@ -304,8 +304,6 @@ INIT_XMM ssse3
 DCT_SUB8
 INIT_XMM avx
 DCT_SUB8
-INIT_XMM xop
-DCT_SUB8
 
 INIT_YMM avx2
 cglobal sub16x16_dct8, 3,3,10

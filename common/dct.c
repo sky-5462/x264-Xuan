@@ -26,21 +26,7 @@
  *****************************************************************************/
 
 #include "common.h"
-#if HAVE_MMX
-#   include "x86/dct.h"
-#endif
-#if HAVE_ALTIVEC
-#   include "ppc/dct.h"
-#endif
-#if HAVE_ARMV6
-#   include "arm/dct.h"
-#endif
-#if HAVE_AARCH64
-#   include "aarch64/dct.h"
-#endif
-#if HAVE_MSA
-#   include "mips/dct.h"
-#endif
+#include "x86/dct.h"
 
 static void dct4x4dc( dctcoef d[16] )
 {
@@ -499,55 +485,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
 
     dctf->dct2x4dc = dct2x4dc;
 
-#if HIGH_BIT_DEPTH
-#if HAVE_MMX
-    if( cpu&X264_CPU_MMX )
-    {
-        dctf->sub4x4_dct    = x264_sub4x4_dct_mmx;
-        dctf->sub8x8_dct    = x264_sub8x8_dct_mmx;
-        dctf->sub16x16_dct  = x264_sub16x16_dct_mmx;
-    }
-    if( cpu&X264_CPU_SSE2 )
-    {
-        dctf->add4x4_idct     = x264_add4x4_idct_sse2;
-        dctf->dct4x4dc        = x264_dct4x4dc_sse2;
-        dctf->idct4x4dc       = x264_idct4x4dc_sse2;
-        dctf->dct2x4dc        = x264_dct2x4dc_sse2;
-        dctf->sub8x8_dct8     = x264_sub8x8_dct8_sse2;
-        dctf->sub16x16_dct8   = x264_sub16x16_dct8_sse2;
-        dctf->add8x8_idct     = x264_add8x8_idct_sse2;
-        dctf->add16x16_idct   = x264_add16x16_idct_sse2;
-        dctf->add8x8_idct8    = x264_add8x8_idct8_sse2;
-        dctf->add16x16_idct8    = x264_add16x16_idct8_sse2;
-        dctf->sub8x8_dct_dc   = x264_sub8x8_dct_dc_sse2;
-        dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_sse2;
-        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_sse2;
-        dctf->add16x16_idct_dc= x264_add16x16_idct_dc_sse2;
-    }
-    if( cpu&X264_CPU_SSE4 )
-    {
-        dctf->sub8x8_dct8     = x264_sub8x8_dct8_sse4;
-        dctf->sub16x16_dct8   = x264_sub16x16_dct8_sse4;
-    }
-    if( cpu&X264_CPU_AVX )
-    {
-        dctf->add4x4_idct     = x264_add4x4_idct_avx;
-        dctf->dct4x4dc        = x264_dct4x4dc_avx;
-        dctf->idct4x4dc       = x264_idct4x4dc_avx;
-        dctf->dct2x4dc        = x264_dct2x4dc_avx;
-        dctf->sub8x8_dct8     = x264_sub8x8_dct8_avx;
-        dctf->sub16x16_dct8   = x264_sub16x16_dct8_avx;
-        dctf->add8x8_idct     = x264_add8x8_idct_avx;
-        dctf->add16x16_idct   = x264_add16x16_idct_avx;
-        dctf->add8x8_idct8    = x264_add8x8_idct8_avx;
-        dctf->add16x16_idct8  = x264_add16x16_idct8_avx;
-        dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_avx;
-        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_avx;
-        dctf->add16x16_idct_dc= x264_add16x16_idct_dc_avx;
-    }
-#endif // HAVE_MMX
-#else // !HIGH_BIT_DEPTH
-#if HAVE_MMX
     if( cpu&X264_CPU_MMX )
     {
         dctf->sub4x4_dct    = x264_sub4x4_dct_mmx;
@@ -555,17 +492,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->idct4x4dc     = x264_idct4x4dc_mmx;
         dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_mmx2;
 
-#if !ARCH_X86_64
-        dctf->sub8x8_dct    = x264_sub8x8_dct_mmx;
-        dctf->sub16x16_dct  = x264_sub16x16_dct_mmx;
-        dctf->add8x8_idct   = x264_add8x8_idct_mmx;
-        dctf->add16x16_idct = x264_add16x16_idct_mmx;
-
-        dctf->sub8x8_dct8   = x264_sub8x8_dct8_mmx;
-        dctf->sub16x16_dct8 = x264_sub16x16_dct8_mmx;
-        dctf->add8x8_idct8  = x264_add8x8_idct8_mmx;
-        dctf->add16x16_idct8= x264_add16x16_idct8_mmx;
-#endif
     }
 
     if( cpu&X264_CPU_MMX2 )
@@ -630,11 +556,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx;
     }
 
-    if( cpu&X264_CPU_XOP )
-    {
-        dctf->sub8x8_dct       = x264_sub8x8_dct_xop;
-        dctf->sub16x16_dct     = x264_sub16x16_dct_xop;
-    }
 
     if( cpu&X264_CPU_AVX2 )
     {
@@ -643,91 +564,8 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub8x8_dct       = x264_sub8x8_dct_avx2;
         dctf->sub16x16_dct     = x264_sub16x16_dct_avx2;
         dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx2;
-#if ARCH_X86_64
         dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx2;
-#endif
     }
-
-    if( cpu&X264_CPU_AVX512 )
-    {
-        dctf->sub4x4_dct       = x264_sub4x4_dct_avx512;
-        dctf->sub8x8_dct       = x264_sub8x8_dct_avx512;
-        dctf->sub16x16_dct     = x264_sub16x16_dct_avx512;
-        dctf->sub8x8_dct_dc    = x264_sub8x8_dct_dc_avx512;
-        dctf->sub8x16_dct_dc   = x264_sub8x16_dct_dc_avx512;
-        dctf->add8x8_idct      = x264_add8x8_idct_avx512;
-    }
-#endif //HAVE_MMX
-
-#if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-    {
-        dctf->sub4x4_dct    = x264_sub4x4_dct_altivec;
-        dctf->sub8x8_dct    = x264_sub8x8_dct_altivec;
-        dctf->sub16x16_dct  = x264_sub16x16_dct_altivec;
-
-        dctf->add8x8_idct_dc = x264_add8x8_idct_dc_altivec;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_altivec;
-
-        dctf->add4x4_idct   = x264_add4x4_idct_altivec;
-        dctf->add8x8_idct   = x264_add8x8_idct_altivec;
-        dctf->add16x16_idct = x264_add16x16_idct_altivec;
-
-        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_altivec;
-        dctf->sub8x8_dct8   = x264_sub8x8_dct8_altivec;
-        dctf->sub16x16_dct8 = x264_sub16x16_dct8_altivec;
-
-        dctf->add8x8_idct8  = x264_add8x8_idct8_altivec;
-        dctf->add16x16_idct8= x264_add16x16_idct8_altivec;
-    }
-#endif
-
-#if HAVE_ARMV6 || HAVE_AARCH64
-    if( cpu&X264_CPU_NEON )
-    {
-        dctf->sub4x4_dct    = x264_sub4x4_dct_neon;
-        dctf->sub8x8_dct    = x264_sub8x8_dct_neon;
-        dctf->sub16x16_dct  = x264_sub16x16_dct_neon;
-        dctf->add8x8_idct_dc = x264_add8x8_idct_dc_neon;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_neon;
-        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_neon;
-        dctf->dct4x4dc      = x264_dct4x4dc_neon;
-        dctf->idct4x4dc     = x264_idct4x4dc_neon;
-
-        dctf->add4x4_idct   = x264_add4x4_idct_neon;
-        dctf->add8x8_idct   = x264_add8x8_idct_neon;
-        dctf->add16x16_idct = x264_add16x16_idct_neon;
-
-        dctf->sub8x8_dct8   = x264_sub8x8_dct8_neon;
-        dctf->sub16x16_dct8 = x264_sub16x16_dct8_neon;
-
-        dctf->add8x8_idct8  = x264_add8x8_idct8_neon;
-        dctf->add16x16_idct8= x264_add16x16_idct8_neon;
-        dctf->sub8x16_dct_dc= x264_sub8x16_dct_dc_neon;
-    }
-#endif
-
-#if HAVE_MSA
-    if( cpu&X264_CPU_MSA )
-    {
-        dctf->sub4x4_dct       = x264_sub4x4_dct_msa;
-        dctf->sub8x8_dct       = x264_sub8x8_dct_msa;
-        dctf->sub16x16_dct     = x264_sub16x16_dct_msa;
-        dctf->sub8x8_dct_dc    = x264_sub8x8_dct_dc_msa;
-        dctf->sub8x16_dct_dc   = x264_sub8x16_dct_dc_msa;
-        dctf->dct4x4dc         = x264_dct4x4dc_msa;
-        dctf->idct4x4dc        = x264_idct4x4dc_msa;
-        dctf->add4x4_idct      = x264_add4x4_idct_msa;
-        dctf->add8x8_idct      = x264_add8x8_idct_msa;
-        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_msa;
-        dctf->add16x16_idct    = x264_add16x16_idct_msa;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_msa;
-        dctf->add8x8_idct8     = x264_add8x8_idct8_msa;
-        dctf->add16x16_idct8   = x264_add16x16_idct8_msa;
-    }
-#endif
-
-#endif // HIGH_BIT_DEPTH
 }
 
 
@@ -914,35 +752,6 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     pf_interlaced->sub_4x4ac  = zigzag_sub_4x4ac_field;
     pf_progressive->sub_4x4ac = zigzag_sub_4x4ac_frame;
 
-#if HIGH_BIT_DEPTH
-#if HAVE_MMX
-    if( cpu&X264_CPU_SSE2 )
-    {
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_sse2;
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_sse2;
-        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_sse2;
-    }
-    if( cpu&X264_CPU_SSE4 )
-        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_sse4;
-    if( cpu&X264_CPU_AVX )
-        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_avx;
-#if ARCH_X86_64
-    if( cpu&X264_CPU_AVX )
-    {
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx;
-        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx;
-    }
-#endif // ARCH_X86_64
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
-        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_avx512;
-        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
-    }
-#endif // HAVE_MMX
-#else
-#if HAVE_MMX
     if( cpu&X264_CPU_MMX )
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_mmx;
     if( cpu&X264_CPU_MMX2 )
@@ -968,73 +777,13 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     {
         pf_interlaced->sub_4x4   = x264_zigzag_sub_4x4_field_avx;
         pf_progressive->sub_4x4  = x264_zigzag_sub_4x4_frame_avx;
-#if ARCH_X86_64
         pf_interlaced->sub_4x4ac = x264_zigzag_sub_4x4ac_field_avx;
         pf_progressive->sub_4x4ac= x264_zigzag_sub_4x4ac_frame_avx;
-#endif
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx;
     }
-    if( cpu&X264_CPU_XOP )
-    {
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_xop;
-        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_xop;
-        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_xop;
-    }
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
-        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_avx512;
-        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
-    }
-#endif // HAVE_MMX
-#if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-    {
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_altivec;
-        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_altivec;
-        pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_altivec;
-    }
-#endif
-#if HAVE_ARMV6 || HAVE_AARCH64
-    if( cpu&X264_CPU_NEON )
-    {
-        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_neon;
-#if HAVE_AARCH64
-        pf_interlaced->scan_4x4   = x264_zigzag_scan_4x4_field_neon;
-        pf_interlaced->scan_8x8   = x264_zigzag_scan_8x8_field_neon;
-        pf_interlaced->sub_4x4    = x264_zigzag_sub_4x4_field_neon;
-        pf_interlaced->sub_4x4ac  = x264_zigzag_sub_4x4ac_field_neon;
-        pf_interlaced->sub_8x8    = x264_zigzag_sub_8x8_field_neon;
-        pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_neon;
-        pf_progressive->sub_4x4   = x264_zigzag_sub_4x4_frame_neon;
-        pf_progressive->sub_4x4ac = x264_zigzag_sub_4x4ac_frame_neon;
-        pf_progressive->sub_8x8   = x264_zigzag_sub_8x8_frame_neon;
-#endif // HAVE_AARCH64
-    }
-#endif // HAVE_ARMV6 || HAVE_AARCH64
-#endif // HIGH_BIT_DEPTH
 
     pf_interlaced->interleave_8x8_cavlc =
     pf_progressive->interleave_8x8_cavlc = zigzag_interleave_8x8_cavlc;
-#if HAVE_MMX
-#if HIGH_BIT_DEPTH
-    if( cpu&X264_CPU_SSE2 )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_sse2;
-    }
-    if( cpu&X264_CPU_AVX )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx;
-    }
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx512;
-    }
-#else
     if( cpu&X264_CPU_MMX )
     {
         pf_interlaced->interleave_8x8_cavlc =
@@ -1057,35 +806,4 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
         pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     }
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx512;
-    }
-#endif // HIGH_BIT_DEPTH
-#endif
-#if !HIGH_BIT_DEPTH
-#if HAVE_AARCH64
-    if( cpu&X264_CPU_NEON )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc =  x264_zigzag_interleave_8x8_cavlc_neon;
-    }
-#endif // HAVE_AARCH64
-
-#if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-    {
-        pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_altivec;
-    }
-#endif // HAVE_ALTIVEC
-
-#if HAVE_MSA
-    if( cpu&X264_CPU_MSA )
-    {
-        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_msa;
-    }
-#endif
-#endif // !HIGH_BIT_DEPTH
 }
