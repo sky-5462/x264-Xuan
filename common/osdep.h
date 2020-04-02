@@ -251,16 +251,8 @@ static inline int x264_is_pipe( const char *path )
 #define NATIVE_ALIGN 64
 #define ALIGNED_32( var ) DECLARE_ALIGNED( var, 32 )
 #define ALIGNED_64( var ) DECLARE_ALIGNED( var, 64 )
-#if STACK_ALIGNMENT >= 32
 #define ALIGNED_ARRAY_32( type, name, sub1, ... ) ALIGNED_32( type name sub1 __VA_ARGS__ )
-#else
-#define ALIGNED_ARRAY_32( ... ) EXPAND( ALIGNED_ARRAY_EMU( 31, __VA_ARGS__ ) )
-#endif
-#if STACK_ALIGNMENT >= 64
 #define ALIGNED_ARRAY_64( type, name, sub1, ... ) ALIGNED_64( type name sub1 __VA_ARGS__ )
-#else
-#define ALIGNED_ARRAY_64( ... ) EXPAND( ALIGNED_ARRAY_EMU( 63, __VA_ARGS__ ) )
-#endif
 #else
 #define NATIVE_ALIGN 16
 #define ALIGNED_32 ALIGNED_16
