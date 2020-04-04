@@ -376,22 +376,18 @@ INIT_XMM avx2
 cglobal pixel_ssd_4x4, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m4, m0, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r4]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
@@ -408,45 +404,37 @@ INIT_XMM avx2
 cglobal pixel_ssd_4x8, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m4, m0, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
+    vpunpcklbw     m2, m2, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m2, m2, m3
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
 
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r4]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
@@ -463,91 +451,75 @@ INIT_XMM avx2
 cglobal pixel_ssd_4x16, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m4, m0, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
+    vpunpcklbw     m2, m2, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m2, m2, m3
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
 
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
+    vpunpcklbw     m2, m2, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m2, m2, m3
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
 
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
+    vpunpcklbw     m2, m2, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m2, m2, m3
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
 
     vmovd          m0, [r0]
-    vmovd          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vmovd          m2, [r0 + r1]
-    vmovd          m3, [r2 + r3]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r3]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
     vpaddd         m4, m4, m0
     vmovd          m0, [r0 + r1 * 2]
-    vmovd          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vmovd          m2, [r0 + r6]
-    vmovd          m3, [r2 + r4]
-    vpunpcklbw     m2, m2, m3
+    vpunpcklbw     m2, m2, [r2 + r4]
     vpunpcklqdq    m0, m0, m2
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m0, m0, m0
@@ -564,27 +536,23 @@ INIT_XMM avx2
 cglobal pixel_ssd_8x4, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m2, m0, m0
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r4]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
@@ -600,54 +568,46 @@ INIT_XMM avx2
 cglobal pixel_ssd_8x8, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m2, m0, m0
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
+    vpunpcklbw     m0, m0, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m0, m0, m1
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
 
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r4]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
@@ -663,108 +623,92 @@ INIT_XMM avx2
 cglobal pixel_ssd_8x16, 0, 0
     vpbroadcastd   m5, [hsub_mul]
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     lea            r6d, [r1 + r1 * 2]
     lea            r4d, [r3 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m2, m0, m0
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
+    vpunpcklbw     m0, m0, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m0, m0, m1
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
 
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
+    vpunpcklbw     m0, m0, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m0, m0, m1
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
 
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
+    vpunpcklbw     m0, m0, [r2 + r4]
     lea            r0, [r0 + r1 * 4]
     lea            r2, [r2 + r3 * 4]
-    vpunpcklbw     m0, m0, m1
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
 
     vmovq          m0, [r0]
-    vmovq          m1, [r2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1]
-    vmovq          m1, [r2 + r3]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r1 * 2]
-    vmovq          m1, [r2 + r3 * 2]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r3 * 2]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
     vmovq          m0, [r0 + r6]
-    vmovq          m1, [r2 + r4]
-    vpunpcklbw     m0, m0, m1
+    vpunpcklbw     m0, m0, [r2 + r4]
     vpmaddubsw     m0, m0, m5
     vpmaddwd       m3, m0, m0
     vpaddd         m2, m2, m3
@@ -961,517 +905,6 @@ cglobal pixel_ssd_16x16, 0, 0
     RET
 
 
-
-;=============================================================================
-; SSD_NV12_CORE
-;=============================================================================
-;-----------------------------------------------------------------------------
-; void pixel_ssd_nv12_core( uint8_t *pixuv1, intptr_t stride1, uint8_t *pixuv2, intptr_t stride2,
-;                           int width, int height, uint64_t *ssd_u, uint64_t *ssd_v )
-;
-; This implementation can potentially overflow on image widths >= 11008 (or
-; 6604 if interlaced), since it is called on blocks of height up to 12 (resp
-; 20). At sane distortion levels it will take much more than that though.
-;-----------------------------------------------------------------------------
-INIT_YMM avx2
-cglobal pixel_ssd_nv12_core, 0, 0
-%if WIN64
-    mov            r4d, [rsp + 40]
-    mov            r5d, [rsp + 48]
-%endif
-    add            r4d, r4d
-    add            r0, r4
-    add            r2, r4
-    neg            r4
-    vpxor          m3, m3, m3
-    vpxor          m4, m4, m4
-    vpbroadcastd   m5, [pw_00ff]
-
-.loopy:
-    mov            r6, r4
-.loopx:
-    vmovdqu        m2, [r0 + r6]
-    vmovdqu        m1, [r2 + r6]
-    vpsubusb       m0, m2, m1
-    vpsubusb       m1, m1, m2
-    vpor           m0, m0, m1
-    vpsrlw         m2, m0, 8
-    vpand          m0, m0, m5
-    vpmaddwd       m2, m2, m2
-    vpmaddwd       m0, m0, m0
-    vpaddd         m4, m4, m2
-    vpaddd         m3, m3, m0
-    add            r6, 32
-    jl             .loopx
-    je             .no_overread
-    vpcmpeqb       xm1, xm1, xm1
-    vpandn         m0, m1, m0
-    vpandn         m2, m1, m2
-    vpsubd         m3, m3, m0
-    vpsubd         m4, m4, m2
-.no_overread:
-    add            r0, r1
-    add            r2, r3
-    sub            r5d, 1
-    jg             .loopy
-%if WIN64
-    mov            r0, [rsp + 56]
-    mov            r1, [rsp + 64]
-%else
-    mov            r0, [rsp + 8]
-    mov            r1, [rsp + 16]
-%endif
-    vphaddd        m3, m3, m4
-    vextracti128   xm4, m3, 1
-    vpaddd         xm3, xm3, xm4
-    vpsllq         xm4, xm3, 32
-    vpaddd         xm3, xm3, xm4
-    vpsrlq         xm3, xm3, 32
-    vmovq          [r0], xm3
-    vmovhps        [r1], xm3
-    RET
-
-;=============================================================================
-; VAR
-;=============================================================================
-INIT_YMM avx2
-cglobal pixel_var_8x8, 0, 0
-    lea            r6d, [r1 + r1 * 2]
-    vpxor          m5, m5, m5
-
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m0, m1
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m0, m1
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m3, m0
-    vpaddw         m3, m3, m1
-
-    vpbroadcastd   m5, [pw_1]
-    vpmaddwd       m3, m3, m5
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m4, m0
-    vpaddd         m4, m4, m1
-
-    vphaddd        m0, m3, m4
-    vphaddd        m0, m0, m0
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vmovq          rax, xm0
-    RET
-
-INIT_YMM avx2
-cglobal pixel_var_8x16, 0, 0
-    lea            r6d, [r1 + r1 * 2]
-    vpxor          m5, m5, m5
-
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m0, m1
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m0, m1
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m3, m0
-    vpaddw         m3, m3, m1
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m4, m0
-    vpaddd         m4, m4, m1
-
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m3, m0
-    vpaddw         m3, m3, m1
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m4, m0
-    vpaddd         m4, m4, m1
-    vmovq          xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovq          xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    vpunpcklbw     m0, m0, m5
-    vpunpcklbw     m1, m1, m5
-    vpaddw         m3, m3, m0
-    vpaddw         m3, m3, m1
-
-    vpbroadcastd   m5, [pw_1]
-    vpmaddwd       m3, m3, m5
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m1, m1, m1
-    vpaddd         m4, m4, m0
-    vpaddd         m4, m4, m1
-
-    vphaddd        m0, m3, m4
-    vphaddd        m0, m0, m0
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vmovq          rax, xm0
-    RET
-
-INIT_YMM avx2
-cglobal pixel_var_16x16, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-%endif
-    lea            r6d, [r1 + r1 * 2]
-    vpbroadcastd   m6, [pw_00ff]
-
-    vmovdqu        xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovdqu        xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpand          m2, m0, m6
-    vpand          m3, m1, m6
-    vpsrlw         m0, m0, 8
-    vpsrlw         m1, m1, 8
-    vpaddw         m4, m2, m3
-    vpaddw         m4, m4, m0
-    vpaddw         m4, m4, m1
-    vpmaddwd       m2, m2, m2
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m3, m3, m3
-    vpmaddwd       m1, m1, m1
-    vpaddd         m5, m2, m0
-    vpaddd         m5, m5, m3
-    vpaddd         m5, m5, m1
-    vmovdqu        xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovdqu        xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpand          m2, m0, m6
-    vpand          m3, m1, m6
-    vpsrlw         m0, m0, 8
-    vpsrlw         m1, m1, 8
-    vpaddw         m4, m4, m2
-    vpaddw         m4, m4, m3
-    vpaddw         m4, m4, m0
-    vpaddw         m4, m4, m1
-    vpmaddwd       m2, m2, m2
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m3, m3, m3
-    vpmaddwd       m1, m1, m1
-    vpaddd         m5, m5, m2
-    vpaddd         m5, m5, m0
-    vpaddd         m5, m5, m3
-    vpaddd         m5, m5, m1
-
-    vmovdqu        xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovdqu        xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    lea            r0, [r0 + r1 * 4]
-    vpand          m2, m0, m6
-    vpand          m3, m1, m6
-    vpsrlw         m0, m0, 8
-    vpsrlw         m1, m1, 8
-    vpaddw         m4, m4, m2
-    vpaddw         m4, m4, m3
-    vpaddw         m4, m4, m0
-    vpaddw         m4, m4, m1
-    vpmaddwd       m2, m2, m2
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m3, m3, m3
-    vpmaddwd       m1, m1, m1
-    vpaddd         m5, m5, m2
-    vpaddd         m5, m5, m0
-    vpaddd         m5, m5, m3
-    vpaddd         m5, m5, m1
-    vmovdqu        xm0, [r0]
-    vinserti128    m0, m0, [r0 + r1], 1
-    vmovdqu        xm1, [r0 + r1 * 2]
-    vinserti128    m1, m1, [r0 + r6], 1
-    vpand          m2, m0, m6
-    vpand          m3, m1, m6
-    vpsrlw         m0, m0, 8
-    vpsrlw         m1, m1, 8
-    vpaddw         m4, m4, m2
-    vpaddw         m4, m4, m3
-    vpaddw         m4, m4, m0
-    vpaddw         m4, m4, m1
-
-    vpbroadcastd   m6, [pw_1]
-    vpmaddwd       m4, m4, m6
-    vpmaddwd       m2, m2, m2
-    vpmaddwd       m0, m0, m0
-    vpmaddwd       m3, m3, m3
-    vpmaddwd       m1, m1, m1
-    vpaddd         m5, m5, m2
-    vpaddd         m5, m5, m0
-    vpaddd         m5, m5, m3
-    vpaddd         m5, m5, m1
-
-%if WIN64
-    vmovdqu        xm6, [rsp + 8]
-%endif
-    vphaddd        m0, m4, m5
-    vphaddd        m0, m0, m0
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vmovq          rax, xm0
-    RET
-
-;=============================================================================
-; VAR2
-;=============================================================================
-INIT_YMM avx2
-cglobal pixel_var2_8x8, 0, 0
-    vpxor          m5, m5, m5
-
-    vpmovzxbw      m0, [r0]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m2, m0, m1
-    vpmaddwd       m3, m2, m2
-    vpmovzxbw      m0, [r0 + 16]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 32]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 48]
-    vmovdqu        m1, [r1 + 96]
-    add            r1, 128
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpmovzxbw      m0, [r0 + 64]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 80]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 96]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 112]
-    vmovdqu        m1, [r1 + 96]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpbroadcastd   m5, [pw_1]
-    vpmaddwd       m2, m2, m5
-    vpunpckhqdq    m0, m2, m2
-    vpunpckhqdq    m1, m3, m3
-    vpaddd         m0, m0, m2
-    vpaddd         m1, m1, m3
-    vpsrlq         m2, m0, 32
-    vpsrlq         m3, m1, 32
-    vpaddd         m0, m0, m2
-    vpaddd         m1, m1, m3
-    vpmaddwd       m0, m0, m0
-    vextracti128   xm2, m1, 1
-    vpunpckldq     xm2, xm1, xm2
-    vmovq          [r2], xm2
-    vpsrld         m0, m0, 6
-    vpsubd         m0, m1, m0
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vmovd          eax, xm0
-    RET
-
-INIT_YMM avx2
-cglobal pixel_var2_8x16, 0, 0
-    vpxor          m5, m5, m5
-
-    vpmovzxbw      m0, [r0]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m2, m0, m1
-    vpmaddwd       m3, m2, m2
-    vpmovzxbw      m0, [r0 + 16]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 32]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 48]
-    vmovdqu        m1, [r1 + 96]
-    add            r1, 128
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpmovzxbw      m0, [r0 + 64]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 80]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 96]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 112]
-    vmovdqu        m1, [r1 + 96]
-    add            r0, 128
-    add            r1, 128
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpmovzxbw      m0, [r0]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 16]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 32]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 48]
-    vmovdqu        m1, [r1 + 96]
-    add            r1, 128
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpmovzxbw      m0, [r0 + 64]
-    vmovdqu        m1, [r1]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 80]
-    vmovdqu        m1, [r1 + 32]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 96]
-    vmovdqu        m1, [r1 + 64]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-    vpmovzxbw      m0, [r0 + 112]
-    vmovdqu        m1, [r1 + 96]
-    vpunpcklbw     m1, m1, m5
-    vpsubw         m0, m0, m1
-    vpmaddwd       m1, m0, m0
-    vpaddw         m2, m2, m0
-    vpaddd         m3, m3, m1
-
-    vpbroadcastd   m5, [pw_1]
-    vpmaddwd       m2, m2, m5
-    vpunpckhqdq    m0, m2, m2
-    vpunpckhqdq    m1, m3, m3
-    vpaddd         m0, m0, m2
-    vpaddd         m1, m1, m3
-    vpsrlq         m2, m0, 32
-    vpsrlq         m3, m1, 32
-    vpaddd         m0, m0, m2
-    vpaddd         m1, m1, m3
-    vpmaddwd       m0, m0, m0
-    vextracti128   xm2, m1, 1
-    vpunpckldq     xm2, xm1, xm2
-    vmovq          [r2], xm2
-    vpsrld         m0, m0, 7
-    vpsubd         m0, m1, m0
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vmovd          eax, xm0
-    RET
-
-
 ;=============================================================================
 ; SATD
 ;=============================================================================
@@ -1482,12 +915,10 @@ cglobal pixel_satd_4x4, 0, 0
     lea            r4d, [r3 + r3 * 2]
 
     vmovd          m0, [r0]
-    vmovd          m1, [r0 + r1]
-    vshufps        m0, m0, m1, 0
+    vshufps        m0, m0, [r0 + r1], 0
     vpmaddubsw     m0, m0, m5
     vmovd          m1, [r0 + r1 * 2]
-    vmovd          m2, [r0 + r6]
-    vshufps        m1, m1, m2, 0
+    vshufps        m1, m1, [r0 + r6], 0
     vpmaddubsw     m1, m1, m5
     vmovd          m2, [r2]
     vmovd          m3, [r2 + r3]
@@ -1531,20 +962,16 @@ cglobal pixel_satd_4x8, 0, 0
     lea            r4d, [r3 + r3 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + r1]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + r1], 0
     vmovd          xm1, [r5]
-    vmovd          xm2, [r5 + r1]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r5 + r1], 0
     vinserti128    m0, m0, xm1, 1
     vpmaddubsw     m0, m0, m5
     vmovd          xm1, [r0 + r1 * 2]
-    vmovd          xm2, [r0 + r6]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r0 + r6], 0
     vmovd          xm2, [r5 + r1 * 2]
-    vmovd          xm3, [r5 + r6]
+    vshufps        xm2, xm2, [r5 + r6], 0
     lea            r5, [r2 + r3 * 4]
-    vshufps        xm2, xm2, xm3, 0
     vinserti128    m1, m1, xm2, 1
     vpmaddubsw     m1, m1, m5
     vmovd          xm2, [r2]
@@ -1602,20 +1029,16 @@ cglobal pixel_satd_4x16, 0, 0
     lea            r4d, [r3 + r3 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + r1]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + r1], 0
     vmovd          xm1, [r5]
-    vmovd          xm2, [r5 + r1]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r5 + r1], 0
     vinserti128    m0, m0, xm1, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm1, [r0 + r1 * 2]
-    vmovd          xm2, [r0 + r6]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r0 + r6], 0
     vmovd          xm2, [r5 + r1 * 2]
-    vmovd          xm3, [r5 + r6]
+    vshufps        xm2, xm2, [r5 + r6], 0
     lea            r5, [r2 + r3 * 4]
-    vshufps        xm2, xm2, xm3, 0
     vinserti128    m1, m1, xm2, 1
     vpmaddubsw     m1, m1, m6
     vmovd          xm2, [r2]
@@ -1655,20 +1078,16 @@ cglobal pixel_satd_4x16, 0, 0
     vpmaxsw        m5, m0, m1
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + r1]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + r1], 0
     vmovd          xm1, [r5]
-    vmovd          xm2, [r5 + r1]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r5 + r1], 0
     vinserti128    m0, m0, xm1, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm1, [r0 + r1 * 2]
-    vmovd          xm2, [r0 + r6]
-    vshufps        xm1, xm1, xm2, 0
+    vshufps        xm1, xm1, [r0 + r6], 0
     vmovd          xm2, [r5 + r1 * 2]
-    vmovd          xm3, [r5 + r6]
+    vshufps        xm2, xm2, [r5 + r6], 0
     lea            r5, [r2 + r3 * 4]
-    vshufps        xm2, xm2, xm3, 0
     vinserti128    m1, m1, xm2, 1
     vpmaddubsw     m1, m1, m6
     vmovd          xm2, [r2]
@@ -1761,7 +1180,7 @@ cglobal pixel_satd_8x4, 0, 0
     vpabsw         m3, m3
     vpabsw         m0, m0
     vpabsw         m4, m4
-    vpbroadcastd   m6, [pw_1]
+    vmovddup       m6, [pw_1]
     vpblendw       m1, m2, m3, 0AAh
     vpsrld         m2, m2, 16
     vpslld         m3, m3, 16
@@ -2357,6 +1776,741 @@ cglobal pixel_satd_16x16, 0, 0
 
 
 ;=============================================================================
+; SA8D
+;=============================================================================
+INIT_YMM avx2
+cglobal pixel_sa8d_8x8, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+%endif
+    vbroadcasti128 m6, [hmul_8p]
+    lea            r5, [r0 + r1 * 4]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+
+    vmovddup       xm0, [r0]
+    vmovddup       xm1, [r5]
+    vinserti128    m0, m0, xm1, 1
+    vpmaddubsw     m0, m0, m6
+    vmovddup       xm1, [r0 + r1]
+    vmovddup       xm2, [r5 + r1]
+    vinserti128    m1, m1, xm2, 1
+    vpmaddubsw     m1, m1, m6
+    vmovddup       xm2, [r0 + r1 * 2]
+    vmovddup       xm3, [r5 + r1 * 2]
+    vinserti128    m2, m2, xm3, 1
+    vpmaddubsw     m2, m2, m6
+    vmovddup       xm3, [r0 + r6]
+    vmovddup       xm4, [r5 + r6]
+    lea            r5, [r2 + r3 * 4]
+    vinserti128    m3, m3, xm4, 1
+    vpmaddubsw     m3, m3, m6
+    vmovddup       xm4, [r2]
+    vmovddup       xm5, [r5]
+    vinserti128    m4, m4, xm5, 1
+    vpmaddubsw     m4, m4, m6
+    vpsubw         m0, m0, m4
+    vmovddup       xm4, [r2 + r3]
+    vmovddup       xm5, [r5 + r3]
+    vinserti128    m4, m4, xm5, 1
+    vpmaddubsw     m4, m4, m6
+    vpsubw         m1, m1, m4
+    vmovddup       xm4, [r2 + r3 * 2]
+    vmovddup       xm5, [r5 + r3 * 2]
+    vinserti128    m4, m4, xm5, 1
+    vpmaddubsw     m4, m4, m6
+    vpsubw         m2, m2, m4
+    vmovddup       xm4, [r2 + r4]
+    vmovddup       xm5, [r5 + r4]
+    vinserti128    m4, m4, xm5, 1
+    vpmaddubsw     m4, m4, m6
+    vpsubw         m3, m3, m4
+
+    vpaddw         m4, m0, m1
+    vpsubw         m5, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m0
+    vpsubw         m3, m4, m0
+    vpaddw         m0, m5, m1
+    vpsubw         m4, m5, m1
+    vperm2i128     m1, m2, m0, 31h
+    vinserti128    m2, m2, xm0, 1
+    vpaddw         m0, m1, m2
+    vpsubw         m1, m1, m2
+    vperm2i128     m2, m3, m4, 31h
+    vinserti128    m3, m3, xm4, 1
+    vpaddw         m4, m2, m3
+    vpsubw         m5, m2, m3
+    vshufps        m2, m0, m1, 0DDh
+    vshufps        m3, m0, m1, 88h
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vshufps        m2, m4, m5, 0DDh
+    vshufps        m3, m4, m5, 88h
+    vpaddw         m4, m2, m3
+    vpsubw         m5, m2, m3
+
+    vpbroadcastd   m6, [pw_1]
+    vpabsw         m0, m0
+    vpabsw         m1, m1
+    vpabsw         m4, m4
+    vpabsw         m5, m5
+    vpblendw       m2, m0, m1, 0AAh
+    vpsrld         m0, m0, 16
+    vpslld         m1, m1, 16
+    vpor           m0, m0, m1
+    vpmaxsw        m2, m2, m0
+    vpblendw       m3, m4, m5, 0AAh
+    vpsrld         m4, m4, 16
+    vpslld         m5, m5, 16
+    vpor           m4, m4, m5
+    vpmaxsw        m3, m3, m4
+    vpaddw         m2, m2, m3
+    vpmaddwd       m2, m2, m6
+
+%if WIN64
+    vmovdqu        xm6, [rsp + 8]
+%endif
+    vextracti128   xm1, m2, 1
+    vpaddd         xm2, xm2, xm1
+    vpunpckhqdq    xm5, xm2, xm2
+    vpaddd         xm2, xm2, xm5
+    vpshufd        xm5, xm2, 1
+    vpavgw         xm2, xm2, xm5
+    vmovd          eax, xm2
+    RET
+
+INIT_YMM avx2
+cglobal pixel_sa8d_16x16, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 56
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+    vmovdqu        [rsp + 32], xm10
+%endif
+    vmovdqu        m9, [hmul_16p]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+
+    vbroadcasti128 m0, [r0]
+    vbroadcasti128 m1, [r2]
+    vpmaddubsw     m0, m0, m9
+    vpmaddubsw     m1, m1, m9
+    vpsubw         m0, m0, m1
+    vbroadcasti128 m1, [r0 + r1]
+    vbroadcasti128 m2, [r2 + r3]
+    vpmaddubsw     m1, m1, m9
+    vpmaddubsw     m2, m2, m9
+    vpsubw         m1, m1, m2
+    vbroadcasti128 m2, [r0 + r1 * 2]
+    vbroadcasti128 m3, [r2 + r3 * 2]
+    vpmaddubsw     m2, m2, m9
+    vpmaddubsw     m3, m3, m9
+    vpsubw         m2, m2, m3
+    vbroadcasti128 m3, [r0 + r6]
+    vbroadcasti128 m4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpmaddubsw     m3, m3, m9
+    vpmaddubsw     m4, m4, m9
+    vpsubw         m3, m3, m4
+    vbroadcasti128 m4, [r0]
+    vbroadcasti128 m5, [r2]
+    vpmaddubsw     m4, m4, m9
+    vpmaddubsw     m5, m5, m9
+    vpsubw         m4, m4, m5
+    vbroadcasti128 m5, [r0 + r1]
+    vbroadcasti128 m6, [r2 + r3]
+    vpmaddubsw     m5, m5, m9
+    vpmaddubsw     m6, m6, m9
+    vpsubw         m5, m5, m6
+    vbroadcasti128 m6, [r0 + r1 * 2]
+    vbroadcasti128 m7, [r2 + r3 * 2]
+    vpmaddubsw     m6, m6, m9
+    vpmaddubsw     m7, m7, m9
+    vpsubw         m6, m6, m7
+    vbroadcasti128 m7, [r0 + r6]
+    vbroadcasti128 m8, [r2 + r4]
+    vpmaddubsw     m7, m7, m9
+    vpmaddubsw     m8, m8, m9
+    vpsubw         m7, m7, m8
+
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpaddw         m8, m0, m1
+    vpsubw         m9, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m5
+    vpsubw         m3, m4, m5
+    vpaddw         m4, m6, m7
+    vpsubw         m5, m6, m7
+    vpaddw         m6, m8, m0
+    vpsubw         m7, m8, m0
+    vpaddw         m0, m9, m1
+    vpsubw         m8, m9, m1
+    vpaddw         m1, m2, m4
+    vpsubw         m9, m2, m4
+    vpaddw         m2, m3, m5
+    vpsubw         m4, m3, m5
+    vpaddw         m3, m6, m1
+    vpsubw         m5, m6, m1
+    vpaddw         m1, m0, m2
+    vpsubw         m6, m0, m2
+    vpaddw         m0, m7, m9
+    vpsubw         m2, m7, m9
+    vpaddw         m7, m8, m4
+    vpsubw         m9, m8, m4
+
+    vshufps        m4, m3, m5, 0DDh
+    vshufps        m8, m3, m5, 88h
+    vpaddw         m3, m4, m8
+    vpsubw         m5, m4, m8
+    vshufps        m4, m1, m6, 0DDh
+    vshufps        m8, m1, m6, 88h
+    vpaddw         m1, m4, m8
+    vpsubw         m6, m4, m8
+    vshufps        m4, m0, m2, 0DDh
+    vshufps        m8, m0, m2, 88h
+    vpaddw         m0, m4, m8
+    vpsubw         m2, m4, m8
+    vshufps        m4, m7, m9, 0DDh
+    vshufps        m8, m7, m9, 88h
+    vpaddw         m7, m4, m8
+    vpsubw         m9, m4, m8
+
+    vpabsw         m3, m3
+    vpabsw         m5, m5
+    vpabsw         m1, m1
+    vpabsw         m6, m6
+    vpabsw         m0, m0
+    vpabsw         m2, m2
+    vpabsw         m7, m7
+    vpabsw         m9, m9
+    vpblendw       m4, m3, m5, 0AAh
+    vpsrld         m3, m3, 16
+    vpslld         m5, m5, 16
+    vpor           m3, m3, m5
+    vpmaxsw        m4, m4, m3
+    vpblendw       m8, m1, m6, 0AAh
+    vpsrld         m1, m1, 16
+    vpslld         m6, m6, 16
+    vpor           m1, m1, m6
+    vpmaxsw        m8, m8, m1
+    vpaddw         m10, m4, m8
+    vpblendw       m4, m0, m2, 0AAh
+    vpsrld         m0, m0, 16
+    vpslld         m2, m2, 16
+    vpor           m0, m0, m2
+    vpmaxsw        m4, m4, m0
+    vpaddw         m10, m10, m4
+    vpblendw       m8, m7, m9, 0AAh
+    vpsrld         m7, m7, 16
+    vpslld         m9, m9, 16
+    vpor           m7, m7, m9
+    vpmaxsw        m8, m8, m7
+    vpaddw         m10, m10, m8
+
+    vmovdqu        m9, [hmul_16p]
+    vbroadcasti128 m0, [r0]
+    vbroadcasti128 m1, [r2]
+    vpmaddubsw     m0, m0, m9
+    vpmaddubsw     m1, m1, m9
+    vpsubw         m0, m0, m1
+    vbroadcasti128 m1, [r0 + r1]
+    vbroadcasti128 m2, [r2 + r3]
+    vpmaddubsw     m1, m1, m9
+    vpmaddubsw     m2, m2, m9
+    vpsubw         m1, m1, m2
+    vbroadcasti128 m2, [r0 + r1 * 2]
+    vbroadcasti128 m3, [r2 + r3 * 2]
+    vpmaddubsw     m2, m2, m9
+    vpmaddubsw     m3, m3, m9
+    vpsubw         m2, m2, m3
+    vbroadcasti128 m3, [r0 + r6]
+    vbroadcasti128 m4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpmaddubsw     m3, m3, m9
+    vpmaddubsw     m4, m4, m9
+    vpsubw         m3, m3, m4
+    vbroadcasti128 m4, [r0]
+    vbroadcasti128 m5, [r2]
+    vpmaddubsw     m4, m4, m9
+    vpmaddubsw     m5, m5, m9
+    vpsubw         m4, m4, m5
+    vbroadcasti128 m5, [r0 + r1]
+    vbroadcasti128 m6, [r2 + r3]
+    vpmaddubsw     m5, m5, m9
+    vpmaddubsw     m6, m6, m9
+    vpsubw         m5, m5, m6
+    vbroadcasti128 m6, [r0 + r1 * 2]
+    vbroadcasti128 m7, [r2 + r3 * 2]
+    vpmaddubsw     m6, m6, m9
+    vpmaddubsw     m7, m7, m9
+    vpsubw         m6, m6, m7
+    vbroadcasti128 m7, [r0 + r6]
+    vbroadcasti128 m8, [r2 + r4]
+    vpmaddubsw     m7, m7, m9
+    vpmaddubsw     m8, m8, m9
+    vpsubw         m7, m7, m8
+
+    vpaddw         m8, m0, m1
+    vpsubw         m9, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m5
+    vpsubw         m3, m4, m5
+    vpaddw         m4, m6, m7
+    vpsubw         m5, m6, m7
+    vpaddw         m6, m8, m0
+    vpsubw         m7, m8, m0
+    vpaddw         m0, m9, m1
+    vpsubw         m8, m9, m1
+    vpaddw         m1, m2, m4
+    vpsubw         m9, m2, m4
+    vpaddw         m2, m3, m5
+    vpsubw         m4, m3, m5
+    vpaddw         m3, m6, m1
+    vpsubw         m5, m6, m1
+    vpaddw         m1, m0, m2
+    vpsubw         m6, m0, m2
+    vpaddw         m0, m7, m9
+    vpsubw         m2, m7, m9
+    vpaddw         m7, m8, m4
+    vpsubw         m9, m8, m4
+
+    vshufps        m4, m3, m5, 0DDh
+    vshufps        m8, m3, m5, 88h
+    vpaddw         m3, m4, m8
+    vpsubw         m5, m4, m8
+    vshufps        m4, m1, m6, 0DDh
+    vshufps        m8, m1, m6, 88h
+    vpaddw         m1, m4, m8
+    vpsubw         m6, m4, m8
+    vshufps        m4, m0, m2, 0DDh
+    vshufps        m8, m0, m2, 88h
+    vpaddw         m0, m4, m8
+    vpsubw         m2, m4, m8
+    vshufps        m4, m7, m9, 0DDh
+    vshufps        m8, m7, m9, 88h
+    vpaddw         m7, m4, m8
+    vpsubw         m9, m4, m8
+
+    vpabsw         m3, m3
+    vpabsw         m5, m5
+    vpabsw         m1, m1
+    vpabsw         m6, m6
+    vpabsw         m0, m0
+    vpabsw         m2, m2
+    vpabsw         m7, m7
+    vpabsw         m9, m9
+    vpbroadcastd   m8, [pw_1]
+    vpblendw       m4, m3, m5, 0AAh
+    vpsrld         m3, m3, 16
+    vpslld         m5, m5, 16
+    vpor           m3, m3, m5
+    vpmaxsw        m4, m4, m3
+    vpaddw         m10, m10, m4
+    vpblendw       m4, m1, m6, 0AAh
+    vpsrld         m1, m1, 16
+    vpslld         m6, m6, 16
+    vpor           m1, m1, m6
+    vpmaxsw        m4, m4, m1
+    vpaddw         m10, m10, m4
+    vpblendw       m4, m0, m2, 0AAh
+    vpsrld         m0, m0, 16
+    vpslld         m2, m2, 16
+    vpor           m0, m0, m2
+    vpmaxsw        m4, m4, m0
+    vpaddw         m10, m10, m4
+    vpblendw       m4, m7, m9, 0AAh
+    vpsrld         m7, m7, 16
+    vpslld         m9, m9, 16
+    vpor           m7, m7, m9
+    vpmaxsw        m4, m4, m7
+    vpaddw         m10, m10, m4
+    vpmaddwd       m2, m10, m8
+
+%if WIN64
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    vmovdqu        xm10, [rsp + 32]
+    add            rsp, 56
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%endif
+    vextracti128   xm1, m2, 1
+    vpaddd         xm2, xm2, xm1
+    vpunpckhqdq    xm5, xm2, xm2
+    vpaddd         xm2, xm2, xm5
+    vpshufd        xm5, xm2, 1
+    vpavgw         xm2, xm2, xm5
+    vmovd          eax, xm2
+    RET
+
+;=============================================================================
+; SA8D_SATD
+;=============================================================================
+INIT_YMM avx2
+cglobal pixel_sa8d_satd_16x16, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 104
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+    vmovdqu        [rsp + 32], xm10
+    vmovdqu        [rsp + 48], xm11
+    vmovdqu        [rsp + 64], xm12
+    vmovdqu        [rsp + 80], xm13
+%endif
+    vmovdqu        m10, [hmul_16p]
+    vpbroadcastd   m13, [pw_1]
+    lea            r6d, [r1 + r1 * 2]
+    lea            r4d, [r3 + r3 * 2]
+
+    vbroadcasti128 m0, [r0]
+    vbroadcasti128 m1, [r2]
+    vpmaddubsw     m0, m0, m10
+    vpmaddubsw     m1, m1, m10
+    vpsubw         m0, m0, m1
+    vbroadcasti128 m1, [r0 + r1]
+    vbroadcasti128 m2, [r2 + r3]
+    vpmaddubsw     m1, m1, m10
+    vpmaddubsw     m2, m2, m10
+    vpsubw         m1, m1, m2
+    vbroadcasti128 m2, [r0 + r1 * 2]
+    vbroadcasti128 m3, [r2 + r3 * 2]
+    vpmaddubsw     m2, m2, m10
+    vpmaddubsw     m3, m3, m10
+    vpsubw         m2, m2, m3
+    vbroadcasti128 m3, [r0 + r6]
+    vbroadcasti128 m4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpmaddubsw     m3, m3, m10
+    vpmaddubsw     m4, m4, m10
+    vpsubw         m3, m3, m4
+    vbroadcasti128 m4, [r0]
+    vbroadcasti128 m5, [r2]
+    vpmaddubsw     m4, m4, m10
+    vpmaddubsw     m5, m5, m10
+    vpsubw         m4, m4, m5
+    vbroadcasti128 m5, [r0 + r1]
+    vbroadcasti128 m6, [r2 + r3]
+    vpmaddubsw     m5, m5, m10
+    vpmaddubsw     m6, m6, m10
+    vpsubw         m5, m5, m6
+    vbroadcasti128 m6, [r0 + r1 * 2]
+    vbroadcasti128 m7, [r2 + r3 * 2]
+    vpmaddubsw     m6, m6, m10
+    vpmaddubsw     m7, m7, m10
+    vpsubw         m6, m6, m7
+    vbroadcasti128 m7, [r0 + r6]
+    vbroadcasti128 m8, [r2 + r4]
+    vpmaddubsw     m7, m7, m10
+    vpmaddubsw     m8, m8, m10
+    vpsubw         m7, m7, m8
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+
+; satd part
+    vpaddw         m8, m0, m1
+    vpsubw         m9, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m5
+    vpsubw         m3, m4, m5
+    vpaddw         m4, m6, m7
+    vpsubw         m5, m6, m7
+    vpaddw         m6, m8, m0
+    vpsubw         m7, m8, m0
+    vpaddw         m0, m9, m1
+    vpsubw         m8, m9, m1
+    vpaddw         m1, m2, m4
+    vpsubw         m9, m2, m4
+    vpaddw         m2, m3, m5
+    vpsubw         m4, m3, m5
+
+    vpblendw       m3, m6, m0, 0AAh
+    vpsrld         m6, m6, 16
+    vpslld         m0, m0, 16
+    vpor           m5, m6, m0
+    vpaddw         m6, m3, m5
+    vpsubw         m0, m3, m5
+    vpabsw         m11, m6
+    vpabsw         m3, m0
+    vpaddw         m11, m11, m3
+    vpblendw       m3, m7, m8, 0AAh
+    vpsrld         m7, m7, 16
+    vpslld         m8, m8, 16
+    vpor           m5, m7, m8
+    vpaddw         m7, m3, m5
+    vpsubw         m8, m3, m5
+    vpabsw         m3, m7
+    vpabsw         m5, m8
+    vpaddw         m3, m3, m5
+    vpaddw         m11, m11, m3
+    vpblendw       m3, m1, m2, 0AAh
+    vpsrld         m1, m1, 16
+    vpslld         m2, m2, 16
+    vpor           m5, m1, m2
+    vpaddw         m1, m3, m5
+    vpsubw         m2, m3, m5
+    vpabsw         m3, m1
+    vpabsw         m5, m2
+    vpaddw         m3, m3, m5
+    vpaddw         m11, m11, m3
+    vpblendw       m3, m9, m4, 0AAh
+    vpsrld         m9, m9, 16
+    vpslld         m4, m4, 16
+    vpor           m5, m9, m4
+    vpaddw         m9, m3, m5
+    vpsubw         m4, m3, m5
+    vpabsw         m3, m9
+    vpabsw         m5, m4
+    vpaddw         m3, m3, m5
+    vpaddw         m11, m11, m3
+
+; sa8d part
+    vpaddw         m3, m6, m1
+    vpsubw         m5, m6, m1
+    vpaddw         m1, m0, m2
+    vpsubw         m6, m0, m2
+    vpaddw         m0, m7, m9
+    vpsubw         m2, m7, m9
+    vpaddw         m7, m8, m4
+    vpsubw         m9, m8, m4
+
+    vpblendd       m4, m3, m1, 10101010b
+    vpsrlq         m3, m3, 32
+    vpsllq         m1, m1, 32
+    vpor           m3, m3, m1
+    vpaddw         m12, m4, m3
+    vpabsw         m12, m12
+    vpsubw         m3, m4, m3
+    vpabsw         m3, m3
+    vpaddw         m12, m12, m3
+    vpblendd       m4, m0, m7, 10101010b
+    vpsrlq         m0, m0, 32
+    vpsllq         m7, m7, 32
+    vpor           m0, m0, m7
+    vpaddw         m7, m4, m0
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+    vpsubw         m7, m4, m0
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+    vpblendd       m4, m5, m6, 10101010b
+    vpsrlq         m5, m5, 32
+    vpsllq         m6, m6, 32
+    vpor           m5, m5, m6
+    vpaddw         m7, m4, m5
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+    vpsubw         m7, m4, m5
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+    vmovdqu        m10, [hmul_16p]
+    vpblendd       m4, m2, m9, 10101010b
+    vpsrlq         m2, m2, 32
+    vpsllq         m9, m9, 32
+    vpor           m2, m2, m9
+    vpaddw         m7, m4, m2
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+    vpsubw         m7, m4, m2
+    vpabsw         m7, m7
+    vpaddw         m12, m12, m7
+
+; convert to dword before being unsigned
+    vpmaddwd       m11, m11, m13 
+    vpmaddwd       m12, m12, m13
+
+    vbroadcasti128 m0, [r0]
+    vbroadcasti128 m1, [r2]
+    vpmaddubsw     m0, m0, m10
+    vpmaddubsw     m1, m1, m10
+    vpsubw         m0, m0, m1
+    vbroadcasti128 m1, [r0 + r1]
+    vbroadcasti128 m2, [r2 + r3]
+    vpmaddubsw     m1, m1, m10
+    vpmaddubsw     m2, m2, m10
+    vpsubw         m1, m1, m2
+    vbroadcasti128 m2, [r0 + r1 * 2]
+    vbroadcasti128 m3, [r2 + r3 * 2]
+    vpmaddubsw     m2, m2, m10
+    vpmaddubsw     m3, m3, m10
+    vpsubw         m2, m2, m3
+    vbroadcasti128 m3, [r0 + r6]
+    vbroadcasti128 m4, [r2 + r4]
+    lea            r0, [r0 + r1 * 4]
+    lea            r2, [r2 + r3 * 4]
+    vpmaddubsw     m3, m3, m10
+    vpmaddubsw     m4, m4, m10
+    vpsubw         m3, m3, m4
+    vbroadcasti128 m4, [r0]
+    vbroadcasti128 m5, [r2]
+    vpmaddubsw     m4, m4, m10
+    vpmaddubsw     m5, m5, m10
+    vpsubw         m4, m4, m5
+    vbroadcasti128 m5, [r0 + r1]
+    vbroadcasti128 m6, [r2 + r3]
+    vpmaddubsw     m5, m5, m10
+    vpmaddubsw     m6, m6, m10
+    vpsubw         m5, m5, m6
+    vbroadcasti128 m6, [r0 + r1 * 2]
+    vbroadcasti128 m7, [r2 + r3 * 2]
+    vpmaddubsw     m6, m6, m10
+    vpmaddubsw     m7, m7, m10
+    vpsubw         m6, m6, m7
+    vbroadcasti128 m7, [r0 + r6]
+    vbroadcasti128 m8, [r2 + r4]
+    vpmaddubsw     m7, m7, m10
+    vpmaddubsw     m8, m8, m10
+    vpsubw         m7, m7, m8
+
+; satd part
+    vpaddw         m8, m0, m1
+    vpsubw         m9, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m5
+    vpsubw         m3, m4, m5
+    vpaddw         m4, m6, m7
+    vpsubw         m5, m6, m7
+    vpaddw         m6, m8, m0
+    vpsubw         m7, m8, m0
+    vpaddw         m0, m9, m1
+    vpsubw         m8, m9, m1
+    vpaddw         m1, m2, m4
+    vpsubw         m9, m2, m4
+    vpaddw         m2, m3, m5
+    vpsubw         m4, m3, m5
+
+    vpblendw       m3, m6, m0, 0AAh
+    vpsrld         m6, m6, 16
+    vpslld         m0, m0, 16
+    vpor           m5, m6, m0
+    vpaddw         m6, m3, m5
+    vpsubw         m0, m3, m5
+    vpabsw         m3, m6
+    vpabsw         m5, m0
+    vpaddw         m10, m3, m5
+    vpblendw       m3, m7, m8, 0AAh
+    vpsrld         m7, m7, 16
+    vpslld         m8, m8, 16
+    vpor           m5, m7, m8
+    vpaddw         m7, m3, m5
+    vpsubw         m8, m3, m5
+    vpabsw         m3, m7
+    vpabsw         m5, m8
+    vpaddw         m3, m3, m5
+    vpaddw         m10, m10, m3
+    vpblendw       m3, m1, m2, 0AAh
+    vpsrld         m1, m1, 16
+    vpslld         m2, m2, 16
+    vpor           m5, m1, m2
+    vpaddw         m1, m3, m5
+    vpsubw         m2, m3, m5
+    vpabsw         m3, m1
+    vpabsw         m5, m2
+    vpaddw         m3, m3, m5
+    vpaddw         m10, m10, m3
+    vpblendw       m3, m9, m4, 0AAh
+    vpsrld         m9, m9, 16
+    vpslld         m4, m4, 16
+    vpor           m5, m9, m4
+    vpaddw         m9, m3, m5
+    vpsubw         m4, m3, m5
+    vpabsw         m3, m9
+    vpabsw         m5, m4
+    vpaddw         m3, m3, m5
+    vpaddw         m10, m10, m3 
+    vpmaddwd       m10, m10, m13
+    vpaddd         m11, m11, m10
+
+; sa8d part
+    vpaddw         m3, m6, m1
+    vpsubw         m5, m6, m1
+    vpaddw         m1, m0, m2
+    vpsubw         m6, m0, m2
+    vpaddw         m0, m7, m9
+    vpsubw         m2, m7, m9
+    vpaddw         m7, m8, m4
+    vpsubw         m9, m8, m4
+
+    vpblendd       m4, m3, m1, 10101010b
+    vpsrlq         m3, m3, 32
+    vpsllq         m1, m1, 32
+    vpor           m3, m3, m1
+    vpaddw         m8, m4, m3
+    vpabsw         m10, m8
+    vpsubw         m3, m4, m3
+    vpabsw         m3, m3
+    vpaddw         m10, m10, m3
+    vpblendd       m4, m0, m7, 10101010b
+    vpsrlq         m0, m0, 32
+    vpsllq         m7, m7, 32
+    vpor           m0, m0, m7
+    vpaddw         m7, m4, m0
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpsubw         m7, m4, m0
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpblendd       m4, m5, m6, 10101010b
+    vpsrlq         m5, m5, 32
+    vpsllq         m6, m6, 32
+    vpor           m5, m5, m6
+    vpaddw         m7, m4, m5
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpsubw         m7, m4, m5
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpblendd       m4, m2, m9, 10101010b
+    vpsrlq         m2, m2, 32
+    vpsllq         m9, m9, 32
+    vpor           m2, m2, m9
+    vpaddw         m7, m4, m2
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpsubw         m7, m4, m2
+    vpabsw         m7, m7
+    vpaddw         m10, m10, m7
+    vpmaddwd       m10, m10, m13
+    vpaddd         m12, m12, m10
+
+    vphaddd        m0, m12, m11
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vpshufd        xm1, xm0, 00110001b
+    vpaddd         xm0, xm0, xm1
+    vpsrld         xm1, xm0, 2
+    vpsrld         xm2, xm0, 1
+    vpblendd       xm0, xm1, xm2, 00000100b
+    vpshufd        xm0, xm0, 00001000b
+    vmovq          rax, xm0
+%if WIN64
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    vmovdqu        xm10, [rsp + 32]
+    vmovdqu        xm11, [rsp + 48]
+    vmovdqu        xm12, [rsp + 64]
+    vmovdqu        xm13, [rsp + 80]
+    add            rsp, 104
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%endif
+    RET
+
+
+;=============================================================================
 ; SATD X3/X4
 ;=============================================================================
 INIT_YMM avx2
@@ -2370,8 +2524,7 @@ cglobal pixel_satd_x3_4x4, 0, 0
     lea            r6d, [r4 + r4 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + 16]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 16], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm1, [r1]
@@ -2387,8 +2540,7 @@ cglobal pixel_satd_x3_4x4, 0, 0
     vpsubw         m1, m0, m1
     vpsubw         xm2, xm0, xm2
     vmovd          xm0, [r0 + 32]
-    vmovd          xm3, [r0 + 48]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 48], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm3, [r1 + r4 * 2]
@@ -2460,8 +2612,7 @@ cglobal pixel_satd_x3_4x8, 0, 0
     lea            r6d, [r4 + r4 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + 16]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 16], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm1, [r1]
@@ -2477,8 +2628,7 @@ cglobal pixel_satd_x3_4x8, 0, 0
     vpsubw         m1, m0, m1
     vpsubw         xm2, xm0, xm2
     vmovd          xm0, [r0 + 32]
-    vmovd          xm3, [r0 + 48]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 48], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm3, [r1 + r4 * 2]
@@ -2526,8 +2676,7 @@ cglobal pixel_satd_x3_4x8, 0, 0
     vpmaxsw        xm9, xm1, xm2
 
     vmovd          xm0, [r0 + 64]
-    vmovd          xm1, [r0 + 80]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 80], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm1, [r1]
@@ -2543,8 +2692,7 @@ cglobal pixel_satd_x3_4x8, 0, 0
     vpsubw         m1, m0, m1
     vpsubw         xm2, xm0, xm2
     vmovd          xm0, [r0 + 96]
-    vmovd          xm3, [r0 + 112]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 112], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm3, [r1 + r4 * 2]
@@ -3149,8 +3297,7 @@ cglobal pixel_satd_x4_4x4, 0, 0
     lea            r6d, [r5 + r5 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + 16]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 16], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm1, [r1]
@@ -3169,8 +3316,7 @@ cglobal pixel_satd_x4_4x4, 0, 0
     vpsubw         m2, m0, m2
 
     vmovd          xm0, [r0 + 32]
-    vmovd          xm3, [r0 + 48]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 48], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m6
     vmovd          xm3, [r1 + r5 * 2]
@@ -3247,8 +3393,7 @@ cglobal pixel_satd_x4_4x8, 0, 0
     lea            r6d, [r5 + r5 * 2]
 
     vmovd          xm0, [r0]
-    vmovd          xm1, [r0 + 16]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 16], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm1, [r1]
@@ -3266,8 +3411,7 @@ cglobal pixel_satd_x4_4x8, 0, 0
     vpsubw         m1, m0, m1
     vpsubw         m2, m0, m2
     vmovd          xm0, [r0 + 32]
-    vmovd          xm3, [r0 + 48]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 48], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm3, [r1 + r5 * 2]
@@ -3318,8 +3462,7 @@ cglobal pixel_satd_x4_4x8, 0, 0
     vpmaxsw        m9, m1, m2
 
     vmovd          xm0, [r0 + 64]
-    vmovd          xm1, [r0 + 80]
-    vshufps        xm0, xm0, xm1, 0
+    vshufps        xm0, xm0, [r0 + 80], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm1, [r1]
@@ -3337,8 +3480,7 @@ cglobal pixel_satd_x4_4x8, 0, 0
     vpsubw         m1, m0, m1
     vpsubw         m2, m0, m2
     vmovd          xm0, [r0 + 96]
-    vmovd          xm3, [r0 + 112]
-    vshufps        xm0, xm0, xm3, 0
+    vshufps        xm0, xm0, [r0 + 112], 0
     vinserti128    m0, m0, xm0, 1
     vpmaddubsw     m0, m0, m7
     vmovd          xm3, [r1 + r5 * 2]
@@ -4015,6 +4157,447 @@ cglobal pixel_satd_x4_16x16, 0, 0
     vextracti128   xm1, m0, 1
     vpaddd         xm0, xm0, xm1
     vmovdqu        [r6], xm0
+    RET
+
+
+;=============================================================================
+; VAR
+;=============================================================================
+INIT_YMM avx2
+cglobal pixel_var_8x8, 0, 0
+    lea            r6d, [r1 + r1 * 2]
+    vpxor          m5, m5, m5
+
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m0, m1
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m0, m1
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m3, m0
+    vpaddw         m3, m3, m1
+
+    vpbroadcastd   m5, [pw_1]
+    vpmaddwd       m3, m3, m5
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m4, m0
+    vpaddd         m4, m4, m1
+
+    vphaddd        m0, m3, m4
+    vphaddd        m0, m0, m0
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vmovq          rax, xm0
+    RET
+
+INIT_YMM avx2
+cglobal pixel_var_8x16, 0, 0
+    lea            r6d, [r1 + r1 * 2]
+    vpxor          m5, m5, m5
+
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m0, m1
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m0, m1
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m3, m0
+    vpaddw         m3, m3, m1
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m4, m0
+    vpaddd         m4, m4, m1
+
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m3, m0
+    vpaddw         m3, m3, m1
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m4, m0
+    vpaddd         m4, m4, m1
+    vmovq          xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovq          xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    vpunpcklbw     m0, m0, m5
+    vpunpcklbw     m1, m1, m5
+    vpaddw         m3, m3, m0
+    vpaddw         m3, m3, m1
+
+    vpbroadcastd   m5, [pw_1]
+    vpmaddwd       m3, m3, m5
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m1, m1, m1
+    vpaddd         m4, m4, m0
+    vpaddd         m4, m4, m1
+
+    vphaddd        m0, m3, m4
+    vphaddd        m0, m0, m0
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vmovq          rax, xm0
+    RET
+
+INIT_YMM avx2
+cglobal pixel_var_16x16, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+%endif
+    lea            r6d, [r1 + r1 * 2]
+    vpbroadcastd   m6, [pw_00ff]
+
+    vmovdqu        xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovdqu        xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpand          m2, m0, m6
+    vpand          m3, m1, m6
+    vpsrlw         m0, m0, 8
+    vpsrlw         m1, m1, 8
+    vpaddw         m4, m2, m3
+    vpaddw         m4, m4, m0
+    vpaddw         m4, m4, m1
+    vpmaddwd       m2, m2, m2
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m3, m3, m3
+    vpmaddwd       m1, m1, m1
+    vpaddd         m5, m2, m0
+    vpaddd         m5, m5, m3
+    vpaddd         m5, m5, m1
+    vmovdqu        xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovdqu        xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpand          m2, m0, m6
+    vpand          m3, m1, m6
+    vpsrlw         m0, m0, 8
+    vpsrlw         m1, m1, 8
+    vpaddw         m4, m4, m2
+    vpaddw         m4, m4, m3
+    vpaddw         m4, m4, m0
+    vpaddw         m4, m4, m1
+    vpmaddwd       m2, m2, m2
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m3, m3, m3
+    vpmaddwd       m1, m1, m1
+    vpaddd         m5, m5, m2
+    vpaddd         m5, m5, m0
+    vpaddd         m5, m5, m3
+    vpaddd         m5, m5, m1
+
+    vmovdqu        xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovdqu        xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    lea            r0, [r0 + r1 * 4]
+    vpand          m2, m0, m6
+    vpand          m3, m1, m6
+    vpsrlw         m0, m0, 8
+    vpsrlw         m1, m1, 8
+    vpaddw         m4, m4, m2
+    vpaddw         m4, m4, m3
+    vpaddw         m4, m4, m0
+    vpaddw         m4, m4, m1
+    vpmaddwd       m2, m2, m2
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m3, m3, m3
+    vpmaddwd       m1, m1, m1
+    vpaddd         m5, m5, m2
+    vpaddd         m5, m5, m0
+    vpaddd         m5, m5, m3
+    vpaddd         m5, m5, m1
+    vmovdqu        xm0, [r0]
+    vinserti128    m0, m0, [r0 + r1], 1
+    vmovdqu        xm1, [r0 + r1 * 2]
+    vinserti128    m1, m1, [r0 + r6], 1
+    vpand          m2, m0, m6
+    vpand          m3, m1, m6
+    vpsrlw         m0, m0, 8
+    vpsrlw         m1, m1, 8
+    vpaddw         m4, m4, m2
+    vpaddw         m4, m4, m3
+    vpaddw         m4, m4, m0
+    vpaddw         m4, m4, m1
+
+    vpbroadcastd   m6, [pw_1]
+    vpmaddwd       m4, m4, m6
+    vpmaddwd       m2, m2, m2
+    vpmaddwd       m0, m0, m0
+    vpmaddwd       m3, m3, m3
+    vpmaddwd       m1, m1, m1
+    vpaddd         m5, m5, m2
+    vpaddd         m5, m5, m0
+    vpaddd         m5, m5, m3
+    vpaddd         m5, m5, m1
+
+%if WIN64
+    vmovdqu        xm6, [rsp + 8]
+%endif
+    vphaddd        m0, m4, m5
+    vphaddd        m0, m0, m0
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vmovq          rax, xm0
+    RET
+
+;=============================================================================
+; VAR2
+;=============================================================================
+INIT_YMM avx2
+cglobal pixel_var2_8x8, 0, 0
+    vpxor          m5, m5, m5
+
+    vpmovzxbw      m0, [r0]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m2, m0, m1
+    vpmaddwd       m3, m2, m2
+    vpmovzxbw      m0, [r0 + 16]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 32]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 48]
+    vmovdqu        m1, [r1 + 96]
+    add            r1, 128
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpmovzxbw      m0, [r0 + 64]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 80]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 96]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 112]
+    vmovdqu        m1, [r1 + 96]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpbroadcastd   m5, [pw_1]
+    vpmaddwd       m2, m2, m5
+    vpunpckhqdq    m0, m2, m2
+    vpunpckhqdq    m1, m3, m3
+    vpaddd         m0, m0, m2
+    vpaddd         m1, m1, m3
+    vpsrlq         m2, m0, 32
+    vpsrlq         m3, m1, 32
+    vpaddd         m0, m0, m2
+    vpaddd         m1, m1, m3
+    vpmaddwd       m0, m0, m0
+    vextracti128   xm2, m1, 1
+    vpunpckldq     xm2, xm1, xm2
+    vmovq          [r2], xm2
+    vpsrld         m0, m0, 6
+    vpsubd         m0, m1, m0
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vmovd          eax, xm0
+    RET
+
+INIT_YMM avx2
+cglobal pixel_var2_8x16, 0, 0
+    vpxor          m5, m5, m5
+
+    vpmovzxbw      m0, [r0]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m2, m0, m1
+    vpmaddwd       m3, m2, m2
+    vpmovzxbw      m0, [r0 + 16]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 32]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 48]
+    vmovdqu        m1, [r1 + 96]
+    add            r1, 128
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpmovzxbw      m0, [r0 + 64]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 80]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 96]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 112]
+    vmovdqu        m1, [r1 + 96]
+    add            r0, 128
+    add            r1, 128
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpmovzxbw      m0, [r0]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 16]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 32]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 48]
+    vmovdqu        m1, [r1 + 96]
+    add            r1, 128
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpmovzxbw      m0, [r0 + 64]
+    vmovdqu        m1, [r1]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 80]
+    vmovdqu        m1, [r1 + 32]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 96]
+    vmovdqu        m1, [r1 + 64]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+    vpmovzxbw      m0, [r0 + 112]
+    vmovdqu        m1, [r1 + 96]
+    vpunpcklbw     m1, m1, m5
+    vpsubw         m0, m0, m1
+    vpmaddwd       m1, m0, m0
+    vpaddw         m2, m2, m0
+    vpaddd         m3, m3, m1
+
+    vpbroadcastd   m5, [pw_1]
+    vpmaddwd       m2, m2, m5
+    vpunpckhqdq    m0, m2, m2
+    vpunpckhqdq    m1, m3, m3
+    vpaddd         m0, m0, m2
+    vpaddd         m1, m1, m3
+    vpsrlq         m2, m0, 32
+    vpsrlq         m3, m1, 32
+    vpaddd         m0, m0, m2
+    vpaddd         m1, m1, m3
+    vpmaddwd       m0, m0, m0
+    vextracti128   xm2, m1, 1
+    vpunpckldq     xm2, xm1, xm2
+    vmovq          [r2], xm2
+    vpsrld         m0, m0, 7
+    vpsubd         m0, m1, m0
+    vextracti128   xm1, m0, 1
+    vpaddd         xm0, xm0, xm1
+    vmovd          eax, xm0
     RET
 
 
@@ -4874,1528 +5457,40 @@ cglobal pixel_hadamard_ac_16x16, 0, 0
 
 
 ;=============================================================================
-; SA8D
+; ASD8
 ;=============================================================================
-INIT_YMM avx2
-cglobal pixel_sa8d_8x8, 0, 0
+INIT_XMM avx2
+cglobal pixel_asd8, 0, 0
 %if WIN64
-    vmovdqu        [rsp + 8], xm6
+    mov            r4d, [rsp + 40]
 %endif
-    vbroadcasti128 m6, [hmul_8p]
-    lea            r5, [r0 + r1 * 4]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-
-    vmovddup       xm0, [r0]
-    vmovddup       xm1, [r5]
-    vinserti128    m0, m0, xm1, 1
-    vpmaddubsw     m0, m0, m6
-    vmovddup       xm1, [r0 + r1]
-    vmovddup       xm2, [r5 + r1]
-    vinserti128    m1, m1, xm2, 1
-    vpmaddubsw     m1, m1, m6
-    vmovddup       xm2, [r0 + r1 * 2]
-    vmovddup       xm3, [r5 + r1 * 2]
-    vinserti128    m2, m2, xm3, 1
-    vpmaddubsw     m2, m2, m6
-    vmovddup       xm3, [r0 + r6]
-    vmovddup       xm4, [r5 + r6]
-    lea            r5, [r2 + r3 * 4]
-    vinserti128    m3, m3, xm4, 1
-    vpmaddubsw     m3, m3, m6
-    vmovddup       xm4, [r2]
-    vmovddup       xm5, [r5]
-    vinserti128    m4, m4, xm5, 1
-    vpmaddubsw     m4, m4, m6
-    vpsubw         m0, m0, m4
-    vmovddup       xm4, [r2 + r3]
-    vmovddup       xm5, [r5 + r3]
-    vinserti128    m4, m4, xm5, 1
-    vpmaddubsw     m4, m4, m6
-    vpsubw         m1, m1, m4
-    vmovddup       xm4, [r2 + r3 * 2]
-    vmovddup       xm5, [r5 + r3 * 2]
-    vinserti128    m4, m4, xm5, 1
-    vpmaddubsw     m4, m4, m6
-    vpsubw         m2, m2, m4
-    vmovddup       xm4, [r2 + r4]
-    vmovddup       xm5, [r5 + r4]
-    vinserti128    m4, m4, xm5, 1
-    vpmaddubsw     m4, m4, m6
-    vpsubw         m3, m3, m4
-
-    vpaddw         m4, m0, m1
-    vpsubw         m5, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m0
-    vpsubw         m3, m4, m0
-    vpaddw         m0, m5, m1
-    vpsubw         m4, m5, m1
-    vperm2i128     m1, m2, m0, 31h
-    vinserti128    m2, m2, xm0, 1
-    vpaddw         m0, m1, m2
-    vpsubw         m1, m1, m2
-    vperm2i128     m2, m3, m4, 31h
-    vinserti128    m3, m3, xm4, 1
-    vpaddw         m4, m2, m3
-    vpsubw         m5, m2, m3
-    vshufps        m2, m0, m1, 0DDh
-    vshufps        m3, m0, m1, 88h
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vshufps        m2, m4, m5, 0DDh
-    vshufps        m3, m4, m5, 88h
-    vpaddw         m4, m2, m3
-    vpsubw         m5, m2, m3
-
-    vpbroadcastd   m6, [pw_1]
-    vpabsw         m0, m0
-    vpabsw         m1, m1
-    vpabsw         m4, m4
-    vpabsw         m5, m5
-    vpblendw       m2, m0, m1, 0AAh
-    vpsrld         m0, m0, 16
-    vpslld         m1, m1, 16
-    vpor           m0, m0, m1
-    vpmaxsw        m2, m2, m0
-    vpblendw       m3, m4, m5, 0AAh
-    vpsrld         m4, m4, 16
-    vpslld         m5, m5, 16
-    vpor           m4, m4, m5
-    vpmaxsw        m3, m3, m4
-    vpaddw         m2, m2, m3
-    vpmaddwd       m2, m2, m6
-
-%if WIN64
-    vmovdqu        xm6, [rsp + 8]
-%endif
-    vextracti128   xm1, m2, 1
-    vpaddd         xm2, xm2, xm1
-    vpunpckhqdq    xm5, xm2, xm2
-    vpaddd         xm2, xm2, xm5
-    vpshufd        xm5, xm2, 1
-    vpaddd         xm2, xm2, xm5
-    vpxor          xm0, xm0, xm0
-    vpavgw         xm2, xm2, xm0
-    vmovd          eax, xm2
-    RET
-
-INIT_YMM avx2
-cglobal pixel_sa8d_16x16, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    sub            rsp, 56
-    vmovdqu        [rsp], xm8
-    vmovdqu        [rsp + 16], xm9
-    vmovdqu        [rsp + 32], xm10
-%endif
-    vmovdqu        m9, [hmul_16p]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-
-    vbroadcasti128 m0, [r0]
-    vbroadcasti128 m1, [r2]
-    vpmaddubsw     m0, m0, m9
-    vpmaddubsw     m1, m1, m9
-    vpsubw         m0, m0, m1
-    vbroadcasti128 m1, [r0 + r1]
-    vbroadcasti128 m2, [r2 + r3]
-    vpmaddubsw     m1, m1, m9
-    vpmaddubsw     m2, m2, m9
-    vpsubw         m1, m1, m2
-    vbroadcasti128 m2, [r0 + r1 * 2]
-    vbroadcasti128 m3, [r2 + r3 * 2]
-    vpmaddubsw     m2, m2, m9
-    vpmaddubsw     m3, m3, m9
-    vpsubw         m2, m2, m3
-    vbroadcasti128 m3, [r0 + r6]
-    vbroadcasti128 m4, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpmaddubsw     m3, m3, m9
-    vpmaddubsw     m4, m4, m9
-    vpsubw         m3, m3, m4
-    vbroadcasti128 m4, [r0]
-    vbroadcasti128 m5, [r2]
-    vpmaddubsw     m4, m4, m9
-    vpmaddubsw     m5, m5, m9
-    vpsubw         m4, m4, m5
-    vbroadcasti128 m5, [r0 + r1]
-    vbroadcasti128 m6, [r2 + r3]
-    vpmaddubsw     m5, m5, m9
-    vpmaddubsw     m6, m6, m9
-    vpsubw         m5, m5, m6
-    vbroadcasti128 m6, [r0 + r1 * 2]
-    vbroadcasti128 m7, [r2 + r3 * 2]
-    vpmaddubsw     m6, m6, m9
-    vpmaddubsw     m7, m7, m9
-    vpsubw         m6, m6, m7
-    vbroadcasti128 m7, [r0 + r6]
-    vbroadcasti128 m8, [r2 + r4]
-    vpmaddubsw     m7, m7, m9
-    vpmaddubsw     m8, m8, m9
-    vpsubw         m7, m7, m8
-
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpaddw         m8, m0, m1
-    vpsubw         m9, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m5
-    vpsubw         m3, m4, m5
-    vpaddw         m4, m6, m7
-    vpsubw         m5, m6, m7
-    vpaddw         m6, m8, m0
-    vpsubw         m7, m8, m0
-    vpaddw         m0, m9, m1
-    vpsubw         m8, m9, m1
-    vpaddw         m1, m2, m4
-    vpsubw         m9, m2, m4
-    vpaddw         m2, m3, m5
-    vpsubw         m4, m3, m5
-    vpaddw         m3, m6, m1
-    vpsubw         m5, m6, m1
-    vpaddw         m1, m0, m2
-    vpsubw         m6, m0, m2
-    vpaddw         m0, m7, m9
-    vpsubw         m2, m7, m9
-    vpaddw         m7, m8, m4
-    vpsubw         m9, m8, m4
-
-    vshufps        m4, m3, m5, 0DDh
-    vshufps        m8, m3, m5, 88h
-    vpaddw         m3, m4, m8
-    vpsubw         m5, m4, m8
-    vshufps        m4, m1, m6, 0DDh
-    vshufps        m8, m1, m6, 88h
-    vpaddw         m1, m4, m8
-    vpsubw         m6, m4, m8
-    vshufps        m4, m0, m2, 0DDh
-    vshufps        m8, m0, m2, 88h
-    vpaddw         m0, m4, m8
-    vpsubw         m2, m4, m8
-    vshufps        m4, m7, m9, 0DDh
-    vshufps        m8, m7, m9, 88h
-    vpaddw         m7, m4, m8
-    vpsubw         m9, m4, m8
-
-    vpabsw         m3, m3
-    vpabsw         m5, m5
-    vpabsw         m1, m1
-    vpabsw         m6, m6
-    vpabsw         m0, m0
-    vpabsw         m2, m2
-    vpabsw         m7, m7
-    vpabsw         m9, m9
-    vpblendw       m4, m3, m5, 0AAh
-    vpsrld         m3, m3, 16
-    vpslld         m5, m5, 16
-    vpor           m3, m3, m5
-    vpmaxsw        m4, m4, m3
-    vpblendw       m8, m1, m6, 0AAh
-    vpsrld         m1, m1, 16
-    vpslld         m6, m6, 16
-    vpor           m1, m1, m6
-    vpmaxsw        m8, m8, m1
-    vpaddw         m10, m4, m8
-    vpblendw       m4, m0, m2, 0AAh
-    vpsrld         m0, m0, 16
-    vpslld         m2, m2, 16
-    vpor           m0, m0, m2
-    vpmaxsw        m4, m4, m0
-    vpaddw         m10, m10, m4
-    vpblendw       m8, m7, m9, 0AAh
-    vpsrld         m7, m7, 16
-    vpslld         m9, m9, 16
-    vpor           m7, m7, m9
-    vpmaxsw        m8, m8, m7
-    vpaddw         m10, m10, m8
-
-    vmovdqu        m9, [hmul_16p]
-    vbroadcasti128 m0, [r0]
-    vbroadcasti128 m1, [r2]
-    vpmaddubsw     m0, m0, m9
-    vpmaddubsw     m1, m1, m9
-    vpsubw         m0, m0, m1
-    vbroadcasti128 m1, [r0 + r1]
-    vbroadcasti128 m2, [r2 + r3]
-    vpmaddubsw     m1, m1, m9
-    vpmaddubsw     m2, m2, m9
-    vpsubw         m1, m1, m2
-    vbroadcasti128 m2, [r0 + r1 * 2]
-    vbroadcasti128 m3, [r2 + r3 * 2]
-    vpmaddubsw     m2, m2, m9
-    vpmaddubsw     m3, m3, m9
-    vpsubw         m2, m2, m3
-    vbroadcasti128 m3, [r0 + r6]
-    vbroadcasti128 m4, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpmaddubsw     m3, m3, m9
-    vpmaddubsw     m4, m4, m9
-    vpsubw         m3, m3, m4
-    vbroadcasti128 m4, [r0]
-    vbroadcasti128 m5, [r2]
-    vpmaddubsw     m4, m4, m9
-    vpmaddubsw     m5, m5, m9
-    vpsubw         m4, m4, m5
-    vbroadcasti128 m5, [r0 + r1]
-    vbroadcasti128 m6, [r2 + r3]
-    vpmaddubsw     m5, m5, m9
-    vpmaddubsw     m6, m6, m9
-    vpsubw         m5, m5, m6
-    vbroadcasti128 m6, [r0 + r1 * 2]
-    vbroadcasti128 m7, [r2 + r3 * 2]
-    vpmaddubsw     m6, m6, m9
-    vpmaddubsw     m7, m7, m9
-    vpsubw         m6, m6, m7
-    vbroadcasti128 m7, [r0 + r6]
-    vbroadcasti128 m8, [r2 + r4]
-    vpmaddubsw     m7, m7, m9
-    vpmaddubsw     m8, m8, m9
-    vpsubw         m7, m7, m8
-
-    vpaddw         m8, m0, m1
-    vpsubw         m9, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m5
-    vpsubw         m3, m4, m5
-    vpaddw         m4, m6, m7
-    vpsubw         m5, m6, m7
-    vpaddw         m6, m8, m0
-    vpsubw         m7, m8, m0
-    vpaddw         m0, m9, m1
-    vpsubw         m8, m9, m1
-    vpaddw         m1, m2, m4
-    vpsubw         m9, m2, m4
-    vpaddw         m2, m3, m5
-    vpsubw         m4, m3, m5
-    vpaddw         m3, m6, m1
-    vpsubw         m5, m6, m1
-    vpaddw         m1, m0, m2
-    vpsubw         m6, m0, m2
-    vpaddw         m0, m7, m9
-    vpsubw         m2, m7, m9
-    vpaddw         m7, m8, m4
-    vpsubw         m9, m8, m4
-
-    vshufps        m4, m3, m5, 0DDh
-    vshufps        m8, m3, m5, 88h
-    vpaddw         m3, m4, m8
-    vpsubw         m5, m4, m8
-    vshufps        m4, m1, m6, 0DDh
-    vshufps        m8, m1, m6, 88h
-    vpaddw         m1, m4, m8
-    vpsubw         m6, m4, m8
-    vshufps        m4, m0, m2, 0DDh
-    vshufps        m8, m0, m2, 88h
-    vpaddw         m0, m4, m8
-    vpsubw         m2, m4, m8
-    vshufps        m4, m7, m9, 0DDh
-    vshufps        m8, m7, m9, 88h
-    vpaddw         m7, m4, m8
-    vpsubw         m9, m4, m8
-
-    vpabsw         m3, m3
-    vpabsw         m5, m5
-    vpabsw         m1, m1
-    vpabsw         m6, m6
-    vpabsw         m0, m0
-    vpabsw         m2, m2
-    vpabsw         m7, m7
-    vpabsw         m9, m9
-    vpbroadcastd   m8, [pw_1]
-    vpblendw       m4, m3, m5, 0AAh
-    vpsrld         m3, m3, 16
-    vpslld         m5, m5, 16
-    vpor           m3, m3, m5
-    vpmaxsw        m4, m4, m3
-    vpaddw         m10, m10, m4
-    vpblendw       m4, m1, m6, 0AAh
-    vpsrld         m1, m1, 16
-    vpslld         m6, m6, 16
-    vpor           m1, m1, m6
-    vpmaxsw        m4, m4, m1
-    vpaddw         m10, m10, m4
-    vpblendw       m4, m0, m2, 0AAh
-    vpsrld         m0, m0, 16
-    vpslld         m2, m2, 16
-    vpor           m0, m0, m2
-    vpmaxsw        m4, m4, m0
-    vpaddw         m10, m10, m4
-    vpblendw       m4, m7, m9, 0AAh
-    vpsrld         m7, m7, 16
-    vpslld         m9, m9, 16
-    vpor           m7, m7, m9
-    vpmaxsw        m4, m4, m7
-    vpaddw         m10, m10, m4
-    vpmaddwd       m2, m10, m8
-
-%if WIN64
-    vmovdqu        xm8, [rsp]
-    vmovdqu        xm9, [rsp + 16]
-    vmovdqu        xm10, [rsp + 32]
-    add            rsp, 56
-    vmovdqu        xm6, [rsp + 8]
-    vmovdqu        xm7, [rsp + 24]
-%endif
-    vextracti128   xm1, m2, 1
-    vpaddd         xm2, xm2, xm1
-    vpunpckhqdq    xm5, xm2, xm2
-    vpaddd         xm2, xm2, xm5
-    vpshufd        xm5, xm2, 1
-    vpaddd         xm2, xm2, xm5
-    vmovd          eax, xm2
-    add            eax, 1
-    shr            eax, 1
-    RET
-
-;=============================================================================
-; SA8D_SATD
-;=============================================================================
-INIT_YMM avx2
-cglobal pixel_sa8d_satd_16x16, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    sub            rsp, 104
-    vmovdqu        [rsp], xm8
-    vmovdqu        [rsp + 16], xm9
-    vmovdqu        [rsp + 32], xm10
-    vmovdqu        [rsp + 48], xm11
-    vmovdqu        [rsp + 64], xm12
-    vmovdqu        [rsp + 80], xm13
-%endif
-    vmovdqu        m10, [hmul_16p]
-    vpbroadcastd   m13, [pw_1]
-    lea            r6d, [r1 + r1 * 2]
-    lea            r4d, [r3 + r3 * 2]
-
-    vbroadcasti128 m0, [r0]
-    vbroadcasti128 m1, [r2]
-    vpmaddubsw     m0, m0, m10
-    vpmaddubsw     m1, m1, m10
-    vpsubw         m0, m0, m1
-    vbroadcasti128 m1, [r0 + r1]
-    vbroadcasti128 m2, [r2 + r3]
-    vpmaddubsw     m1, m1, m10
-    vpmaddubsw     m2, m2, m10
-    vpsubw         m1, m1, m2
-    vbroadcasti128 m2, [r0 + r1 * 2]
-    vbroadcasti128 m3, [r2 + r3 * 2]
-    vpmaddubsw     m2, m2, m10
-    vpmaddubsw     m3, m3, m10
-    vpsubw         m2, m2, m3
-    vbroadcasti128 m3, [r0 + r6]
-    vbroadcasti128 m4, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpmaddubsw     m3, m3, m10
-    vpmaddubsw     m4, m4, m10
-    vpsubw         m3, m3, m4
-    vbroadcasti128 m4, [r0]
-    vbroadcasti128 m5, [r2]
-    vpmaddubsw     m4, m4, m10
-    vpmaddubsw     m5, m5, m10
-    vpsubw         m4, m4, m5
-    vbroadcasti128 m5, [r0 + r1]
-    vbroadcasti128 m6, [r2 + r3]
-    vpmaddubsw     m5, m5, m10
-    vpmaddubsw     m6, m6, m10
-    vpsubw         m5, m5, m6
-    vbroadcasti128 m6, [r0 + r1 * 2]
-    vbroadcasti128 m7, [r2 + r3 * 2]
-    vpmaddubsw     m6, m6, m10
-    vpmaddubsw     m7, m7, m10
-    vpsubw         m6, m6, m7
-    vbroadcasti128 m7, [r0 + r6]
-    vbroadcasti128 m8, [r2 + r4]
-    vpmaddubsw     m7, m7, m10
-    vpmaddubsw     m8, m8, m10
-    vpsubw         m7, m7, m8
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-
-; satd part
-    vpaddw         m8, m0, m1
-    vpsubw         m9, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m5
-    vpsubw         m3, m4, m5
-    vpaddw         m4, m6, m7
-    vpsubw         m5, m6, m7
-    vpaddw         m6, m8, m0
-    vpsubw         m7, m8, m0
-    vpaddw         m0, m9, m1
-    vpsubw         m8, m9, m1
-    vpaddw         m1, m2, m4
-    vpsubw         m9, m2, m4
-    vpaddw         m2, m3, m5
-    vpsubw         m4, m3, m5
-
-    vpblendw       m3, m6, m0, 0AAh
-    vpsrld         m6, m6, 16
-    vpslld         m0, m0, 16
-    vpor           m5, m6, m0
-    vpaddw         m6, m3, m5
-    vpsubw         m0, m3, m5
-    vpabsw         m11, m6
-    vpabsw         m3, m0
-    vpaddw         m11, m11, m3
-    vpblendw       m3, m7, m8, 0AAh
-    vpsrld         m7, m7, 16
-    vpslld         m8, m8, 16
-    vpor           m5, m7, m8
-    vpaddw         m7, m3, m5
-    vpsubw         m8, m3, m5
-    vpabsw         m3, m7
-    vpabsw         m5, m8
-    vpaddw         m3, m3, m5
-    vpaddw         m11, m11, m3
-    vpblendw       m3, m1, m2, 0AAh
-    vpsrld         m1, m1, 16
-    vpslld         m2, m2, 16
-    vpor           m5, m1, m2
-    vpaddw         m1, m3, m5
-    vpsubw         m2, m3, m5
-    vpabsw         m3, m1
-    vpabsw         m5, m2
-    vpaddw         m3, m3, m5
-    vpaddw         m11, m11, m3
-    vpblendw       m3, m9, m4, 0AAh
-    vpsrld         m9, m9, 16
-    vpslld         m4, m4, 16
-    vpor           m5, m9, m4
-    vpaddw         m9, m3, m5
-    vpsubw         m4, m3, m5
-    vpabsw         m3, m9
-    vpabsw         m5, m4
-    vpaddw         m3, m3, m5
-    vpaddw         m11, m11, m3
-
-; sa8d part
-    vpaddw         m3, m6, m1
-    vpsubw         m5, m6, m1
-    vpaddw         m1, m0, m2
-    vpsubw         m6, m0, m2
-    vpaddw         m0, m7, m9
-    vpsubw         m2, m7, m9
-    vpaddw         m7, m8, m4
-    vpsubw         m9, m8, m4
-
-    vpblendd       m4, m3, m1, 10101010b
-    vpsrlq         m3, m3, 32
-    vpsllq         m1, m1, 32
-    vpor           m3, m3, m1
-    vpaddw         m12, m4, m3
-    vpabsw         m12, m12
-    vpsubw         m3, m4, m3
-    vpabsw         m3, m3
-    vpaddw         m12, m12, m3
-    vpblendd       m4, m0, m7, 10101010b
-    vpsrlq         m0, m0, 32
-    vpsllq         m7, m7, 32
-    vpor           m0, m0, m7
-    vpaddw         m7, m4, m0
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-    vpsubw         m7, m4, m0
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-    vpblendd       m4, m5, m6, 10101010b
-    vpsrlq         m5, m5, 32
-    vpsllq         m6, m6, 32
-    vpor           m5, m5, m6
-    vpaddw         m7, m4, m5
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-    vpsubw         m7, m4, m5
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-    vmovdqu        m10, [hmul_16p]
-    vpblendd       m4, m2, m9, 10101010b
-    vpsrlq         m2, m2, 32
-    vpsllq         m9, m9, 32
-    vpor           m2, m2, m9
-    vpaddw         m7, m4, m2
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-    vpsubw         m7, m4, m2
-    vpabsw         m7, m7
-    vpaddw         m12, m12, m7
-
-; convert to dword before being unsigned
-    vpmaddwd       m11, m11, m13 
-    vpmaddwd       m12, m12, m13
-
-    vbroadcasti128 m0, [r0]
-    vbroadcasti128 m1, [r2]
-    vpmaddubsw     m0, m0, m10
-    vpmaddubsw     m1, m1, m10
-    vpsubw         m0, m0, m1
-    vbroadcasti128 m1, [r0 + r1]
-    vbroadcasti128 m2, [r2 + r3]
-    vpmaddubsw     m1, m1, m10
-    vpmaddubsw     m2, m2, m10
-    vpsubw         m1, m1, m2
-    vbroadcasti128 m2, [r0 + r1 * 2]
-    vbroadcasti128 m3, [r2 + r3 * 2]
-    vpmaddubsw     m2, m2, m10
-    vpmaddubsw     m3, m3, m10
-    vpsubw         m2, m2, m3
-    vbroadcasti128 m3, [r0 + r6]
-    vbroadcasti128 m4, [r2 + r4]
-    lea            r0, [r0 + r1 * 4]
-    lea            r2, [r2 + r3 * 4]
-    vpmaddubsw     m3, m3, m10
-    vpmaddubsw     m4, m4, m10
-    vpsubw         m3, m3, m4
-    vbroadcasti128 m4, [r0]
-    vbroadcasti128 m5, [r2]
-    vpmaddubsw     m4, m4, m10
-    vpmaddubsw     m5, m5, m10
-    vpsubw         m4, m4, m5
-    vbroadcasti128 m5, [r0 + r1]
-    vbroadcasti128 m6, [r2 + r3]
-    vpmaddubsw     m5, m5, m10
-    vpmaddubsw     m6, m6, m10
-    vpsubw         m5, m5, m6
-    vbroadcasti128 m6, [r0 + r1 * 2]
-    vbroadcasti128 m7, [r2 + r3 * 2]
-    vpmaddubsw     m6, m6, m10
-    vpmaddubsw     m7, m7, m10
-    vpsubw         m6, m6, m7
-    vbroadcasti128 m7, [r0 + r6]
-    vbroadcasti128 m8, [r2 + r4]
-    vpmaddubsw     m7, m7, m10
-    vpmaddubsw     m8, m8, m10
-    vpsubw         m7, m7, m8
-
-; satd part
-    vpaddw         m8, m0, m1
-    vpsubw         m9, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m5
-    vpsubw         m3, m4, m5
-    vpaddw         m4, m6, m7
-    vpsubw         m5, m6, m7
-    vpaddw         m6, m8, m0
-    vpsubw         m7, m8, m0
-    vpaddw         m0, m9, m1
-    vpsubw         m8, m9, m1
-    vpaddw         m1, m2, m4
-    vpsubw         m9, m2, m4
-    vpaddw         m2, m3, m5
-    vpsubw         m4, m3, m5
-
-    vpblendw       m3, m6, m0, 0AAh
-    vpsrld         m6, m6, 16
-    vpslld         m0, m0, 16
-    vpor           m5, m6, m0
-    vpaddw         m6, m3, m5
-    vpsubw         m0, m3, m5
-    vpabsw         m3, m6
-    vpabsw         m5, m0
-    vpaddw         m10, m3, m5
-    vpblendw       m3, m7, m8, 0AAh
-    vpsrld         m7, m7, 16
-    vpslld         m8, m8, 16
-    vpor           m5, m7, m8
-    vpaddw         m7, m3, m5
-    vpsubw         m8, m3, m5
-    vpabsw         m3, m7
-    vpabsw         m5, m8
-    vpaddw         m3, m3, m5
-    vpaddw         m10, m10, m3
-    vpblendw       m3, m1, m2, 0AAh
-    vpsrld         m1, m1, 16
-    vpslld         m2, m2, 16
-    vpor           m5, m1, m2
-    vpaddw         m1, m3, m5
-    vpsubw         m2, m3, m5
-    vpabsw         m3, m1
-    vpabsw         m5, m2
-    vpaddw         m3, m3, m5
-    vpaddw         m10, m10, m3
-    vpblendw       m3, m9, m4, 0AAh
-    vpsrld         m9, m9, 16
-    vpslld         m4, m4, 16
-    vpor           m5, m9, m4
-    vpaddw         m9, m3, m5
-    vpsubw         m4, m3, m5
-    vpabsw         m3, m9
-    vpabsw         m5, m4
-    vpaddw         m3, m3, m5
-    vpaddw         m10, m10, m3 
-    vpmaddwd       m10, m10, m13
-    vpaddd         m11, m11, m10
-
-; sa8d part
-    vpaddw         m3, m6, m1
-    vpsubw         m5, m6, m1
-    vpaddw         m1, m0, m2
-    vpsubw         m6, m0, m2
-    vpaddw         m0, m7, m9
-    vpsubw         m2, m7, m9
-    vpaddw         m7, m8, m4
-    vpsubw         m9, m8, m4
-
-    vpblendd       m4, m3, m1, 10101010b
-    vpsrlq         m3, m3, 32
-    vpsllq         m1, m1, 32
-    vpor           m3, m3, m1
-    vpaddw         m8, m4, m3
-    vpabsw         m10, m8
-    vpsubw         m3, m4, m3
-    vpabsw         m3, m3
-    vpaddw         m10, m10, m3
-    vpblendd       m4, m0, m7, 10101010b
-    vpsrlq         m0, m0, 32
-    vpsllq         m7, m7, 32
-    vpor           m0, m0, m7
-    vpaddw         m7, m4, m0
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpsubw         m7, m4, m0
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpblendd       m4, m5, m6, 10101010b
-    vpsrlq         m5, m5, 32
-    vpsllq         m6, m6, 32
-    vpor           m5, m5, m6
-    vpaddw         m7, m4, m5
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpsubw         m7, m4, m5
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpblendd       m4, m2, m9, 10101010b
-    vpsrlq         m2, m2, 32
-    vpsllq         m9, m9, 32
-    vpor           m2, m2, m9
-    vpaddw         m7, m4, m2
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpsubw         m7, m4, m2
-    vpabsw         m7, m7
-    vpaddw         m10, m10, m7
-    vpmaddwd       m10, m10, m13
-    vpaddd         m12, m12, m10
-
-    vphaddd        m0, m12, m11
-    vextracti128   xm1, m0, 1
-    vpaddd         xm0, xm0, xm1
-    vpshufd        xm1, xm0, 00110001b
-    vpaddd         xm0, xm0, xm1
-    vpsrld         xm1, xm0, 2
-    vpsrld         xm2, xm0, 1
-    vpblendd       xm0, xm1, xm2, 00000100b
-    vpshufd        xm0, xm0, 00001000b
-    vmovq          rax, xm0
-%if WIN64
-    vmovdqu        xm8, [rsp]
-    vmovdqu        xm9, [rsp + 16]
-    vmovdqu        xm10, [rsp + 32]
-    vmovdqu        xm11, [rsp + 48]
-    vmovdqu        xm12, [rsp + 64]
-    vmovdqu        xm13, [rsp + 80]
-    add            rsp, 104
-    vmovdqu        xm6, [rsp + 8]
-    vmovdqu        xm7, [rsp + 24]
-%endif
-    RET
-
-
-;=============================================================================
-; INTRA_SAD_X9
-;=============================================================================
-INIT_YMM avx2
-cglobal intra_sad_x9_4x4, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    sub            rsp, 184
-    vmovdqu        [rsp + 160], xm8
-%else
-    sub            rsp, 168
-%endif
-    lea            r5, [intrax9a_vrl1]
-    vmovdqu        xm1, [r1 - 40]
-    vpinsrb        xm1, xm1, [r1 + 95],0
-    vpinsrb        xm1, xm1, [r1 + 63],1
-    vpinsrb        xm1, xm1, [r1 + 31],2
-    vpinsrb        xm1, xm1, [r1 - 1],3          ; l3 l2 l1 l0 __ __ __ lt t0 t1 t2 t3 t4 t5 t6 t7
-    vpshufb        xm1, xm1, [intrax9_edge]      ; l3 l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __
-    vpsrldq        xm0, xm1, 1                   ; l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __
-    vpsrldq        xm2, xm1, 2                   ; l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __ __
-    vpavgb         xm5, xm0, xm1                 ; Gl3 Gl2 Gl1 Gl0 Glt Gt0 Gt1 Gt2 Gt3 Gt4 Gt5  __  __ __ __ __
-    vinserti128    m5, m5, xm5, 1
-    vinserti128    m8, m1, xm1, 1
-    vpavgb         xm4, xm1, xm2
-    vpxor          xm2, xm2, xm1
-    vpbroadcastd   xm3, [pb_1]
-    vpand          xm2, xm2, xm3
-    vpsubusb       xm4, xm4, xm2
-    vpavgb         xm0, xm0, xm4                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Ft6 Ft7 __ __ __
-    vinserti128    m0, m0, xm0, 1
-
-    ; ddl               ddr
-    ; Ft1 Ft2 Ft3 Ft4   Flt Ft0 Ft1 Ft2
-    ; Ft2 Ft3 Ft4 Ft5   Fl0 Flt Ft0 Ft1
-    ; Ft3 Ft4 Ft5 Ft6   Fl1 Fl0 Flt Ft0
-    ; Ft4 Ft5 Ft6 Ft7   Fl2 Fl1 Fl0 Flt
-    vpshufb        m2, m0, [r5 - 64]                  ; a: ddl row0, ddl row1, ddr row0, ddr row1 / b: ddl row0, ddr row0, ddl row1, ddr row1
-                                                 ; rows 2,3
-
-    ; hd                hu
-    ; Glt Flt Ft0 Ft1   Gl0 Fl1 Gl1 Fl2
-    ; Gl0 Fl0 Glt Flt   Gl1 Fl2 Gl2 Fl3
-    ; Gl1 Fl1 Gl0 Fl0   Gl2 Fl3 Gl3 Gl3
-    ; Gl2 Fl2 Gl1 Fl1   Gl3 Gl3 Gl3 Gl3
-    vpslldq        m0, m0, 5                     ; ___ ___ ___ ___ ___ Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5
-    vpalignr       m7, m5, m0, 5                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gl3 Gl2 Gl1 Gl0 Glt
-    vpshufb        m6, m7, [r5 - 32]             ; hdu1 | hdu2
-
-    ; vr                vl
-    ; Gt0 Gt1 Gt2 Gt3   Gt1 Gt2 Gt3 Gt4
-    ; Flt Ft0 Ft1 Ft2   Ft1 Ft2 Ft3 Ft4
-    ; Fl0 Gt0 Gt1 Gt2   Gt2 Gt3 Gt4 Gt5
-    ; Fl1 Flt Ft0 Ft1   Ft2 Ft3 Ft4 Ft5
-    vpsrldq        m5, m5, 5                     ; Gt0 Gt1 Gt2 Gt3 Gt4 Gt5 ...
-    vpalignr       m5, m5, m0, 6                 ; ___ Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gt0 Gt1 Gt2 Gt3 Gt4 Gt5
-    vpshufb        m4, m5, [r5]                  ; vrl1 | vrl2
-
-    vmovdqu        [rsp], m2
-    vmovdqu        [rsp + 32], m4
-    vmovdqu        [rsp + 64], m6
-
-    vmovd          xm0, [r0]
-    vpinsrd        xm0, xm0, [r0 + 16], 1
-    vmovd          xm1, [r0 + 32]
-    vpinsrd        xm1, xm1, [r0 + 48],1
-    vinserti128    m0, m0, xm1, 1
-    vpunpcklqdq    m0, m0, m0
-    vpsadbw        m2, m2, m0
-    vpsadbw        m4, m4, m0
-    vpsadbw        m6, m6, m0
-    vpshufb        m3, m8, [r5 + 32]             ; t0 t1 t2 t3 t0 t1 t2 t3 l0 l0 l0 l0 l1 l1 l1 l1
-                                                 ; t0 t1 t2 t3 t0 t1 t2 t3 l2 l2 l2 l2 l3 l3 l3 l3
-    vpshufb        xm8, xm8, [r5 + 64]           ; l3 l2 l1 l0 t0 t1 t2 t3 0  0  0  0  0  0  0  0
-    vpxor          xm7, xm7, xm7
-    vpsadbw        xm8, xm8, xm7
-    vpsrlw         xm8, xm8, 2
-    vpavgw         xm8, xm8, xm7
-    vpbroadcastb   m8, xm8
-    vmovdqu        [rsp + 96], m3
-    vmovdqu        [rsp + 128], m8
-    vpsadbw        m3, m3, m0
-    vextracti128   xm5, m3, 1
-    vpaddd         xm5, xm3, xm5
-    vpsadbw        m0, m8, m0
-    movzx          r3d, word [r2]
-    vmovd          r0d, xm5
-    add            r3d, r0d                      ; v
-    vpunpckhqdq    m3, m3, m0
-    vshufps        m3, m3, m2, 88h               ; h,dc,ddl,ddr
-    vpsllq         m6, m6, 32
-    vpor           m4, m4, m6                    ; vr,hd,vl,hu
-    vmovdqu        xm0, [r2 + 2]
-    vpackssdw      m3, m3, m4                    ; h,dc,ddl,ddr,vr,hd,vl,hu
-    vextracti128   xm4, m3, 1
-    vpaddw         xm3, xm3, xm4
-    vpaddw         xm0, xm0, xm3                 ; add cost
-    vphminposuw    xm0, xm0                      ; h,dc,ddl,ddr,vr,hd,vl,hu
-    vmovd          eax, xm0
-    add            eax, 10000h                   ; index not include V
-    cmp            ax, r3w
-    cmovge         eax, r3d
-    mov            r3d, eax
-    shr            r3d, 10h
-    lea            r2, [r5 + 80]                 ; intrax9a_lut
-    movzx          r2d, byte [r2 + r3]
-    vmovq          xm0,  [rsp + r2]
-    vmovq          xm1,  [rsp + r2 + 16]
-    vmovd          [r1], xm0
-    vmovd          [r1 + 64], xm1
-    vpsrlq         xm0, 32
-    vpsrlq         xm1, 32
-    vmovd          [r1 + 32], xm0
-    vmovd          [r1 + 96], xm1
-
-%if WIN64 
-    vmovdqu        xm8, [rsp + 60]
-    add            rsp, 184
-    vmovdqu        xm7, [rsp + 24]
-    vmovdqu        xm6, [rsp + 8]
-%else
-    add            rsp, 168
-%endif
-    RET
-
-INIT_YMM avx2
-cglobal intra_sad_x9_8x8, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    mov            r4, [rsp + 40]
-    sub            rsp, 616
-    vmovdqu        [rsp + 576], xm8
-    vmovdqu        [rsp + 592], xm9
-%else
-    sub            rsp, 584
-%endif
-    vpbroadcastd   m8, [pb_1]
-    vmovdqu        m5, [r0]
-    vmovdqu        m6, [r0 + 64]
-    vpunpcklqdq    m5, m5, [r0 + 32]
-    vpunpcklqdq    m6, m6, [r0 + 96]
-
-    ; save instruction size: avoid 4-byte memory offsets
-    lea            r0, [intra8x9_vl1]
-    vpbroadcastq   m0, [r2 + 16]                 ; v
-    vpsadbw        m4, m0, m5
-    vpsadbw        m2, m0, m6
-    vmovdqu        [rsp], m0
-    vmovdqu        [rsp + 32], m0
-    vpaddw         m4, m4, m2
-
-    vpbroadcastq   m1, [r2 + 7]                  ; h
-    vpshufb        m3, m1, [r0 - 128]            ; intra8x9_h1 intra8x9_h2
-    vpshufb        m2, m1, [r0 - 96]             ; intra8x9_h3 intra8x9_h4
-    vmovdqu        [rsp + 64], m3
-    vmovdqu        [rsp + 96], m2
-    vpsadbw        m3, m3, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m3, m3, m2
-
-    lea            r5, [rsp + 256]
-
-    ; combine the first two
-    vpsllq         m3, m3, 16
-    vpor           m4, m4, m3                    ; v, h
-
-    vpxor          m2, m2, m2
-    vpsadbw        m0, m0, m2
-    vpsadbw        m1, m1, m2
-    vpaddw         m0, m0, m1
-    vpsrlw         m0, m0, 3
-    vpavgw         m0, m0, m2
-    vpshufb        m0, m0, m2                    ; dc
-    vmovdqu        [r5 - 128], m0
-    vmovdqu        [r5 - 96], m0
-    vpsadbw        m3, m0, m5
-    vpsadbw        m2, m0, m6
-    vpaddw         m3, m3, m2
-    vpsllq         m3, m3, 32
-    vpor           m4, m4, m3                    ; v, h, dc
-
-    vbroadcasti128 m0, [r2 + 16]
-    vbroadcasti128 m2, [r2 + 17]
-    vpslldq        m1, m0, 1
-    vpavgb         m3, m0, m2
-
-    vpavgb         m7, m1, m2
-    vpxor          m2, m2, m1
-    vpand          m2, m2, m8
-    vpsubusb       m7, m7, m2
-    vpavgb         m0, m0, m7
-
-    vpshufb        m1, m0, [r0 - 64]             ; intra8x9_ddl1 intra8x9_ddl2
-    vpshufb        m2, m0, [r0 - 32]             ; intra8x9_ddl3 intra8x9_ddl4
-    vmovdqu        [r5 - 64], m1
-    vmovdqu        [r5 - 32], m2
-    vpsadbw        m1, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m1, m1, m2
-    vpsllq         m1, m1, 48
-    vpor           m9, m4, m1                    ; v, h, dc, ddl
-
-    ; for later
-    vinserti128    m7, m3, xm0, 1
-    vbroadcasti128 m2, [r2 + 8]
-    vbroadcasti128 m0, [r2 + 7]
-    vbroadcasti128 m1, [r2 + 6]
-    vpavgb         m3, m2, m0
-
-    vpavgb         m4, m1, m2
-    vpxor          m2, m2, m1
-    vpand          m2, m2, m8
-    vpsubusb       m4, m4, m2
-    vpavgb         m0, m0, m4
-    vpshufb        m1, m0, [r0 + 64]             ; intra8x9_ddr1 intra8x9_ddr2
-    vpshufb        m2, m0, [r0 + 96]             ; intra8x9_ddr3 intra8x9_ddr4
-    vmovdqu        [r5], m1
-    vmovdqu        [r5 + 32], m2
-    vpsadbw        m4, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m4, m4, m2                    ; ddr
-
-    add            r0, 256
-    add            r5, 192
-    vpblendd       m2, m3, m0, 11110011b
-    vpshufb        m1, m2, [r0 - 128]            ; intra8x9_vr1 intra8x9_vr2
-    vpshufb        m2, m2, [r0 - 96]             ; intra8x9_vr3 intra8x9_vr4
-    vmovdqu        [r5 - 128], m1
-    vmovdqu        [r5 - 96], m2
-    vpsadbw        m1, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m1, m1, m2
-    vpsllq         m1, m1, 16
-    vpor           m4, m4, m1                    ; ddr, vr
-
-    vpsrldq        m2, m3, 4
-    vpblendw       m2, m2, m0, q3330
-    vpunpcklbw     m0, m0, m3
-    vpshufb        m1, m2, [r0 - 64]             ; intra8x9_hd1 intra8x9_hd2
-    vpshufb        m2, m0, [r0 - 32]             ; intra8x9_hd3 intra8x9_hd4
-    vmovdqu        [r5 - 64], m1
-    vmovdqu        [r5 - 32], m2
-    vpsadbw        m1, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m1, m1, m2
-    vpsllq         m1, m1, 32
-    vpor           m4, m4, m1                    ; ddr, vr, hd
-
-    vpshufb        m1, m7, [r0 - 256]            ; intra8x9_vl1 intra8x9_vl2
-    vpshufb        m2, m7, [r0 - 224]            ; intra8x9_vl3 intra8x9_vl4
-    vmovdqu        [r5], m1
-    vmovdqu        [r5 + 32], m2
-    vpsadbw        m1, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m1, m1, m2
-    vpsllq         m1, m1, 48
-    vpor           m4, m4, m1                    ; ddr, vr, hd, vl
-    vpunpckhqdq    m7, m9, m4
-    vpunpcklqdq    m3, m9, m4
-    vpaddw         m3, m3, m7
-    vextracti128   xm7, m3, 1
-    vpaddw         xm3, xm3, xm7                 ; v, h, dc, ddl, ddr, vr, hd, vl
-
-    vpslldq        m1, m0, 1
-    vpbroadcastd   m0, [r2 + 7]
-    vpalignr       m0, m0, m1, 1
-    vpshufb        m1, m0, [r0]                  ; intra8x9_hu1 intra8x9_hu2
-    vpshufb        m2, m0, [r0 + 32]             ; intra8x9_hu3 intra8x9_hu4
-    vmovdqu        [r5 + 64], m1
-    vmovdqu        [r5 + 96], m2
-    vpsadbw        m1, m1, m5
-    vpsadbw        m2, m2, m6
-    vpaddw         m1, m1, m2
-    vextracti128   xm2, m1, 1
-    vpaddw         xm1, xm1, xm2
-    vpunpckhqdq    xm2, xm1, xm1
-    vpaddw         xm1, xm1, xm2
-    vmovd          r2d, xm1                      ; hu
-
-    vpaddw         xm3, xm3, [r3]
-    vmovdqu        [r4], xm3
-    add            r2w, [r3 + 16]
-    mov            [r4 + 16], r2w
-
-    vphminposuw    xm3, xm3
-    vmovd          r3d, xm3
-    add            r2d, 80000h                   ; add the index of hu
-    cmp            r3w, r2w
-    cmovg          r3d, r2d
-
-    mov            eax, r3d
-    shr            r3, 16
-    shl            r3, 6
-    add            r1, 128
-    vmovdqu        xm0, [rsp + r3]
-    vmovdqu        xm1, [rsp + r3 + 16]
-    vmovdqu        xm2, [rsp + r3 + 32]
-    vmovdqu        xm3, [rsp + r3 + 48]
-    vmovq          [r1 - 128], xm0
-    vmovhps        [r1 - 64], xm0
-    vmovq          [r1 - 96], xm1
-    vmovhps        [r1 - 32], xm1
-    vmovq          [r1], xm2
-    vmovhps        [r1 + 64], xm2
-    vmovq          [r1 + 32], xm3
-    vmovhps        [r1 + 96], xm3
-%if WIN64
-    vmovdqu        xm8, [rsp + 576]
-    vmovdqu        xm9, [rsp + 592]
-    add            rsp, 616
-    vmovdqu        xm6, [rsp + 8]
-    vmovdqu        xm7, [rsp + 24]
-%else
-    add            rsp, 584
-%endif
-    RET
-
-
-;=============================================================================
-; INTRA_SATD/SA8D_X9
-;=============================================================================
-INIT_YMM avx2
-cglobal intra_satd_x9_4x4, 0, 0
-%if WIN64
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    sub            rsp, 216
-    vmovdqu        [rsp + 160], xm8
-    vmovdqu        [rsp + 176], xm9
-    vmovdqu        [rsp + 192], xm10
-%else
-    sub            rsp, 168
-%endif
-    lea            r5, [intrax9b_vrl1]
-    vmovdqu        xm1, [r1 - 40]
-    vpinsrb        xm1, xm1, [r1 + 95],0
-    vpinsrb        xm1, xm1, [r1 + 63],1
-    vpinsrb        xm1, xm1, [r1 + 31],2
-    vpinsrb        xm1, xm1, [r1 - 1],3          ; l3 l2 l1 l0 __ __ __ lt t0 t1 t2 t3 t4 t5 t6 t7
-    vpshufb        xm1, xm1, [intrax9_edge]      ; l3 l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __
-    vpsrldq        xm0, xm1, 1                   ; l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __
-    vpsrldq        xm2, xm1, 2                   ; l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __ __
-    vpavgb         xm5, xm0, xm1                 ; Gl3 Gl2 Gl1 Gl0 Glt Gt0 Gt1 Gt2 Gt3 Gt4 Gt5  __  __ __ __ __
-    vinserti128    m5, m5, xm5, 1
-    vinserti128    m10, m1, xm1, 1
-    vpavgb         xm4, xm1, xm2
-    vpxor          xm2, xm2, xm1
-    vpbroadcastd   xm3, [pb_1]
-    vpand          xm2, xm2, xm3
-    vpsubusb       xm4, xm4, xm2
-    vpavgb         xm0, xm0, xm4                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Ft6 Ft7 __ __ __
-    vinserti128    m0, m0, xm0, 1
-
-    ; ddl               ddr
-    ; Ft1 Ft2 Ft3 Ft4   Flt Ft0 Ft1 Ft2
-    ; Ft2 Ft3 Ft4 Ft5   Fl0 Flt Ft0 Ft1
-    ; Ft3 Ft4 Ft5 Ft6   Fl1 Fl0 Flt Ft0
-    ; Ft4 Ft5 Ft6 Ft7   Fl2 Fl1 Fl0 Flt
-    vpshufb        m2, m0, [r5 - 64]             ; a: ddl row0, ddl row1, ddr row0, ddr row1 / b: ddl row0, ddr row0, ddl row1, ddr row1
-                                                 ; rows 2,3
-
-    ; hd                hu
-    ; Glt Flt Ft0 Ft1   Gl0 Fl1 Gl1 Fl2
-    ; Gl0 Fl0 Glt Flt   Gl1 Fl2 Gl2 Fl3
-    ; Gl1 Fl1 Gl0 Fl0   Gl2 Fl3 Gl3 Gl3
-    ; Gl2 Fl2 Gl1 Fl1   Gl3 Gl3 Gl3 Gl3
-    vpslldq        m0, m0, 5                     ; ___ ___ ___ ___ ___ Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5
-    vpalignr       m7, m5, m0, 5                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gl3 Gl2 Gl1 Gl0 Glt
-    vpshufb        m6, m7, [r5 - 32]             ; hdu1 | hdu2
-
-    ; vr                vl
-    ; Gt0 Gt1 Gt2 Gt3   Gt1 Gt2 Gt3 Gt4
-    ; Flt Ft0 Ft1 Ft2   Ft1 Ft2 Ft3 Ft4
-    ; Fl0 Gt0 Gt1 Gt2   Gt2 Gt3 Gt4 Gt5
-    ; Fl1 Flt Ft0 Ft1   Ft2 Ft3 Ft4 Ft5
-    vpsrldq        m5, m5, 5                     ; Gt0 Gt1 Gt2 Gt3 Gt4 Gt5 ...
-    vpalignr       m5, m5, m0, 6                 ; ___ Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gt0 Gt1 Gt2 Gt3 Gt4 Gt5
-    vpshufb        m4, m5, [r5]                  ; vrl1 | vrl2
-
-    vmovdqu        [rsp], m2
-    vmovdqu        [rsp + 32], m4
-    vmovdqu        [rsp + 64], m6
-    vpbroadcastd   xm0, [r0]
-    vpbroadcastd   xm1, [r0 + 16]
-    vpbroadcastd   xm3, [r0 + 32]
-    vpbroadcastd   xm5, [r0 + 48]
-    vinserti128    m7, m0, xm3, 1
-    vinserti128    m8, m1, xm5, 1
-    vbroadcasti128 m9, [hmul_8p]
-    vpmaddubsw     m7, m7, m9
-    vpmaddubsw     m8, m8, m9
-
-    vmovddup       m0, m2
-    vpunpckhqdq    m1, m2, m2
-    call           .satd_8x4                     ; ddl, ddr
-    vmovdqu        m5, m0
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    call           .satd_8x4                     ; vr, vl
-    vmovdqu        m4, m0
-    vmovddup       m0, m6
-    vpunpckhqdq    m1, m6, m6
-    call           .satd_8x4                     ; hd, hu
-    vpunpckldq     m1, m4, m0
-    vpunpckhdq     m4, m4, m0
-    vpaddw         m4, m4, m1                    ; vr, hd, vl, hu
-
-    vpshufb        m2, m10, [r5 + 32]
-    vmovdqu        [rsp + 96], m2
-    vmovddup       m0, m2
-    vpunpckhqdq    m1, m2, m2
-    call           .satd_8x4                     ; v, h
-    vmovdqu        m6, m0
-    vpshufb        xm10, xm10, [r5 + 64]         ; t0 t1 t2 t3 l0 l1 l2 l3 _ _ _ _ _ _ _ _
-    vpxor          xm0, xm0, xm0
-    vpsadbw        xm10, xm10, xm0
-    vpsrlw         xm10, xm10, 2
-    vpavgw         xm10, xm10, xm0
-    vpbroadcastb   m10, xm10
-    vmovdqu        [rsp + 128], m10
-    vmovddup       m0, m10
-    vpunpckhqdq    m1, m10, m10
-    call           .satd_8x4                     ; dc
-    vpbroadcastd   m1, [pw_1]
-    vpmaddwd       m5, m5, m1                    ; ddl, ddr
-    vpmaddwd       m4, m4, m1                    ; vr, hd, vl, hu
-    vpmaddwd       m6, m6, m1                    ; v, h
-    vpmaddwd       m0, m0, m1                    ; dc
-
-    vextracti128   xm1, m6, 1
-    vpaddd         xm1, xm1, xm6
-    vpunpckhqdq    xm3, xm1, xm1
-    vpaddd         xm1, xm1, xm3
-    movzx          r3d, word [r2]
-    vmovd          r0d, xm1
-    add            r3d, r0d                      ; v
-    vpsrlq         m6, m6, 32
-    vpblendd       m0, m6, m0, 10101010b         ; h, dc
-    vpunpcklqdq    m1, m0, m5
-    vpunpckhqdq    m5, m0, m5
-    vpaddd         m1, m1, m5                    ; h, dc, ddl, ddr
-    vmovdqu        xm0, [r2 + 2]
-    vpackssdw      m1, m1, m4                    ; h,dc,ddl,ddr,vr,hd,vl,hu
-    vextracti128   xm2, m1, 1
-    vpaddw         xm1, xm1, xm2
-    vpaddw         xm0, xm0, xm1                 ; add cost
-    vphminposuw    xm0, xm0                      ; h,dc,ddl,ddr,vr,hd,vl,hu
-    vmovd          eax, xm0
-    add            eax, 10000h                   ; index not include V
-    cmp            ax, r3w
-    cmovge         eax, r3d
-    mov            r3d, eax
-    shr            r3d, 10h
-
-    ; output the predicted samples
-    lea            r2, [r5 + 80]                 ; intrax9b_lut
-    movzx          r2d, byte [r2 + r3]
-    mov            r3d, [rsp + r2]
-    mov            [r1], r3d
-    mov            r3d, [rsp + r2 + 8]
-    mov            [r1 + 32], r3d
-    mov            r3d, [rsp + r2 + 16]
-    mov            [r1 + 64], r3d
-    mov            r3d, [rsp + r2 + 24]
-    mov            [r1 + 96], r3d
-
-%if WIN64
-    vmovdqu        xm8, [rsp + 160]
-    vmovdqu        xm9, [rsp + 176]
-    vmovdqu        xm10, [rsp + 192]
-    add            rsp, 216
-    vmovdqu        xm6, [rsp + 8]
-    vmovdqu        xm7, [rsp + 24]
-%else
-    add            rsp, 168
-%endif
-    RET
-
-ALIGN 16
-.satd_8x4:
-    vpmaddubsw     m0, m0, m9
-    vpmaddubsw     m1, m1, m9
-    vpsubw         m0, m0, m7
-    vpsubw         m1, m1, m8
-
-    vpaddw         m2, m0, m1
-    vpsubw         m3, m0, m1
-    vperm2i128     m1, m2, m3, 31h
-    vinserti128    m0, m2, xm3, 1
-    vpaddw         m2, m0, m1
-    vpsubw         m3, m0, m1
-    vpabsw         m2, m2
-    vpabsw         m3, m3
-    vpblendw       m1, m2, m3, 0AAh
-    vpsrld         m2, m2, 10h
-    vpslld         m3, m3, 10h
-    vpor           m2, m2, m3
-    vpmaxsw        m0, m1, m2
+    vpxor          m0, m0, m0
+    vpxor          m3, m3, m3
+    test           r4d, r4d
+    jg             .loop
+    xor            eax, eax
     ret
 
-
-INIT_YMM avx2
-cglobal intra_sa8d_x9_8x8, 0, 0
-%if WIN64
-    mov            r4, [rsp + 40]
-    vmovdqu        [rsp + 8], xm6
-    vmovdqu        [rsp + 24], xm7
-    sub            rsp, 136
-    vmovdqu        [rsp], xm8
-    vmovdqu        [rsp + 16], xm9
-    vmovdqu        [rsp + 32], xm10
-    vmovdqu        [rsp + 48], xm11
-    vmovdqu        [rsp + 64], xm12
-    vmovdqu        [rsp + 80], xm13
-    vmovdqu        [rsp + 96], xm14
-    vmovdqu        [rsp + 112], xm15
-    sub            rsp, 608
-%else
-    sub            rsp, 616
-%endif
-    vbroadcasti128 m10, [hmul_8p]
-    vmovddup       m6, [r0]
-    vmovddup       m7, [r0 + 32]
-    vmovddup       m8, [r0 + 64]
-    vmovddup       m9, [r0 + 96]
-    vpmaddubsw     m6, m6, m10
-    vpmaddubsw     m7, m7, m10
-    vpmaddubsw     m8, m8, m10
-    vpmaddubsw     m9, m9, m10
-
-    ; save instruction size: avoid 4-byte memory offsets
-    lea            r0, [intra8x9_vl1]
-    vpbroadcastq   m12, [r2 + 16]                ; v
-    vmovdqu        [rsp], m12
-    vmovdqu        [rsp + 32], m12
-    vmovdqu        m0, m12
-    vmovdqu        m1, m12
-    vmovdqu        m2, m12
-    vmovdqu        m3, m12
-    call           .sa8d
-    vmovdqu        m14, m0
-
-    vpbroadcastq   m13, [r2 + 7]                 ; h
-    vpshufb        m4, m13, [r0 - 128]           ; intra8x9_h1 intra8x9_h2
-    vpshufb        m5, m13, [r0 - 96]            ; intra8x9_h3 intra8x9_h4
-    vmovdqu        [rsp + 64], m4
-    vmovdqu        [rsp + 96], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vphaddw        m14, m14, m0                  ; v, h
-
-    lea            r5, [rsp + 256]
-    vpxor          m2, m2, m2
-    vpsadbw        m12, m12, m2
-    vpsadbw        m13, m13, m2
-    vpaddw         m0, m12, m13
-    vpsrlw         m0, m0, 3
-    vpavgw         m0, m0, m2
-    vpshufb        m0, m0, m2                    ; dc
-    vmovdqu        [r5 - 128], m0
-    vmovdqu        [r5 - 96], m0
-    vmovdqu        m1, m0
-    vmovdqu        m2, m0
-    vmovdqu        m3, m0
-    call           .sa8d
-    vmovdqu        m15, m0
-
-    vbroadcasti128 m12, [r2 + 16]
-    vbroadcasti128 m13, [r2 + 17]
-    vpslldq        m1, m12, 1
-    vpavgb         m11, m12, m13
-
-    vpbroadcastd   m0, [pb_1]
-    vpavgb         m4, m1, m13
-    vpxor          m13, m13, m1
-    vpand          m13, m13, m0
-    vpsubusb       m4, m4, m13
-    vpavgb         m12, m12, m4
-
-    vpshufb        m4, m12, [r0 - 64]            ; intra8x9_ddl1 intra8x9_ddl2
-    vpshufb        m5, m12, [r0 - 32]            ; intra8x9_ddl3 intra8x9_ddl4
-    vmovdqu        [r5 - 64], m4
-    vmovdqu        [r5 - 32], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vphaddw        m15, m15, m0                  ; dc, ddl
-    vphaddw        m14, m14, m15                 ; v, h, dc, ddl
-    vmovdqu        [rsp + 576], m14
-
-    ; for later
-    vinserti128    m11, m11, xm12, 1
-    vbroadcasti128 m12, [r2 + 8]
-    vbroadcasti128 m13, [r2 + 7]
-    vbroadcasti128 m14, [r2 + 6]
-    vpavgb         m15, m12, m13
-
-    vpbroadcastd   m0, [pb_1]
-    vpavgb         m4, m14, m12
-    vpxor          m12, m12, m14
-    vpand          m12, m12, m0
-    vpsubusb       m4, m4, m12
-    vpavgb         m13, m13, m4
-    vpshufb        m4, m13, [r0 + 64]            ; intra8x9_ddr1 intra8x9_ddr2
-    vpshufb        m5, m13, [r0 + 96]            ; intra8x9_ddr3 intra8x9_ddr4
-    vmovdqu        [r5], m4
-    vmovdqu        [r5 + 32], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vmovdqu        m14, m0                       ; ddr
-
-    add            r0, 256
-    add            r5, 192
-    vpblendd       m2, m15, m13, 11110011b
-    vpshufb        m4, m2, [r0 - 128]            ; intra8x9_vr1 intra8x9_vr2
-    vpshufb        m5, m2, [r0 - 96]             ; intra8x9_vr3 intra8x9_vr4
-    vmovdqu        [r5 - 128], m4
-    vmovdqu        [r5 - 96], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vphaddw        m14, m14, m0                  ; ddr, vr
-
-    vpsrldq        m2, m15, 4
-    vpblendw       m2, m2, m13, q3330
-    vpunpcklbw     m13, m13, m15
-    vpshufb        m4, m2, [r0 - 64]             ; intra8x9_hd1 intra8x9_hd2
-    vpshufb        m5, m13, [r0 - 32]            ; intra8x9_hd3 intra8x9_hd4
-    vmovdqu        [r5 - 64], m4
-    vmovdqu        [r5 - 32], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vmovdqu        m15, m0                       ; hd
-
-    vpshufb        m4, m11, [r0 - 256]           ; intra8x9_vl1 intra8x9_vl2
-    vpshufb        m5, m11, [r0 - 224]           ; intra8x9_vl3 intra8x9_vl4
-    vmovdqu        [r5], m4
-    vmovdqu        [r5 + 32], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vphaddw        m15, m15, m0                  ; hd, vl
-    vphaddw        m14, m14, m15                 ; ddr, vr, hd, vl
-    vmovdqu        m15, [rsp + 576]
-    vphaddw        m14, m15, m14
-    vextracti128   xm15, m14, 1
-    vpavgw         xm14, xm14, xm15              ; v, h, dc, ddl, ddr, vr, hd, vl
-
-    vpslldq        m1, m13, 1
-    vpbroadcastd   m0, [r2 + 7]
-    vpalignr       m0, m0, m1, 1
-    vpshufb        m4, m0, [r0]                  ; intra8x9_hu1 intra8x9_hu2
-    vpshufb        m5, m0, [r0 + 32]             ; intra8x9_hu3 intra8x9_hu4
-    vmovdqu        [r5 + 64], m4
-    vmovdqu        [r5 + 96], m5
-    vmovddup       m0, m4
-    vpunpckhqdq    m1, m4, m4
-    vmovddup       m2, m5
-    vpunpckhqdq    m3, m5, m5
-    call           .sa8d
-    vextracti128   xm1, m0, 1
-    vpaddw         xm0, xm0, xm1
-    vpunpckhqdq    xm1, xm0, xm0
-    vpaddw         xm0, xm0, xm1
-    vpshufd        xm1, xm0, 1
-    vpaddw         xm0, xm0, xm1
-    vpshuflw       xm1, xm0, 1
-    vpavgw         xm0, xm0, xm1
-    vpextrw        r2d, xm0, 0                   ; hu
-
-    vpaddw         xm3, xm14, [r3]
-    vmovdqu        [r4], xm3
-    add            r2w, [r3 + 16]
-    mov            [r4 + 16], r2w
-
-    vphminposuw    xm3, xm3
-    vmovd          r3d, xm3
-    add            r2d, 80000h                   ; add the index of hu
-    cmp            r3w, r2w
-    cmovg          r3d, r2d
-
-    mov            eax, r3d
-    shr            r3, 16
-    shl            r3, 6
-    add            r1, 128
-    vmovdqu        xm0, [rsp + r3]
-    vmovdqu        xm1, [rsp + r3 + 16]
-    vmovdqu        xm2, [rsp + r3 + 32]
-    vmovdqu        xm3, [rsp + r3 + 48]
-    vmovq          [r1 - 128], xm0
-    vmovhps        [r1 - 64], xm0
-    vmovq          [r1 - 96], xm1
-    vmovhps        [r1 - 32], xm1
-    vmovq          [r1], xm2
-    vmovhps        [r1 + 64], xm2
-    vmovq          [r1 + 32], xm3
-    vmovhps        [r1 + 96], xm3
-
-%if WIN64
-    add            rsp, 608
-    vmovdqu        xm8, [rsp]
-    vmovdqu        xm9, [rsp + 16]
-    vmovdqu        xm10, [rsp + 32]
-    vmovdqu        xm11, [rsp + 48]
-    vmovdqu        xm12, [rsp + 64]
-    vmovdqu        xm13, [rsp + 80]
-    vmovdqu        xm14, [rsp + 96]
-    vmovdqu        xm15, [rsp + 112]
-    add            rsp, 136
-    vmovdqu        xm6, [rsp + 8]
-    vmovdqu        xm7, [rsp + 24]
-%else
-    add            rsp, 616
-%endif
-    RET
-
 ALIGN 16
-.sa8d:
-    vpmaddubsw     m0, m0, m10
-    vpmaddubsw     m1, m1, m10
-    vpmaddubsw     m2, m2, m10
-    vpmaddubsw     m3, m3, m10
-    vpsubw         m0, m0, m6
-    vpsubw         m1, m1, m7
-    vpsubw         m2, m2, m8
-    vpsubw         m3, m3, m9
+.loop:
+    vmovq          xm1, [r0]
+    vmovhps        xm1, xm1, [r0 + r1]
+    vmovq          xm2, [r2]
+    vmovhps        xm2, xm2, [r2 + r3]
+    vpsadbw        m1, m1, m0
+    vpsadbw        m2, m2, m0
+    vpsubw         m1, m1, m2
+    vpaddw         m3, m3, m1
+    lea            r0, [r0 + r1 * 2]
+    lea            r2, [r2 + r3 * 2]
+    sub            r4d, 2
+    jg             .loop
 
-    vpaddw         m4, m0, m1
-    vpsubw         m5, m0, m1
-    vpaddw         m0, m2, m3
-    vpsubw         m1, m2, m3
-    vpaddw         m2, m4, m0
-    vpsubw         m3, m4, m0
-    vpaddw         m0, m5, m1
-    vpsubw         m4, m5, m1
-    vperm2i128     m1, m2, m3, 31h
-    vinserti128    m5, m2, xm3, 1
-    vpaddw         m2, m1, m5
-    vpsubw         m3, m1, m5
-    vperm2i128     m1, m0, m4, 31h
-    vinserti128    m5, m0, xm4, 1
-    vpaddw         m0, m1, m5
-    vpsubw         m4, m1, m5
-
-    vshufps        m1, m2, m3, 0DDh
-    vshufps        m5, m2, m3, 88h
-    vpaddw         m2, m1, m5
-    vpsubw         m3, m1, m5
-    vshufps        m1, m0, m4, 0DDh
-    vshufps        m5, m0, m4, 88h
-    vpaddw         m0, m1, m5
-    vpsubw         m4, m1, m5
-    vpabsw         m2, m2
-    vpabsw         m3, m3
-    vpabsw         m0, m0
-    vpabsw         m4, m4
-    vpblendw       m1, m2, m3, 0AAh
-    vpsrld         m2, m2, 16
-    vpslld         m3, m3, 16
-    vpor           m2, m2, m3
-    vpmaxsw        m2, m2, m1
-    vpblendw       m5, m0, m4, 0AAh
-    vpsrld         m0, m0, 16
-    vpslld         m4, m4, 16
-    vpor           m0, m0, m4
-    vpmaxsw        m0, m0, m5
-    vpaddw         m0, m0, m2
+.end:
+    vpunpckhqdq    xm0, xm3, xm3
+    vpaddw         xm0, xm0, xm3
+    vpabsw         xm0, xm0
+    vmovd          eax, xm0
     ret
 
 
@@ -7453,6 +6548,863 @@ cglobal intra_sa8d_x3_8x8, 0, 0
 
 
 ;=============================================================================
+; INTRA_SAD_X9
+;=============================================================================
+INIT_YMM avx2
+cglobal intra_sad_x9_4x4, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 184
+    vmovdqu        [rsp + 160], xm8
+%else
+    sub            rsp, 168
+%endif
+    lea            r5, [intrax9a_vrl1]
+    vmovdqu        xm1, [r1 - 40]
+    vpinsrb        xm1, xm1, [r1 + 95],0
+    vpinsrb        xm1, xm1, [r1 + 63],1
+    vpinsrb        xm1, xm1, [r1 + 31],2
+    vpinsrb        xm1, xm1, [r1 - 1],3          ; l3 l2 l1 l0 __ __ __ lt t0 t1 t2 t3 t4 t5 t6 t7
+    vpshufb        xm1, xm1, [intrax9_edge]      ; l3 l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __
+    vpsrldq        xm0, xm1, 1                   ; l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __
+    vpsrldq        xm2, xm1, 2                   ; l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __ __
+    vpavgb         xm5, xm0, xm1                 ; Gl3 Gl2 Gl1 Gl0 Glt Gt0 Gt1 Gt2 Gt3 Gt4 Gt5  __  __ __ __ __
+    vinserti128    m5, m5, xm5, 1
+    vinserti128    m8, m1, xm1, 1
+    vpavgb         xm4, xm1, xm2
+    vpxor          xm2, xm2, xm1
+    vpbroadcastd   xm3, [pb_1]
+    vpand          xm2, xm2, xm3
+    vpsubusb       xm4, xm4, xm2
+    vpavgb         xm0, xm0, xm4                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Ft6 Ft7 __ __ __
+    vinserti128    m0, m0, xm0, 1
+
+    ; ddl               ddr
+    ; Ft1 Ft2 Ft3 Ft4   Flt Ft0 Ft1 Ft2
+    ; Ft2 Ft3 Ft4 Ft5   Fl0 Flt Ft0 Ft1
+    ; Ft3 Ft4 Ft5 Ft6   Fl1 Fl0 Flt Ft0
+    ; Ft4 Ft5 Ft6 Ft7   Fl2 Fl1 Fl0 Flt
+    vpshufb        m2, m0, [r5 - 64]                  ; a: ddl row0, ddl row1, ddr row0, ddr row1 / b: ddl row0, ddr row0, ddl row1, ddr row1
+                                                 ; rows 2,3
+
+    ; hd                hu
+    ; Glt Flt Ft0 Ft1   Gl0 Fl1 Gl1 Fl2
+    ; Gl0 Fl0 Glt Flt   Gl1 Fl2 Gl2 Fl3
+    ; Gl1 Fl1 Gl0 Fl0   Gl2 Fl3 Gl3 Gl3
+    ; Gl2 Fl2 Gl1 Fl1   Gl3 Gl3 Gl3 Gl3
+    vpslldq        m0, m0, 5                     ; ___ ___ ___ ___ ___ Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5
+    vpalignr       m7, m5, m0, 5                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gl3 Gl2 Gl1 Gl0 Glt
+    vpshufb        m6, m7, [r5 - 32]             ; hdu1 | hdu2
+
+    ; vr                vl
+    ; Gt0 Gt1 Gt2 Gt3   Gt1 Gt2 Gt3 Gt4
+    ; Flt Ft0 Ft1 Ft2   Ft1 Ft2 Ft3 Ft4
+    ; Fl0 Gt0 Gt1 Gt2   Gt2 Gt3 Gt4 Gt5
+    ; Fl1 Flt Ft0 Ft1   Ft2 Ft3 Ft4 Ft5
+    vpsrldq        m5, m5, 5                     ; Gt0 Gt1 Gt2 Gt3 Gt4 Gt5 ...
+    vpalignr       m5, m5, m0, 6                 ; ___ Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gt0 Gt1 Gt2 Gt3 Gt4 Gt5
+    vpshufb        m4, m5, [r5]                  ; vrl1 | vrl2
+
+    vmovdqu        [rsp], m2
+    vmovdqu        [rsp + 32], m4
+    vmovdqu        [rsp + 64], m6
+
+    vmovd          xm0, [r0]
+    vpinsrd        xm0, xm0, [r0 + 16], 1
+    vmovd          xm1, [r0 + 32]
+    vpinsrd        xm1, xm1, [r0 + 48],1
+    vinserti128    m0, m0, xm1, 1
+    vpunpcklqdq    m0, m0, m0
+    vpsadbw        m2, m2, m0
+    vpsadbw        m4, m4, m0
+    vpsadbw        m6, m6, m0
+    vpshufb        m3, m8, [r5 + 32]             ; t0 t1 t2 t3 t0 t1 t2 t3 l0 l0 l0 l0 l1 l1 l1 l1
+                                                 ; t0 t1 t2 t3 t0 t1 t2 t3 l2 l2 l2 l2 l3 l3 l3 l3
+    vpshufb        xm8, xm8, [r5 + 64]           ; l3 l2 l1 l0 t0 t1 t2 t3 0  0  0  0  0  0  0  0
+    vpxor          xm7, xm7, xm7
+    vpsadbw        xm8, xm8, xm7
+    vpsrlw         xm8, xm8, 2
+    vpavgw         xm8, xm8, xm7
+    vpbroadcastb   m8, xm8
+    vmovdqu        [rsp + 96], m3
+    vmovdqu        [rsp + 128], m8
+    vpsadbw        m3, m3, m0
+    vextracti128   xm5, m3, 1
+    vpaddd         xm5, xm3, xm5
+    vpsadbw        m0, m8, m0
+    movzx          r3d, word [r2]
+    vmovd          r0d, xm5
+    add            r3d, r0d                      ; v
+    vpunpckhqdq    m3, m3, m0
+    vshufps        m3, m3, m2, 88h               ; h,dc,ddl,ddr
+    vpsllq         m6, m6, 32
+    vpor           m4, m4, m6                    ; vr,hd,vl,hu
+    vmovdqu        xm0, [r2 + 2]
+    vpackssdw      m3, m3, m4                    ; h,dc,ddl,ddr,vr,hd,vl,hu
+    vextracti128   xm4, m3, 1
+    vpaddw         xm3, xm3, xm4
+    vpaddw         xm0, xm0, xm3                 ; add cost
+    vphminposuw    xm0, xm0                      ; h,dc,ddl,ddr,vr,hd,vl,hu
+    vmovd          eax, xm0
+    add            eax, 10000h                   ; index not include V
+    cmp            ax, r3w
+    cmovge         eax, r3d
+    mov            r3d, eax
+    shr            r3d, 10h
+    lea            r2, [r5 + 80]                 ; intrax9a_lut
+    movzx          r2d, byte [r2 + r3]
+    vmovq          xm0,  [rsp + r2]
+    vmovq          xm1,  [rsp + r2 + 16]
+    vmovd          [r1], xm0
+    vmovd          [r1 + 64], xm1
+    vpsrlq         xm0, 32
+    vpsrlq         xm1, 32
+    vmovd          [r1 + 32], xm0
+    vmovd          [r1 + 96], xm1
+
+%if WIN64 
+    vmovdqu        xm8, [rsp + 60]
+    add            rsp, 184
+    vmovdqu        xm7, [rsp + 24]
+    vmovdqu        xm6, [rsp + 8]
+%else
+    add            rsp, 168
+%endif
+    RET
+
+INIT_YMM avx2
+cglobal intra_sad_x9_8x8, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    mov            r4, [rsp + 40]
+    sub            rsp, 616
+    vmovdqu        [rsp + 576], xm8
+    vmovdqu        [rsp + 592], xm9
+%else
+    sub            rsp, 584
+%endif
+    vpbroadcastd   m8, [pb_1]
+    vmovdqu        m5, [r0]
+    vmovdqu        m6, [r0 + 64]
+    vpunpcklqdq    m5, m5, [r0 + 32]
+    vpunpcklqdq    m6, m6, [r0 + 96]
+
+    ; save instruction size: avoid 4-byte memory offsets
+    lea            r0, [intra8x9_vl1]
+    vpbroadcastq   m0, [r2 + 16]                 ; v
+    vpsadbw        m4, m0, m5
+    vpsadbw        m2, m0, m6
+    vmovdqu        [rsp], m0
+    vmovdqu        [rsp + 32], m0
+    vpaddw         m4, m4, m2
+
+    vpbroadcastq   m1, [r2 + 7]                  ; h
+    vpshufb        m3, m1, [r0 - 128]            ; intra8x9_h1 intra8x9_h2
+    vpshufb        m2, m1, [r0 - 96]             ; intra8x9_h3 intra8x9_h4
+    vmovdqu        [rsp + 64], m3
+    vmovdqu        [rsp + 96], m2
+    vpsadbw        m3, m3, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m3, m3, m2
+
+    lea            r5, [rsp + 256]
+
+    ; combine the first two
+    vpsllq         m3, m3, 16
+    vpor           m4, m4, m3                    ; v, h
+
+    vpxor          m2, m2, m2
+    vpsadbw        m0, m0, m2
+    vpsadbw        m1, m1, m2
+    vpaddw         m0, m0, m1
+    vpsrlw         m0, m0, 3
+    vpavgw         m0, m0, m2
+    vpshufb        m0, m0, m2                    ; dc
+    vmovdqu        [r5 - 128], m0
+    vmovdqu        [r5 - 96], m0
+    vpsadbw        m3, m0, m5
+    vpsadbw        m2, m0, m6
+    vpaddw         m3, m3, m2
+    vpsllq         m3, m3, 32
+    vpor           m4, m4, m3                    ; v, h, dc
+
+    vbroadcasti128 m0, [r2 + 16]
+    vbroadcasti128 m2, [r2 + 17]
+    vpslldq        m1, m0, 1
+    vpavgb         m3, m0, m2
+
+    vpavgb         m7, m1, m2
+    vpxor          m2, m2, m1
+    vpand          m2, m2, m8
+    vpsubusb       m7, m7, m2
+    vpavgb         m0, m0, m7
+
+    vpshufb        m1, m0, [r0 - 64]             ; intra8x9_ddl1 intra8x9_ddl2
+    vpshufb        m2, m0, [r0 - 32]             ; intra8x9_ddl3 intra8x9_ddl4
+    vmovdqu        [r5 - 64], m1
+    vmovdqu        [r5 - 32], m2
+    vpsadbw        m1, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m1, m1, m2
+    vpsllq         m1, m1, 48
+    vpor           m9, m4, m1                    ; v, h, dc, ddl
+
+    ; for later
+    vinserti128    m7, m3, xm0, 1
+    vbroadcasti128 m2, [r2 + 8]
+    vbroadcasti128 m0, [r2 + 7]
+    vbroadcasti128 m1, [r2 + 6]
+    vpavgb         m3, m2, m0
+
+    vpavgb         m4, m1, m2
+    vpxor          m2, m2, m1
+    vpand          m2, m2, m8
+    vpsubusb       m4, m4, m2
+    vpavgb         m0, m0, m4
+    vpshufb        m1, m0, [r0 + 64]             ; intra8x9_ddr1 intra8x9_ddr2
+    vpshufb        m2, m0, [r0 + 96]             ; intra8x9_ddr3 intra8x9_ddr4
+    vmovdqu        [r5], m1
+    vmovdqu        [r5 + 32], m2
+    vpsadbw        m4, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m4, m4, m2                    ; ddr
+
+    add            r0, 256
+    add            r5, 192
+    vpblendd       m2, m3, m0, 11110011b
+    vpshufb        m1, m2, [r0 - 128]            ; intra8x9_vr1 intra8x9_vr2
+    vpshufb        m2, m2, [r0 - 96]             ; intra8x9_vr3 intra8x9_vr4
+    vmovdqu        [r5 - 128], m1
+    vmovdqu        [r5 - 96], m2
+    vpsadbw        m1, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m1, m1, m2
+    vpsllq         m1, m1, 16
+    vpor           m4, m4, m1                    ; ddr, vr
+
+    vpsrldq        m2, m3, 4
+    vpblendw       m2, m2, m0, q3330
+    vpunpcklbw     m0, m0, m3
+    vpshufb        m1, m2, [r0 - 64]             ; intra8x9_hd1 intra8x9_hd2
+    vpshufb        m2, m0, [r0 - 32]             ; intra8x9_hd3 intra8x9_hd4
+    vmovdqu        [r5 - 64], m1
+    vmovdqu        [r5 - 32], m2
+    vpsadbw        m1, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m1, m1, m2
+    vpsllq         m1, m1, 32
+    vpor           m4, m4, m1                    ; ddr, vr, hd
+
+    vpshufb        m1, m7, [r0 - 256]            ; intra8x9_vl1 intra8x9_vl2
+    vpshufb        m2, m7, [r0 - 224]            ; intra8x9_vl3 intra8x9_vl4
+    vmovdqu        [r5], m1
+    vmovdqu        [r5 + 32], m2
+    vpsadbw        m1, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m1, m1, m2
+    vpsllq         m1, m1, 48
+    vpor           m4, m4, m1                    ; ddr, vr, hd, vl
+    vpunpckhqdq    m7, m9, m4
+    vpunpcklqdq    m3, m9, m4
+    vpaddw         m3, m3, m7
+    vextracti128   xm7, m3, 1
+    vpaddw         xm3, xm3, xm7                 ; v, h, dc, ddl, ddr, vr, hd, vl
+
+    vpslldq        m1, m0, 1
+    vpbroadcastd   m0, [r2 + 7]
+    vpalignr       m0, m0, m1, 1
+    vpshufb        m1, m0, [r0]                  ; intra8x9_hu1 intra8x9_hu2
+    vpshufb        m2, m0, [r0 + 32]             ; intra8x9_hu3 intra8x9_hu4
+    vmovdqu        [r5 + 64], m1
+    vmovdqu        [r5 + 96], m2
+    vpsadbw        m1, m1, m5
+    vpsadbw        m2, m2, m6
+    vpaddw         m1, m1, m2
+    vextracti128   xm2, m1, 1
+    vpaddw         xm1, xm1, xm2
+    vpunpckhqdq    xm2, xm1, xm1
+    vpaddw         xm1, xm1, xm2
+    vmovd          r2d, xm1                      ; hu
+
+    vpaddw         xm3, xm3, [r3]
+    vmovdqu        [r4], xm3
+    add            r2w, [r3 + 16]
+    mov            [r4 + 16], r2w
+
+    vphminposuw    xm3, xm3
+    vmovd          r3d, xm3
+    add            r2d, 80000h                   ; add the index of hu
+    cmp            r3w, r2w
+    cmovg          r3d, r2d
+
+    mov            eax, r3d
+    shr            r3, 16
+    shl            r3, 6
+    add            r1, 128
+    vmovdqu        xm0, [rsp + r3]
+    vmovdqu        xm1, [rsp + r3 + 16]
+    vmovdqu        xm2, [rsp + r3 + 32]
+    vmovdqu        xm3, [rsp + r3 + 48]
+    vmovq          [r1 - 128], xm0
+    vmovhps        [r1 - 64], xm0
+    vmovq          [r1 - 96], xm1
+    vmovhps        [r1 - 32], xm1
+    vmovq          [r1], xm2
+    vmovhps        [r1 + 64], xm2
+    vmovq          [r1 + 32], xm3
+    vmovhps        [r1 + 96], xm3
+%if WIN64
+    vmovdqu        xm8, [rsp + 576]
+    vmovdqu        xm9, [rsp + 592]
+    add            rsp, 616
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%else
+    add            rsp, 584
+%endif
+    RET
+
+
+;=============================================================================
+; INTRA_SATD/SA8D_X9
+;=============================================================================
+INIT_YMM avx2
+cglobal intra_satd_x9_4x4, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 216
+    vmovdqu        [rsp + 160], xm8
+    vmovdqu        [rsp + 176], xm9
+    vmovdqu        [rsp + 192], xm10
+%else
+    sub            rsp, 168
+%endif
+    lea            r5, [intrax9b_vrl1]
+    vmovdqu        xm1, [r1 - 40]
+    vpinsrb        xm1, xm1, [r1 + 95],0
+    vpinsrb        xm1, xm1, [r1 + 63],1
+    vpinsrb        xm1, xm1, [r1 + 31],2
+    vpinsrb        xm1, xm1, [r1 - 1],3          ; l3 l2 l1 l0 __ __ __ lt t0 t1 t2 t3 t4 t5 t6 t7
+    vpshufb        xm1, xm1, [intrax9_edge]      ; l3 l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __
+    vpsrldq        xm0, xm1, 1                   ; l3 l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __
+    vpsrldq        xm2, xm1, 2                   ; l2 l1 l0 lt t0 t1 t2 t3 t4 t5 t6 t7 t7 __ __ __
+    vpavgb         xm5, xm0, xm1                 ; Gl3 Gl2 Gl1 Gl0 Glt Gt0 Gt1 Gt2 Gt3 Gt4 Gt5  __  __ __ __ __
+    vinserti128    m5, m5, xm5, 1
+    vinserti128    m10, m1, xm1, 1
+    vpavgb         xm4, xm1, xm2
+    vpxor          xm2, xm2, xm1
+    vpbroadcastd   xm3, [pb_1]
+    vpand          xm2, xm2, xm3
+    vpsubusb       xm4, xm4, xm2
+    vpavgb         xm0, xm0, xm4                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Ft6 Ft7 __ __ __
+    vinserti128    m0, m0, xm0, 1
+
+    ; ddl               ddr
+    ; Ft1 Ft2 Ft3 Ft4   Flt Ft0 Ft1 Ft2
+    ; Ft2 Ft3 Ft4 Ft5   Fl0 Flt Ft0 Ft1
+    ; Ft3 Ft4 Ft5 Ft6   Fl1 Fl0 Flt Ft0
+    ; Ft4 Ft5 Ft6 Ft7   Fl2 Fl1 Fl0 Flt
+    vpshufb        m2, m0, [r5 - 64]             ; a: ddl row0, ddl row1, ddr row0, ddr row1 / b: ddl row0, ddr row0, ddl row1, ddr row1
+                                                 ; rows 2,3
+
+    ; hd                hu
+    ; Glt Flt Ft0 Ft1   Gl0 Fl1 Gl1 Fl2
+    ; Gl0 Fl0 Glt Flt   Gl1 Fl2 Gl2 Fl3
+    ; Gl1 Fl1 Gl0 Fl0   Gl2 Fl3 Gl3 Gl3
+    ; Gl2 Fl2 Gl1 Fl1   Gl3 Gl3 Gl3 Gl3
+    vpslldq        m0, m0, 5                     ; ___ ___ ___ ___ ___ Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5
+    vpalignr       m7, m5, m0, 5                 ; Fl3 Fl2 Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gl3 Gl2 Gl1 Gl0 Glt
+    vpshufb        m6, m7, [r5 - 32]             ; hdu1 | hdu2
+
+    ; vr                vl
+    ; Gt0 Gt1 Gt2 Gt3   Gt1 Gt2 Gt3 Gt4
+    ; Flt Ft0 Ft1 Ft2   Ft1 Ft2 Ft3 Ft4
+    ; Fl0 Gt0 Gt1 Gt2   Gt2 Gt3 Gt4 Gt5
+    ; Fl1 Flt Ft0 Ft1   Ft2 Ft3 Ft4 Ft5
+    vpsrldq        m5, m5, 5                     ; Gt0 Gt1 Gt2 Gt3 Gt4 Gt5 ...
+    vpalignr       m5, m5, m0, 6                 ; ___ Fl1 Fl0 Flt Ft0 Ft1 Ft2 Ft3 Ft4 Ft5 Gt0 Gt1 Gt2 Gt3 Gt4 Gt5
+    vpshufb        m4, m5, [r5]                  ; vrl1 | vrl2
+
+    vmovdqu        [rsp], m2
+    vmovdqu        [rsp + 32], m4
+    vmovdqu        [rsp + 64], m6
+    vpbroadcastd   xm0, [r0]
+    vpbroadcastd   xm1, [r0 + 16]
+    vpbroadcastd   xm3, [r0 + 32]
+    vpbroadcastd   xm5, [r0 + 48]
+    vinserti128    m7, m0, xm3, 1
+    vinserti128    m8, m1, xm5, 1
+    vbroadcasti128 m9, [hmul_8p]
+    vpmaddubsw     m7, m7, m9
+    vpmaddubsw     m8, m8, m9
+
+    vmovddup       m0, m2
+    vpunpckhqdq    m1, m2, m2
+    call           .satd_8x4                     ; ddl, ddr
+    vmovdqu        m5, m0
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    call           .satd_8x4                     ; vr, vl
+    vmovdqu        m4, m0
+    vmovddup       m0, m6
+    vpunpckhqdq    m1, m6, m6
+    call           .satd_8x4                     ; hd, hu
+    vpunpckldq     m1, m4, m0
+    vpunpckhdq     m4, m4, m0
+    vpaddw         m4, m4, m1                    ; vr, hd, vl, hu
+
+    vpshufb        m2, m10, [r5 + 32]
+    vmovdqu        [rsp + 96], m2
+    vmovddup       m0, m2
+    vpunpckhqdq    m1, m2, m2
+    call           .satd_8x4                     ; v, h
+    vmovdqu        m6, m0
+    vpshufb        xm10, xm10, [r5 + 64]         ; t0 t1 t2 t3 l0 l1 l2 l3 _ _ _ _ _ _ _ _
+    vpxor          xm0, xm0, xm0
+    vpsadbw        xm10, xm10, xm0
+    vpsrlw         xm10, xm10, 2
+    vpavgw         xm10, xm10, xm0
+    vpbroadcastb   m10, xm10
+    vmovdqu        [rsp + 128], m10
+    vmovddup       m0, m10
+    vpunpckhqdq    m1, m10, m10
+    call           .satd_8x4                     ; dc
+    vpbroadcastd   m1, [pw_1]
+    vpmaddwd       m5, m5, m1                    ; ddl, ddr
+    vpmaddwd       m4, m4, m1                    ; vr, hd, vl, hu
+    vpmaddwd       m6, m6, m1                    ; v, h
+    vpmaddwd       m0, m0, m1                    ; dc
+
+    vextracti128   xm1, m6, 1
+    vpaddd         xm1, xm1, xm6
+    vpunpckhqdq    xm3, xm1, xm1
+    vpaddd         xm1, xm1, xm3
+    movzx          r3d, word [r2]
+    vmovd          r0d, xm1
+    add            r3d, r0d                      ; v
+    vpsrlq         m6, m6, 32
+    vpblendd       m0, m6, m0, 10101010b         ; h, dc
+    vpunpcklqdq    m1, m0, m5
+    vpunpckhqdq    m5, m0, m5
+    vpaddd         m1, m1, m5                    ; h, dc, ddl, ddr
+    vmovdqu        xm0, [r2 + 2]
+    vpackssdw      m1, m1, m4                    ; h,dc,ddl,ddr,vr,hd,vl,hu
+    vextracti128   xm2, m1, 1
+    vpaddw         xm1, xm1, xm2
+    vpaddw         xm0, xm0, xm1                 ; add cost
+    vphminposuw    xm0, xm0                      ; h,dc,ddl,ddr,vr,hd,vl,hu
+    vmovd          eax, xm0
+    add            eax, 10000h                   ; index not include V
+    cmp            ax, r3w
+    cmovge         eax, r3d
+    mov            r3d, eax
+    shr            r3d, 10h
+
+    ; output the predicted samples
+    lea            r2, [r5 + 80]                 ; intrax9b_lut
+    movzx          r2d, byte [r2 + r3]
+    mov            r3d, [rsp + r2]
+    mov            [r1], r3d
+    mov            r3d, [rsp + r2 + 8]
+    mov            [r1 + 32], r3d
+    mov            r3d, [rsp + r2 + 16]
+    mov            [r1 + 64], r3d
+    mov            r3d, [rsp + r2 + 24]
+    mov            [r1 + 96], r3d
+
+%if WIN64
+    vmovdqu        xm8, [rsp + 160]
+    vmovdqu        xm9, [rsp + 176]
+    vmovdqu        xm10, [rsp + 192]
+    add            rsp, 216
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%else
+    add            rsp, 168
+%endif
+    RET
+
+ALIGN 16
+.satd_8x4:
+    vpmaddubsw     m0, m0, m9
+    vpmaddubsw     m1, m1, m9
+    vpsubw         m0, m0, m7
+    vpsubw         m1, m1, m8
+
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    vperm2i128     m1, m2, m3, 31h
+    vinserti128    m0, m2, xm3, 1
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    vpabsw         m2, m2
+    vpabsw         m3, m3
+    vpblendw       m1, m2, m3, 0AAh
+    vpsrld         m2, m2, 10h
+    vpslld         m3, m3, 10h
+    vpor           m2, m2, m3
+    vpmaxsw        m0, m1, m2
+    ret
+
+
+INIT_YMM avx2
+cglobal intra_sa8d_x9_8x8, 0, 0
+%if WIN64
+    mov            r4, [rsp + 40]
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 136
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+    vmovdqu        [rsp + 32], xm10
+    vmovdqu        [rsp + 48], xm11
+    vmovdqu        [rsp + 64], xm12
+    vmovdqu        [rsp + 80], xm13
+    vmovdqu        [rsp + 96], xm14
+    vmovdqu        [rsp + 112], xm15
+    sub            rsp, 608
+%else
+    sub            rsp, 616
+%endif
+    vbroadcasti128 m10, [hmul_8p]
+    vmovddup       m6, [r0]
+    vmovddup       m7, [r0 + 32]
+    vmovddup       m8, [r0 + 64]
+    vmovddup       m9, [r0 + 96]
+    vpmaddubsw     m6, m6, m10
+    vpmaddubsw     m7, m7, m10
+    vpmaddubsw     m8, m8, m10
+    vpmaddubsw     m9, m9, m10
+
+    ; save instruction size: avoid 4-byte memory offsets
+    lea            r0, [intra8x9_vl1]
+    vpbroadcastq   m12, [r2 + 16]                ; v
+    vmovdqu        [rsp], m12
+    vmovdqu        [rsp + 32], m12
+    vmovdqu        m0, m12
+    vmovdqu        m1, m12
+    vmovdqu        m2, m12
+    vmovdqu        m3, m12
+    call           .sa8d
+    vmovdqu        m14, m0
+
+    vpbroadcastq   m13, [r2 + 7]                 ; h
+    vpshufb        m4, m13, [r0 - 128]           ; intra8x9_h1 intra8x9_h2
+    vpshufb        m5, m13, [r0 - 96]            ; intra8x9_h3 intra8x9_h4
+    vmovdqu        [rsp + 64], m4
+    vmovdqu        [rsp + 96], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vphaddw        m14, m14, m0                  ; v, h
+
+    lea            r5, [rsp + 256]
+    vpxor          m2, m2, m2
+    vpsadbw        m12, m12, m2
+    vpsadbw        m13, m13, m2
+    vpaddw         m0, m12, m13
+    vpsrlw         m0, m0, 3
+    vpavgw         m0, m0, m2
+    vpshufb        m0, m0, m2                    ; dc
+    vmovdqu        [r5 - 128], m0
+    vmovdqu        [r5 - 96], m0
+    vmovdqu        m1, m0
+    vmovdqu        m2, m0
+    vmovdqu        m3, m0
+    call           .sa8d
+    vmovdqu        m15, m0
+
+    vbroadcasti128 m12, [r2 + 16]
+    vbroadcasti128 m13, [r2 + 17]
+    vpslldq        m1, m12, 1
+    vpavgb         m11, m12, m13
+
+    vpbroadcastd   m0, [pb_1]
+    vpavgb         m4, m1, m13
+    vpxor          m13, m13, m1
+    vpand          m13, m13, m0
+    vpsubusb       m4, m4, m13
+    vpavgb         m12, m12, m4
+
+    vpshufb        m4, m12, [r0 - 64]            ; intra8x9_ddl1 intra8x9_ddl2
+    vpshufb        m5, m12, [r0 - 32]            ; intra8x9_ddl3 intra8x9_ddl4
+    vmovdqu        [r5 - 64], m4
+    vmovdqu        [r5 - 32], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vphaddw        m15, m15, m0                  ; dc, ddl
+    vphaddw        m14, m14, m15                 ; v, h, dc, ddl
+    vmovdqu        [rsp + 576], m14
+
+    ; for later
+    vinserti128    m11, m11, xm12, 1
+    vbroadcasti128 m12, [r2 + 8]
+    vbroadcasti128 m13, [r2 + 7]
+    vbroadcasti128 m14, [r2 + 6]
+    vpavgb         m15, m12, m13
+
+    vpbroadcastd   m0, [pb_1]
+    vpavgb         m4, m14, m12
+    vpxor          m12, m12, m14
+    vpand          m12, m12, m0
+    vpsubusb       m4, m4, m12
+    vpavgb         m13, m13, m4
+    vpshufb        m4, m13, [r0 + 64]            ; intra8x9_ddr1 intra8x9_ddr2
+    vpshufb        m5, m13, [r0 + 96]            ; intra8x9_ddr3 intra8x9_ddr4
+    vmovdqu        [r5], m4
+    vmovdqu        [r5 + 32], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vmovdqu        m14, m0                       ; ddr
+
+    add            r0, 256
+    add            r5, 192
+    vpblendd       m2, m15, m13, 11110011b
+    vpshufb        m4, m2, [r0 - 128]            ; intra8x9_vr1 intra8x9_vr2
+    vpshufb        m5, m2, [r0 - 96]             ; intra8x9_vr3 intra8x9_vr4
+    vmovdqu        [r5 - 128], m4
+    vmovdqu        [r5 - 96], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vphaddw        m14, m14, m0                  ; ddr, vr
+
+    vpsrldq        m2, m15, 4
+    vpblendw       m2, m2, m13, q3330
+    vpunpcklbw     m13, m13, m15
+    vpshufb        m4, m2, [r0 - 64]             ; intra8x9_hd1 intra8x9_hd2
+    vpshufb        m5, m13, [r0 - 32]            ; intra8x9_hd3 intra8x9_hd4
+    vmovdqu        [r5 - 64], m4
+    vmovdqu        [r5 - 32], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vmovdqu        m15, m0                       ; hd
+
+    vpshufb        m4, m11, [r0 - 256]           ; intra8x9_vl1 intra8x9_vl2
+    vpshufb        m5, m11, [r0 - 224]           ; intra8x9_vl3 intra8x9_vl4
+    vmovdqu        [r5], m4
+    vmovdqu        [r5 + 32], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vphaddw        m15, m15, m0                  ; hd, vl
+    vphaddw        m14, m14, m15                 ; ddr, vr, hd, vl
+    vmovdqu        m15, [rsp + 576]
+    vphaddw        m14, m15, m14
+    vextracti128   xm15, m14, 1
+    vpavgw         xm14, xm14, xm15              ; v, h, dc, ddl, ddr, vr, hd, vl
+
+    vpslldq        m1, m13, 1
+    vpbroadcastd   m0, [r2 + 7]
+    vpalignr       m0, m0, m1, 1
+    vpshufb        m4, m0, [r0]                  ; intra8x9_hu1 intra8x9_hu2
+    vpshufb        m5, m0, [r0 + 32]             ; intra8x9_hu3 intra8x9_hu4
+    vmovdqu        [r5 + 64], m4
+    vmovdqu        [r5 + 96], m5
+    vmovddup       m0, m4
+    vpunpckhqdq    m1, m4, m4
+    vmovddup       m2, m5
+    vpunpckhqdq    m3, m5, m5
+    call           .sa8d
+    vextracti128   xm1, m0, 1
+    vpaddw         xm0, xm0, xm1
+    vpunpckhqdq    xm1, xm0, xm0
+    vpaddw         xm0, xm0, xm1
+    vpshufd        xm1, xm0, 1
+    vpaddw         xm0, xm0, xm1
+    vpshuflw       xm1, xm0, 1
+    vpavgw         xm0, xm0, xm1
+    vpextrw        r2d, xm0, 0                   ; hu
+
+    vpaddw         xm3, xm14, [r3]
+    vmovdqu        [r4], xm3
+    add            r2w, [r3 + 16]
+    mov            [r4 + 16], r2w
+
+    vphminposuw    xm3, xm3
+    vmovd          r3d, xm3
+    add            r2d, 80000h                   ; add the index of hu
+    cmp            r3w, r2w
+    cmovg          r3d, r2d
+
+    mov            eax, r3d
+    shr            r3, 16
+    shl            r3, 6
+    add            r1, 128
+    vmovdqu        xm0, [rsp + r3]
+    vmovdqu        xm1, [rsp + r3 + 16]
+    vmovdqu        xm2, [rsp + r3 + 32]
+    vmovdqu        xm3, [rsp + r3 + 48]
+    vmovq          [r1 - 128], xm0
+    vmovhps        [r1 - 64], xm0
+    vmovq          [r1 - 96], xm1
+    vmovhps        [r1 - 32], xm1
+    vmovq          [r1], xm2
+    vmovhps        [r1 + 64], xm2
+    vmovq          [r1 + 32], xm3
+    vmovhps        [r1 + 96], xm3
+
+%if WIN64
+    add            rsp, 608
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    vmovdqu        xm10, [rsp + 32]
+    vmovdqu        xm11, [rsp + 48]
+    vmovdqu        xm12, [rsp + 64]
+    vmovdqu        xm13, [rsp + 80]
+    vmovdqu        xm14, [rsp + 96]
+    vmovdqu        xm15, [rsp + 112]
+    add            rsp, 136
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%else
+    add            rsp, 616
+%endif
+    RET
+
+ALIGN 16
+.sa8d:
+    vpmaddubsw     m0, m0, m10
+    vpmaddubsw     m1, m1, m10
+    vpmaddubsw     m2, m2, m10
+    vpmaddubsw     m3, m3, m10
+    vpsubw         m0, m0, m6
+    vpsubw         m1, m1, m7
+    vpsubw         m2, m2, m8
+    vpsubw         m3, m3, m9
+
+    vpaddw         m4, m0, m1
+    vpsubw         m5, m0, m1
+    vpaddw         m0, m2, m3
+    vpsubw         m1, m2, m3
+    vpaddw         m2, m4, m0
+    vpsubw         m3, m4, m0
+    vpaddw         m0, m5, m1
+    vpsubw         m4, m5, m1
+    vperm2i128     m1, m2, m3, 31h
+    vinserti128    m5, m2, xm3, 1
+    vpaddw         m2, m1, m5
+    vpsubw         m3, m1, m5
+    vperm2i128     m1, m0, m4, 31h
+    vinserti128    m5, m0, xm4, 1
+    vpaddw         m0, m1, m5
+    vpsubw         m4, m1, m5
+
+    vshufps        m1, m2, m3, 0DDh
+    vshufps        m5, m2, m3, 88h
+    vpaddw         m2, m1, m5
+    vpsubw         m3, m1, m5
+    vshufps        m1, m0, m4, 0DDh
+    vshufps        m5, m0, m4, 88h
+    vpaddw         m0, m1, m5
+    vpsubw         m4, m1, m5
+    vpabsw         m2, m2
+    vpabsw         m3, m3
+    vpabsw         m0, m0
+    vpabsw         m4, m4
+    vpblendw       m1, m2, m3, 0AAh
+    vpsrld         m2, m2, 16
+    vpslld         m3, m3, 16
+    vpor           m2, m2, m3
+    vpmaxsw        m2, m2, m1
+    vpblendw       m5, m0, m4, 0AAh
+    vpsrld         m0, m0, 16
+    vpslld         m4, m4, 16
+    vpor           m0, m0, m4
+    vpmaxsw        m0, m0, m5
+    vpaddw         m0, m0, m2
+    ret
+
+
+;=============================================================================
+; SSD_NV12_CORE
+;=============================================================================
+;-----------------------------------------------------------------------------
+; void pixel_ssd_nv12_core( uint8_t *pixuv1, intptr_t stride1, uint8_t *pixuv2, intptr_t stride2,
+;                           int width, int height, uint64_t *ssd_u, uint64_t *ssd_v )
+;
+; This implementation can potentially overflow on image widths >= 11008 (or
+; 6604 if interlaced), since it is called on blocks of height up to 12 (resp
+; 20). At sane distortion levels it will take much more than that though.
+;-----------------------------------------------------------------------------
+INIT_YMM avx2
+cglobal pixel_ssd_nv12_core, 0, 0
+%if WIN64
+    mov            r4d, [rsp + 40]
+    mov            r5d, [rsp + 48]
+%endif
+    add            r4d, r4d
+    add            r0, r4
+    add            r2, r4
+    neg            r4
+    vpxor          m3, m3, m3
+    vpxor          m4, m4, m4
+    vpbroadcastd   m5, [pw_00ff]
+
+.loopy:
+    mov            r6, r4
+.loopx:
+    vmovdqu        m2, [r0 + r6]
+    vmovdqu        m1, [r2 + r6]
+    vpsubusb       m0, m2, m1
+    vpsubusb       m1, m1, m2
+    vpor           m0, m0, m1
+    vpsrlw         m2, m0, 8
+    vpand          m0, m0, m5
+    vpmaddwd       m2, m2, m2
+    vpmaddwd       m0, m0, m0
+    vpaddd         m4, m4, m2
+    vpaddd         m3, m3, m0
+    add            r6, 32
+    jl             .loopx
+    je             .no_overread
+    vpcmpeqb       xm1, xm1, xm1
+    vpandn         m0, m1, m0
+    vpandn         m2, m1, m2
+    vpsubd         m3, m3, m0
+    vpsubd         m4, m4, m2
+.no_overread:
+    add            r0, r1
+    add            r2, r3
+    sub            r5d, 1
+    jg             .loopy
+%if WIN64
+    mov            r0, [rsp + 56]
+    mov            r1, [rsp + 64]
+%else
+    mov            r0, [rsp + 8]
+    mov            r1, [rsp + 16]
+%endif
+    vphaddd        m3, m3, m4
+    vextracti128   xm4, m3, 1
+    vpaddd         xm3, xm3, xm4
+    vpsllq         xm4, xm3, 32
+    vpaddd         xm3, xm3, xm4
+    vpsrlq         xm3, xm3, 32
+    vmovq          [r0], xm3
+    vmovhps        [r1], xm3
+    RET
+
+
+;=============================================================================
 ; SSIM
 ;=============================================================================
 INIT_XMM avx2
@@ -7571,42 +7523,6 @@ cglobal pixel_ssim_end4, 0, 0
     vaddss         m0, m0, m1
     RET
 
-;=============================================================================
-; ASD8
-;=============================================================================
-INIT_XMM avx2
-cglobal pixel_asd8, 0, 0
-%if WIN64
-    mov            r4d, [rsp + 40]
-%endif
-    vpxor          m0, m0, m0
-    vpxor          m3, m3, m3
-    test           r4d, r4d
-    jg             .loop
-    xor            eax, eax
-    ret
-
-ALIGN 16
-.loop:
-    vmovq          xm1, [r0]
-    vpinsrq        xm1, xm1, [r0 + r1], 1
-    vmovq          xm2, [r2]
-    vpinsrq        xm2, xm2, [r2 + r3], 1
-    vpsadbw        m1, m1, m0
-    vpsadbw        m2, m2, m0
-    vpsubw         m1, m1, m2
-    vpaddw         m3, m3, m1
-    lea            r0, [r0 + r1 * 2]
-    lea            r2, [r2 + r3 * 2]
-    sub            r4d, 2
-    jg             .loop
-
-.end:
-    vpunpckhqdq    xm0, xm3, xm3
-    vpaddw         xm0, xm0, xm3
-    vpabsw         xm0, xm0
-    vmovd          eax, xm0
-    ret
 
 ;=============================================================================
 ; Successive Elimination ADS
