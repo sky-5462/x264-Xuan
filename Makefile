@@ -97,8 +97,7 @@ SRCASM_X += common/x86/dct-32.asm \
 endif
 ifeq ($(SYS_ARCH),X86_64)
 ARCH_X86 = yes
-SRCASM_X += common/x86/dct-64.asm \
-            common/x86/trellis-64.asm
+SRCASM_X += common/x86/trellis-64.asm
 endif
 
 ifdef ARCH_X86

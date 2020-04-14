@@ -460,25 +460,6 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
  ****************************************************************************/
 void x264_dct_init( int cpu, x264_dct_function_t *dctf )
 {
-    dctf->add4x4_idct   = add4x4_idct;
-
-    dctf->add8x8_idct   = add8x8_idct;
-    dctf->add8x8_idct_dc = add8x8_idct_dc;
-
-
-    dctf->add16x16_idct = add16x16_idct;
-    dctf->add16x16_idct_dc = add16x16_idct_dc;
-
-    dctf->add8x8_idct8  = add8x8_idct8;
-
-    dctf->add16x16_idct8 = add16x16_idct8;
-
-    dctf->dct4x4dc  = dct4x4dc;
-    dctf->idct4x4dc = idct4x4dc;
-
-    dctf->dct2x4dc = dct2x4dc;
-
-
     dctf->sub4x4_dct = x264_sub4x4_dct_avx2;
     dctf->sub8x8_dct = x264_sub8x8_dct_avx2;
     dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_avx2;
@@ -487,67 +468,17 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     dctf->sub8x8_dct8 = x264_sub8x8_dct8_avx2;
     dctf->sub16x16_dct8 = x264_sub16x16_dct8_avx2;
     
+    dctf->add4x4_idct = x264_add4x4_idct_avx2;
+    dctf->add8x8_idct = x264_add8x8_idct_avx2;
+    dctf->add16x16_idct = x264_add16x16_idct_avx2;
+    dctf->add8x8_idct_dc = x264_add8x8_idct_dc_avx2;
+    dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx2;
+    dctf->add8x8_idct8 = x264_add8x8_idct8_avx2;
+    dctf->add16x16_idct8 = x264_add16x16_idct8_avx2;
 
-    if( cpu&X264_CPU_MMX )
-    {
-        dctf->add4x4_idct   = x264_add4x4_idct_mmx;
-        dctf->idct4x4dc     = x264_idct4x4dc_mmx;
-
-    }
-
-    if( cpu&X264_CPU_MMX2 )
-    {
-        dctf->dct4x4dc         = x264_dct4x4dc_mmx2;
-        dctf->dct2x4dc         = x264_dct2x4dc_mmx2;
-        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_mmx2;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_mmx2;
-    }
-
-    if( cpu&X264_CPU_SSE2 )
-    {
-        dctf->add8x8_idct8  = x264_add8x8_idct8_sse2;
-        dctf->add16x16_idct8= x264_add16x16_idct8_sse2;
-
-        if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
-        {
-            dctf->add8x8_idct   = x264_add8x8_idct_sse2;
-            dctf->add16x16_idct = x264_add16x16_idct_sse2;
-            dctf->add16x16_idct_dc = x264_add16x16_idct_dc_sse2;
-        }
-    }
-
-    if( (cpu&X264_CPU_SSSE3) && !(cpu&X264_CPU_SSE2_IS_SLOW) )
-    {
-        if( !(cpu&X264_CPU_SLOW_ATOM) )
-        {
-            if( !(cpu&X264_CPU_SLOW_PSHUFB) )
-            {
-                dctf->add8x8_idct_dc = x264_add8x8_idct_dc_ssse3;
-                dctf->add16x16_idct_dc = x264_add16x16_idct_dc_ssse3;
-            }
-        }
-    }
-
-    if( cpu&X264_CPU_SSE4 )
-        dctf->add4x4_idct   = x264_add4x4_idct_sse4;
-
-    if( cpu&X264_CPU_AVX )
-    {
-        dctf->add4x4_idct      = x264_add4x4_idct_avx;
-        dctf->add8x8_idct      = x264_add8x8_idct_avx;
-        dctf->add16x16_idct    = x264_add16x16_idct_avx;
-        dctf->add8x8_idct8     = x264_add8x8_idct8_avx;
-        dctf->add16x16_idct8   = x264_add16x16_idct8_avx;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx;
-    }
-
-
-    if( cpu&X264_CPU_AVX2 )
-    {
-        dctf->add8x8_idct      = x264_add8x8_idct_avx2;
-        dctf->add16x16_idct    = x264_add16x16_idct_avx2;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx2;
-    }
+    dctf->dct4x4dc = x264_dct4x4dc_avx2;
+    dctf->idct4x4dc = x264_idct4x4dc_avx2;
+    dctf->dct2x4dc = x264_dct2x4dc_avx2;
 }
 
 

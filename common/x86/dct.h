@@ -39,68 +39,24 @@ void x264_sub8x8_dct_dc_avx2   ( dctcoef dct [ 4], pixel   *pix1, pixel   *pix2 
 #define x264_sub8x16_dct_dc_avx2 x264_template(sub8x16_dct_dc_avx2)
 void x264_sub8x16_dct_dc_avx2 ( int16_t dct [ 8], uint8_t *pix1, uint8_t *pix2 );
 
-#define x264_add4x4_idct_mmx x264_template(add4x4_idct_mmx)
-void x264_add4x4_idct_mmx       ( uint8_t *p_dst, int16_t dct    [16] );
-#define x264_add4x4_idct_sse2 x264_template(add4x4_idct_sse2)
-void x264_add4x4_idct_sse2     ( uint16_t *p_dst, int32_t dct    [16] );
-#define x264_add4x4_idct_sse4 x264_template(add4x4_idct_sse4)
-void x264_add4x4_idct_sse4      ( uint8_t *p_dst, int16_t dct    [16] );
-#define x264_add4x4_idct_avx x264_template(add4x4_idct_avx)
-void x264_add4x4_idct_avx       ( pixel   *p_dst, dctcoef dct    [16] );
-#define x264_add8x8_idct_mmx x264_template(add8x8_idct_mmx)
-void x264_add8x8_idct_mmx       ( uint8_t *p_dst, int16_t dct[ 4][16] );
-#define x264_add8x8_idct_dc_mmx2 x264_template(add8x8_idct_dc_mmx2)
-void x264_add8x8_idct_dc_mmx2   ( uint8_t *p_dst, int16_t dct    [ 4] );
-#define x264_add16x16_idct_mmx x264_template(add16x16_idct_mmx)
-void x264_add16x16_idct_mmx     ( uint8_t *p_dst, int16_t dct[16][16] );
-#define x264_add16x16_idct_dc_mmx2 x264_template(add16x16_idct_dc_mmx2)
-void x264_add16x16_idct_dc_mmx2 ( uint8_t *p_dst, int16_t dct    [16] );
-#define x264_add8x8_idct_sse2 x264_template(add8x8_idct_sse2)
-void x264_add8x8_idct_sse2      ( pixel   *p_dst, dctcoef dct[ 4][16] );
-#define x264_add8x8_idct_avx x264_template(add8x8_idct_avx)
-void x264_add8x8_idct_avx       ( pixel   *p_dst, dctcoef dct[ 4][16] );
+#define x264_add4x4_idct_avx2 x264_template(add4x4_idct_avx2)
+void x264_add4x4_idct_avx2       ( pixel   *p_dst, dctcoef dct    [16] );
 #define x264_add8x8_idct_avx2 x264_template(add8x8_idct_avx2)
 void x264_add8x8_idct_avx2      ( pixel   *p_dst, dctcoef dct[ 4][16] );
-#define x264_add16x16_idct_sse2 x264_template(add16x16_idct_sse2)
-void x264_add16x16_idct_sse2    ( pixel   *p_dst, dctcoef dct[16][16] );
-#define x264_add16x16_idct_avx x264_template(add16x16_idct_avx)
-void x264_add16x16_idct_avx     ( pixel   *p_dst, dctcoef dct[16][16] );
 #define x264_add16x16_idct_avx2 x264_template(add16x16_idct_avx2)
 void x264_add16x16_idct_avx2    ( pixel   *p_dst, dctcoef dct[16][16] );
-#define x264_add8x8_idct_dc_sse2 x264_template(add8x8_idct_dc_sse2)
-void x264_add8x8_idct_dc_sse2   ( pixel   *p_dst, dctcoef dct    [ 4] );
-#define x264_add16x16_idct_dc_sse2 x264_template(add16x16_idct_dc_sse2)
-void x264_add16x16_idct_dc_sse2 ( pixel   *p_dst, dctcoef dct    [16] );
-#define x264_add8x8_idct_dc_ssse3 x264_template(add8x8_idct_dc_ssse3)
-void x264_add8x8_idct_dc_ssse3  ( uint8_t *p_dst, int16_t dct    [ 4] );
-#define x264_add16x16_idct_dc_ssse3 x264_template(add16x16_idct_dc_ssse3)
-void x264_add16x16_idct_dc_ssse3( uint8_t *p_dst, int16_t dct    [16] );
-#define x264_add8x8_idct_dc_avx x264_template(add8x8_idct_dc_avx)
-void x264_add8x8_idct_dc_avx    ( pixel   *p_dst, dctcoef dct    [ 4] );
-#define x264_add16x16_idct_dc_avx x264_template(add16x16_idct_dc_avx)
-void x264_add16x16_idct_dc_avx  ( pixel   *p_dst, dctcoef dct    [16] );
+#define x264_add8x8_idct_dc_avx2 x264_template(add8x8_idct_dc_avx2)
+void x264_add8x8_idct_dc_avx2    ( pixel   *p_dst, dctcoef dct    [ 4] );
 #define x264_add16x16_idct_dc_avx2 x264_template(add16x16_idct_dc_avx2)
 void x264_add16x16_idct_dc_avx2 ( uint8_t *p_dst, int16_t dct    [16] );
 
-#define x264_dct4x4dc_mmx2 x264_template(dct4x4dc_mmx2)
-void x264_dct4x4dc_mmx2      ( int16_t d[16] );
-#define x264_dct4x4dc_sse2 x264_template(dct4x4dc_sse2)
-void x264_dct4x4dc_sse2      ( int32_t d[16] );
-#define x264_dct4x4dc_avx x264_template(dct4x4dc_avx)
-void x264_dct4x4dc_avx       ( int32_t d[16] );
-#define x264_idct4x4dc_mmx x264_template(idct4x4dc_mmx)
-void x264_idct4x4dc_mmx      ( int16_t d[16] );
-#define x264_idct4x4dc_sse2 x264_template(idct4x4dc_sse2)
-void x264_idct4x4dc_sse2     ( int32_t d[16] );
-#define x264_idct4x4dc_avx x264_template(idct4x4dc_avx)
-void x264_idct4x4dc_avx      ( int32_t d[16] );
+#define x264_dct4x4dc_avx2 x264_template(dct4x4dc_avx2)
+void x264_dct4x4dc_avx2      ( int16_t d[16] );
+#define x264_idct4x4dc_avx2 x264_template(idct4x4dc_avx2)
+void x264_idct4x4dc_avx2      ( int16_t d[16] );
 
-#define x264_dct2x4dc_mmx2 x264_template(dct2x4dc_mmx2)
-void x264_dct2x4dc_mmx2( dctcoef dct[8], dctcoef dct4x4[8][16] );
-#define x264_dct2x4dc_sse2 x264_template(dct2x4dc_sse2)
-void x264_dct2x4dc_sse2( dctcoef dct[8], dctcoef dct4x4[8][16] );
-#define x264_dct2x4dc_avx x264_template(dct2x4dc_avx)
-void x264_dct2x4dc_avx ( dctcoef dct[8], dctcoef dct4x4[8][16] );
+#define x264_dct2x4dc_avx2 x264_template(dct2x4dc_avx2)
+void x264_dct2x4dc_avx2 ( dctcoef dct[8], dctcoef dct4x4[8][16] );
 
 #define x264_sub8x8_dct8_avx2 x264_template(sub8x8_dct8_avx2)
 void x264_sub8x8_dct8_avx2    ( dctcoef dct   [64], pixel *pix1, pixel *pix2 );
@@ -108,18 +64,10 @@ void x264_sub8x8_dct8_avx2    ( dctcoef dct   [64], pixel *pix1, pixel *pix2 );
 void x264_sub16x16_dct8_avx2 ( dctcoef dct[4][64], pixel *pix1, pixel *pix2 );
 
 
-#define x264_add8x8_idct8_mmx x264_template(add8x8_idct8_mmx)
-void x264_add8x8_idct8_mmx   ( uint8_t *dst, int16_t dct   [64] );
-#define x264_add16x16_idct8_mmx x264_template(add16x16_idct8_mmx)
-void x264_add16x16_idct8_mmx ( uint8_t *dst, int16_t dct[4][64] );
-#define x264_add8x8_idct8_sse2 x264_template(add8x8_idct8_sse2)
-void x264_add8x8_idct8_sse2  ( pixel *dst, dctcoef dct   [64] );
-#define x264_add16x16_idct8_sse2 x264_template(add16x16_idct8_sse2)
-void x264_add16x16_idct8_sse2( pixel *dst, dctcoef dct[4][64] );
-#define x264_add8x8_idct8_avx x264_template(add8x8_idct8_avx)
-void x264_add8x8_idct8_avx   ( pixel *dst, dctcoef dct   [64] );
-#define x264_add16x16_idct8_avx x264_template(add16x16_idct8_avx)
-void x264_add16x16_idct8_avx ( pixel *dst, dctcoef dct[4][64] );
+#define x264_add8x8_idct8_avx2 x264_template(add8x8_idct8_avx2)
+void x264_add8x8_idct8_avx2   ( pixel *dst, dctcoef dct   [64] );
+#define x264_add16x16_idct8_avx2 x264_template(add16x16_idct8_avx2)
+void x264_add16x16_idct8_avx2 ( pixel *dst, dctcoef dct[4][64] );
 
 #define x264_zigzag_scan_8x8_frame_mmx2 x264_template(zigzag_scan_8x8_frame_mmx2)
 void x264_zigzag_scan_8x8_frame_mmx2  ( int16_t level[64], int16_t dct[64] );
