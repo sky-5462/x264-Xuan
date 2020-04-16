@@ -69,54 +69,16 @@ void x264_add8x8_idct8_avx2   ( pixel *dst, dctcoef dct   [64] );
 #define x264_add16x16_idct8_avx2 x264_template(add16x16_idct8_avx2)
 void x264_add16x16_idct8_avx2 ( pixel *dst, dctcoef dct[4][64] );
 
-#define x264_zigzag_scan_8x8_frame_mmx2 x264_template(zigzag_scan_8x8_frame_mmx2)
-void x264_zigzag_scan_8x8_frame_mmx2  ( int16_t level[64], int16_t dct[64] );
-#define x264_zigzag_scan_8x8_frame_sse2 x264_template(zigzag_scan_8x8_frame_sse2)
-void x264_zigzag_scan_8x8_frame_sse2  ( dctcoef level[64], dctcoef dct[64] );
-#define x264_zigzag_scan_8x8_frame_ssse3 x264_template(zigzag_scan_8x8_frame_ssse3)
-void x264_zigzag_scan_8x8_frame_ssse3 ( int16_t level[64], int16_t dct[64] );
-#define x264_zigzag_scan_8x8_frame_avx x264_template(zigzag_scan_8x8_frame_avx)
-void x264_zigzag_scan_8x8_frame_avx   ( dctcoef level[64], dctcoef dct[64] );
-#define x264_zigzag_scan_4x4_frame_mmx x264_template(zigzag_scan_4x4_frame_mmx)
-void x264_zigzag_scan_4x4_frame_mmx   ( int16_t level[16], int16_t dct[16] );
-#define x264_zigzag_scan_4x4_frame_sse2 x264_template(zigzag_scan_4x4_frame_sse2)
-void x264_zigzag_scan_4x4_frame_sse2  ( int32_t level[16], int32_t dct[16] );
-#define x264_zigzag_scan_4x4_frame_ssse3 x264_template(zigzag_scan_4x4_frame_ssse3)
-void x264_zigzag_scan_4x4_frame_ssse3 ( int16_t level[16], int16_t dct[16] );
-#define x264_zigzag_scan_4x4_frame_avx x264_template(zigzag_scan_4x4_frame_avx)
-void x264_zigzag_scan_4x4_frame_avx   ( dctcoef level[16], dctcoef dct[16] );
-#define x264_zigzag_scan_4x4_field_sse x264_template(zigzag_scan_4x4_field_sse)
-void x264_zigzag_scan_4x4_field_sse   ( int16_t level[16], int16_t dct[16] );
-#define x264_zigzag_scan_4x4_field_sse2 x264_template(zigzag_scan_4x4_field_sse2)
-void x264_zigzag_scan_4x4_field_sse2  ( int32_t level[16], int32_t dct[16] );
-#define x264_zigzag_scan_8x8_field_mmx2 x264_template(zigzag_scan_8x8_field_mmx2)
-void x264_zigzag_scan_8x8_field_mmx2  ( int16_t level[64], int16_t dct[64] );
-#define x264_zigzag_scan_8x8_field_sse4 x264_template(zigzag_scan_8x8_field_sse4)
-void x264_zigzag_scan_8x8_field_sse4  ( int32_t level[64], int32_t dct[64] );
-#define x264_zigzag_scan_8x8_field_avx x264_template(zigzag_scan_8x8_field_avx)
-void x264_zigzag_scan_8x8_field_avx   ( int32_t level[64], int32_t dct[64] );
-#define x264_zigzag_sub_4x4_frame_avx x264_template(zigzag_sub_4x4_frame_avx)
-int  x264_zigzag_sub_4x4_frame_avx    ( int16_t level[16], const uint8_t *src, uint8_t *dst );
-#define x264_zigzag_sub_4x4_frame_ssse3 x264_template(zigzag_sub_4x4_frame_ssse3)
-int  x264_zigzag_sub_4x4_frame_ssse3  ( int16_t level[16], const uint8_t *src, uint8_t *dst );
-#define x264_zigzag_sub_4x4ac_frame_avx x264_template(zigzag_sub_4x4ac_frame_avx)
-int  x264_zigzag_sub_4x4ac_frame_avx  ( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
-#define x264_zigzag_sub_4x4ac_frame_ssse3 x264_template(zigzag_sub_4x4ac_frame_ssse3)
-int  x264_zigzag_sub_4x4ac_frame_ssse3( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
-#define x264_zigzag_sub_4x4_field_avx x264_template(zigzag_sub_4x4_field_avx)
-int  x264_zigzag_sub_4x4_field_avx    ( int16_t level[16], const uint8_t *src, uint8_t *dst );
-#define x264_zigzag_sub_4x4_field_ssse3 x264_template(zigzag_sub_4x4_field_ssse3)
-int  x264_zigzag_sub_4x4_field_ssse3  ( int16_t level[16], const uint8_t *src, uint8_t *dst );
-#define x264_zigzag_sub_4x4ac_field_avx x264_template(zigzag_sub_4x4ac_field_avx)
-int  x264_zigzag_sub_4x4ac_field_avx  ( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
-#define x264_zigzag_sub_4x4ac_field_ssse3 x264_template(zigzag_sub_4x4ac_field_ssse3)
-int  x264_zigzag_sub_4x4ac_field_ssse3( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
-#define x264_zigzag_interleave_8x8_cavlc_mmx x264_template(zigzag_interleave_8x8_cavlc_mmx)
-void x264_zigzag_interleave_8x8_cavlc_mmx   ( int16_t *dst, int16_t *src, uint8_t *nnz );
-#define x264_zigzag_interleave_8x8_cavlc_sse2 x264_template(zigzag_interleave_8x8_cavlc_sse2)
-void x264_zigzag_interleave_8x8_cavlc_sse2  ( dctcoef *dst, dctcoef *src, uint8_t *nnz );
-#define x264_zigzag_interleave_8x8_cavlc_avx x264_template(zigzag_interleave_8x8_cavlc_avx)
-void x264_zigzag_interleave_8x8_cavlc_avx   ( dctcoef *dst, dctcoef *src, uint8_t *nnz );
+#define x264_zigzag_scan_8x8_frame_avx2 x264_template(zigzag_scan_8x8_frame_avx2)
+void x264_zigzag_scan_8x8_frame_avx2  ( int16_t level[64], int16_t dct[64] );
+#define x264_zigzag_scan_4x4_frame_avx2 x264_template(zigzag_scan_4x4_frame_avx2)
+void x264_zigzag_scan_4x4_frame_avx2   ( int16_t level[16], int16_t dct[16] );
+#define x264_zigzag_sub_4x4_frame_avx2 x264_template(zigzag_sub_4x4_frame_avx2)
+int  x264_zigzag_sub_4x4_frame_avx2    ( int16_t level[16], const uint8_t *src, uint8_t *dst );
+#define x264_zigzag_sub_8x8_frame_avx2 x264_template(zigzag_sub_8x8_frame_avx2)
+int  x264_zigzag_sub_8x8_frame_avx2    ( int16_t level[64], const uint8_t *src, uint8_t *dst );
+#define x264_zigzag_sub_4x4ac_frame_avx2 x264_template(zigzag_sub_4x4ac_frame_avx2)
+int  x264_zigzag_sub_4x4ac_frame_avx2  ( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
 #define x264_zigzag_interleave_8x8_cavlc_avx2 x264_template(zigzag_interleave_8x8_cavlc_avx2)
 void x264_zigzag_interleave_8x8_cavlc_avx2  ( int16_t *dst, int16_t *src, uint8_t *nnz );
 

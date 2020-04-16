@@ -30,638 +30,32 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA 64
-pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
-pb_sub4frame:   db 0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15
-pb_sub4field:   db 0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15
-pb_subacmask:   dw 0,-1,-1,-1,-1,-1,-1,-1
-pb_scan4framea: SHUFFLE_MASK_W 6,3,7,0,4,1,2,5
-pb_scan4frameb: SHUFFLE_MASK_W 0,4,1,2,5,6,3,7
-pb_scan4frame2a: SHUFFLE_MASK_W 0,4,1,2,5,8,12,9
-pb_scan4frame2b: SHUFFLE_MASK_W 6,3,7,10,13,14,11,15
-
-pb_scan8framet1: SHUFFLE_MASK_W 0,  1,  6,  7,  8,  9, 13, 14
-pb_scan8framet2: SHUFFLE_MASK_W 2 , 3,  4,  7,  9, 15, 10, 14
-pb_scan8framet3: SHUFFLE_MASK_W 0,  1,  5,  6,  8, 11, 12, 13
-pb_scan8framet4: SHUFFLE_MASK_W 0,  3,  4,  5,  8, 11, 12, 15
-pb_scan8framet5: SHUFFLE_MASK_W 1,  2,  6,  7,  9, 10, 13, 14
-pb_scan8framet6: SHUFFLE_MASK_W 0,  3,  4,  5, 10, 11, 12, 15
-pb_scan8framet7: SHUFFLE_MASK_W 1,  2,  6,  7,  8,  9, 14, 15
-pb_scan8framet8: SHUFFLE_MASK_W 0,  1,  2,  7,  8, 10, 11, 14
-pb_scan8framet9: SHUFFLE_MASK_W 1,  4,  5,  7,  8, 13, 14, 15
-
-pb_scan8frame1: SHUFFLE_MASK_W  0,  8,  1,  2,  9, 12,  4, 13
-pb_scan8frame2: SHUFFLE_MASK_W  4,  0,  1,  5,  8, 10, 12, 14
-pb_scan8frame3: SHUFFLE_MASK_W 12, 10,  8,  6,  2,  3,  7,  9
-pb_scan8frame4: SHUFFLE_MASK_W  0,  1,  8, 12,  4, 13,  9,  2
-pb_scan8frame5: SHUFFLE_MASK_W  5, 14, 10,  3, 11, 15,  6,  7
-pb_scan8frame6: SHUFFLE_MASK_W  6,  8, 12, 13,  9,  7,  5,  3
-pb_scan8frame7: SHUFFLE_MASK_W  1,  3,  5,  7, 10, 14, 15, 11
-pb_scan8frame8: SHUFFLE_MASK_W  10, 3, 11, 14,  5,  6, 15,  7
-
-pb_scan8field1 : SHUFFLE_MASK_W    0,   1,   2,   8,   9,   3,   4,  10
-pb_scan8field2a: SHUFFLE_MASK_W 0x80,  11,   5,   6,   7,  12,0x80,0x80
-pb_scan8field2b: SHUFFLE_MASK_W    0,0x80,0x80,0x80,0x80,0x80,   1,   8
-pb_scan8field3a: SHUFFLE_MASK_W   10,   5,   6,   7,  11,0x80,0x80,0x80
-pb_scan8field3b: SHUFFLE_MASK_W 0x80,0x80,0x80,0x80,0x80,   1,   8,   2
-pb_scan8field4a: SHUFFLE_MASK_W    4,   5,   6,   7,  11,0x80,0x80,0x80
-pb_scan8field6 : SHUFFLE_MASK_W    4,   5,   6,   7,  11,0x80,0x80,  12
-pb_scan8field7 : SHUFFLE_MASK_W    5,   6,   7,  11,0x80,0x80,  12,  13
-
-ALIGN 32
-dct4x4dc_shuf1:   db 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15
-dct4x4dc_shuf2:   db 2, 3, 6, 7, 10, 11, 14, 15, 0, 1, 4, 5, 8, 9, 12, 13
+SECTION_RODATA 16
+dct4x4dc_shuf1:      db  0,  1,  4,  5,  8,  9, 12, 13,  2,  3,  6,  7, 10, 11, 14, 15
+dct4x4dc_shuf2:      db  2,  3,  6,  7, 10, 11, 14, 15,  0,  1,  4,  5,  8,  9, 12, 13
+scan_4x4_shuf:       db  0,  1,  8,  9,  2,  3,  4,  5, 10, 11, 12, 13,  6,  7, 14, 15
+sub_4x4_shuf:        db  0,  1,  4,  8,  5,  2,  3,  6,  9, 12, 13, 10,  7, 11, 14, 15
+sub_8x8_shuf1_1:     db  0,  1,  8, -1,  9,  2,  3, 10, -1, -1, -1, -1, -1, 11,  4,  5
+sub_8x8_shuf1_2:     db -1, -1, -1,  0, -1, -1, -1, -1,  1,  8, -1,  9,  2, -1, -1, -1
+sub_8x8_shuf1_3:     db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  0, -1, -1, -1, -1, -1
+sub_8x8_shuf2_1:     db 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, 13,  6,  7, 14, -1, -1
+sub_8x8_shuf2_2:     db -1,  3, 10, -1, -1, -1, -1, -1, 11,  4, -1, -1, -1, -1,  5, 12
+sub_8x8_shuf2_3:     db -1, -1, -1,  1,  8, -1,  9,  2, -1, -1, -1, -1, -1, -1, -1, -1
+sub_8x8_shuf2_4:     db -1, -1, -1, -1, -1,  0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+sub_8x8_shuf3_1:     db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, -1, -1, -1, -1
+sub_8x8_shuf3_2:     db -1, -1, -1, -1, -1, -1, -1, -1, 13,  6, -1,  7, 14, -1, -1, -1
+sub_8x8_shuf3_3:     db  3, 10, -1, -1, -1, -1, 11,  4, -1, -1, -1, -1, -1,  5, 12, -1
+sub_8x8_shuf3_4:     db -1, -1,  1,  8,  9,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  3
+sub_8x8_shuf4_2:     db -1, -1, -1, -1, -1, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+sub_8x8_shuf4_3:     db -1, -1, -1, 13,  6, -1,  7, 14, -1, -1, -1, -1, 15, -1, -1, -1
+sub_8x8_shuf4_4:     db 10, 11,  4, -1, -1, -1, -1, -1,  5, 12, 13,  6, -1,  7, 14, 15
 
 SECTION .text
 
-cextern pw_32_0
 cextern pw_32
-cextern pw_512
 cextern pw_8000
-cextern pw_pixel_max
 cextern hsub_mul
-cextern pb_1
-cextern pw_1
-cextern pd_1
-cextern pd_32
-cextern pw_ppppmmmm
-cextern pw_pmpmpmpm
 cextern deinterleave_shufd
-cextern pb_unpackbd1
-cextern pb_unpackbd2
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_8x8_frame( int16_t level[64], int16_t dct[8][8] )
-;-----------------------------------------------------------------------------
-%macro SCAN_8x8 0
-cglobal zigzag_scan_8x8_frame, 2,2,8
-    movdqa    xmm0, [r1]
-    movdqa    xmm1, [r1+16]
-    movdq2q    mm0, xmm0
-    PALIGNR   xmm1, xmm1, 14, xmm2
-    movdq2q    mm1, xmm1
-
-    movdqa    xmm2, [r1+32]
-    movdqa    xmm3, [r1+48]
-    PALIGNR   xmm2, xmm2, 12, xmm4
-    movdq2q    mm2, xmm2
-    PALIGNR   xmm3, xmm3, 10, xmm4
-    movdq2q    mm3, xmm3
-
-    punpckhwd xmm0, xmm1
-    punpckhwd xmm2, xmm3
-
-    movq       mm4, mm1
-    movq       mm5, mm1
-    movq       mm6, mm2
-    movq       mm7, mm3
-    punpckhwd  mm1, mm0
-    psllq      mm0, 16
-    psrlq      mm3, 16
-    punpckhdq  mm1, mm1
-    punpckhdq  mm2, mm0
-    punpcklwd  mm0, mm4
-    punpckhwd  mm4, mm3
-    punpcklwd  mm4, mm2
-    punpckhdq  mm0, mm2
-    punpcklwd  mm6, mm3
-    punpcklwd  mm5, mm7
-    punpcklwd  mm5, mm6
-
-    movdqa    xmm4, [r1+64]
-    movdqa    xmm5, [r1+80]
-    movdqa    xmm6, [r1+96]
-    movdqa    xmm7, [r1+112]
-
-    movq [r0+2*00], mm0
-    movq [r0+2*04], mm4
-    movd [r0+2*08], mm1
-    movq [r0+2*36], mm5
-    movq [r0+2*46], mm6
-
-    PALIGNR   xmm4, xmm4, 14, xmm3
-    movdq2q    mm4, xmm4
-    PALIGNR   xmm5, xmm5, 12, xmm3
-    movdq2q    mm5, xmm5
-    PALIGNR   xmm6, xmm6, 10, xmm3
-    movdq2q    mm6, xmm6
-%if cpuflag(ssse3)
-    PALIGNR   xmm7, xmm7, 8, xmm3
-    movdq2q    mm7, xmm7
-%else
-    movhlps   xmm3, xmm7
-    punpcklqdq xmm7, xmm7
-    movdq2q    mm7, xmm3
-%endif
-
-    punpckhwd xmm4, xmm5
-    punpckhwd xmm6, xmm7
-
-    movq       mm0, mm4
-    movq       mm1, mm5
-    movq       mm3, mm7
-    punpcklwd  mm7, mm6
-    psrlq      mm6, 16
-    punpcklwd  mm4, mm6
-    punpcklwd  mm5, mm4
-    punpckhdq  mm4, mm3
-    punpcklwd  mm3, mm6
-    punpckhwd  mm3, mm4
-    punpckhwd  mm0, mm1
-    punpckldq  mm4, mm0
-    punpckhdq  mm0, mm6
-    pshufw     mm4, mm4, q1230
-
-    movq [r0+2*14], mm4
-    movq [r0+2*25], mm0
-    movd [r0+2*54], mm7
-    movq [r0+2*56], mm5
-    movq [r0+2*60], mm3
-
-    punpckhdq xmm3, xmm0, xmm2
-    punpckldq xmm0, xmm2
-    punpckhdq xmm7, xmm4, xmm6
-    punpckldq xmm4, xmm6
-    pshufhw   xmm0, xmm0, q0123
-    pshuflw   xmm4, xmm4, q0123
-    pshufhw   xmm3, xmm3, q0123
-    pshuflw   xmm7, xmm7, q0123
-
-    movlps [r0+2*10], xmm0
-    movhps [r0+2*17], xmm0
-    movlps [r0+2*21], xmm3
-    movlps [r0+2*28], xmm4
-    movhps [r0+2*32], xmm3
-    movhps [r0+2*39], xmm4
-    movlps [r0+2*43], xmm7
-    movhps [r0+2*50], xmm7
-
-    RET
-%endmacro
-
-%if HIGH_BIT_DEPTH == 0
-INIT_XMM sse2
-SCAN_8x8
-INIT_XMM ssse3
-SCAN_8x8
-%endif
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_8x8_frame( dctcoef level[64], dctcoef dct[8][8] )
-;-----------------------------------------------------------------------------
-; Output order:
-;  0  8  1  2  9 16 24 17
-; 10  3  4 11 18 25 32 40
-; 33 26 19 12  5  6 13 20
-; 27 34 41 48 56 49 42 35
-; 28 21 14  7 15 22 29 36
-; 43 50 57 58 51 44 37 30
-; 23 31 38 45 52 59 60 53
-; 46 39 47 54 61 62 55 63
-%macro SCAN_8x8_FRAME 5
-cglobal zigzag_scan_8x8_frame, 2,2,8
-    mova        m0, [r1]
-    mova        m1, [r1+ 8*SIZEOF_DCTCOEF]
-    movu        m2, [r1+14*SIZEOF_DCTCOEF]
-    movu        m3, [r1+21*SIZEOF_DCTCOEF]
-    mova        m4, [r1+28*SIZEOF_DCTCOEF]
-    punpckl%4   m5, m0, m1
-    psrl%2      m0, %1
-    punpckh%4   m6, m1, m0
-    punpckl%3   m5, m0
-    punpckl%3   m1, m1
-    punpckh%4   m1, m3
-    mova        m7, [r1+52*SIZEOF_DCTCOEF]
-    mova        m0, [r1+60*SIZEOF_DCTCOEF]
-    punpckh%4   m1, m2
-    punpckl%4   m2, m4
-    punpckh%4   m4, m3
-    punpckl%3   m3, m3
-    punpckh%4   m3, m2
-    mova      [r0], m5
-    mova  [r0+ 4*SIZEOF_DCTCOEF], m1
-    mova  [r0+ 8*SIZEOF_DCTCOEF], m6
-    punpckl%4   m6, m0
-    punpckl%4   m6, m7
-    mova        m1, [r1+32*SIZEOF_DCTCOEF]
-    movu        m5, [r1+39*SIZEOF_DCTCOEF]
-    movu        m2, [r1+46*SIZEOF_DCTCOEF]
-    movu [r0+35*SIZEOF_DCTCOEF], m3
-    movu [r0+47*SIZEOF_DCTCOEF], m4
-    punpckh%4   m7, m0
-    psll%2      m0, %1
-    punpckh%3   m3, m5, m5
-    punpckl%4   m5, m1
-    punpckh%4   m1, m2
-    mova [r0+52*SIZEOF_DCTCOEF], m6
-    movu [r0+13*SIZEOF_DCTCOEF], m5
-    movu        m4, [r1+11*SIZEOF_DCTCOEF]
-    movu        m6, [r1+25*SIZEOF_DCTCOEF]
-    punpckl%4   m5, m7
-    punpckl%4   m1, m3
-    punpckh%3   m0, m7
-    mova        m3, [r1+ 4*SIZEOF_DCTCOEF]
-    movu        m7, [r1+18*SIZEOF_DCTCOEF]
-    punpckl%4   m2, m5
-    movu [r0+25*SIZEOF_DCTCOEF], m1
-    mova        m1, m4
-    mova        m5, m6
-    punpckl%4   m4, m3
-    punpckl%4   m6, m7
-    punpckh%4   m1, m3
-    punpckh%4   m5, m7
-    punpckh%3   m3, m6, m4
-    punpckh%3   m7, m5, m1
-    punpckl%3   m6, m4
-    punpckl%3   m5, m1
-    movu        m4, [r1+35*SIZEOF_DCTCOEF]
-    movu        m1, [r1+49*SIZEOF_DCTCOEF]
-    pshuf%5     m6, m6, q0123
-    pshuf%5     m5, m5, q0123
-    mova [r0+60*SIZEOF_DCTCOEF], m0
-    mova [r0+56*SIZEOF_DCTCOEF], m2
-    movu        m0, [r1+42*SIZEOF_DCTCOEF]
-    mova        m2, [r1+56*SIZEOF_DCTCOEF]
-    movu [r0+17*SIZEOF_DCTCOEF], m3
-    mova [r0+32*SIZEOF_DCTCOEF], m7
-    movu [r0+10*SIZEOF_DCTCOEF], m6
-    movu [r0+21*SIZEOF_DCTCOEF], m5
-    punpckh%4   m3, m0, m4
-    punpckh%4   m7, m2, m1
-    punpckl%4   m0, m4
-    punpckl%4   m2, m1
-    punpckl%3   m4, m2, m0
-    punpckl%3   m1, m7, m3
-    punpckh%3   m2, m0
-    punpckh%3   m7, m3
-    pshuf%5     m2, m2, q0123
-    pshuf%5     m7, m7, q0123
-    mova [r0+28*SIZEOF_DCTCOEF], m4
-    movu [r0+43*SIZEOF_DCTCOEF], m1
-    movu [r0+39*SIZEOF_DCTCOEF], m2
-    movu [r0+50*SIZEOF_DCTCOEF], m7
-    RET
-%endmacro
-
-INIT_MMX mmx2
-SCAN_8x8_FRAME 16, q , dq , wd, w
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_4x4_frame( dctcoef level[16], dctcoef dct[4][4] )
-;-----------------------------------------------------------------------------
-%macro SCAN_4x4 4
-cglobal zigzag_scan_4x4_frame, 2,2,6
-    mova      m0, [r1+ 0*SIZEOF_DCTCOEF]
-    mova      m1, [r1+ 4*SIZEOF_DCTCOEF]
-    mova      m2, [r1+ 8*SIZEOF_DCTCOEF]
-    mova      m3, [r1+12*SIZEOF_DCTCOEF]
-    punpckl%4 m4, m0, m1
-    psrl%2    m0, %1
-    punpckl%3 m4, m0
-    mova  [r0+ 0*SIZEOF_DCTCOEF], m4
-    punpckh%4 m0, m2
-    punpckh%4 m4, m2, m3
-    psll%2    m3, %1
-    punpckl%3 m2, m2
-    punpckl%4 m5, m1, m3
-    punpckh%3 m1, m1
-    punpckh%4 m5, m2
-    punpckl%4 m1, m0
-    punpckh%3 m3, m4
-    mova [r0+ 4*SIZEOF_DCTCOEF], m5
-    mova [r0+ 8*SIZEOF_DCTCOEF], m1
-    mova [r0+12*SIZEOF_DCTCOEF], m3
-    RET
-%endmacro
-
-INIT_MMX mmx
-SCAN_4x4 16, q , dq , wd
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_4x4_frame( int16_t level[16], int16_t dct[4][4] )
-;-----------------------------------------------------------------------------
-%macro SCAN_4x4_FRAME 0
-cglobal zigzag_scan_4x4_frame, 2,2
-    mova    m1, [r1+16]
-    mova    m0, [r1+ 0]
-    pshufb  m1, [pb_scan4frameb]
-    pshufb  m0, [pb_scan4framea]
-    psrldq  m2, m1, 6
-    palignr m1, m0, 6
-    pslldq  m0, 10
-    palignr m2, m0, 10
-    mova [r0+ 0], m1
-    mova [r0+16], m2
-    RET
-%endmacro
-
-INIT_XMM ssse3
-SCAN_4x4_FRAME
-INIT_XMM avx
-SCAN_4x4_FRAME
-
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_4x4_field( int16_t level[16], int16_t dct[4][4] )
-;-----------------------------------------------------------------------------
-INIT_XMM sse
-cglobal zigzag_scan_4x4_field, 2,2
-    mova       m0, [r1]
-    mova       m1, [r1+16]
-    pshufw    mm0, [r1+4], q3102
-    mova     [r0], m0
-    mova  [r0+16], m1
-    movq   [r0+4], mm0
-    RET
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_8x8_field( int16_t level[64], int16_t dct[8][8] )
-;-----------------------------------------------------------------------------
-; Output order:
-;  0  1  2  8  9  3  4 10
-; 16 11  5  6  7 12 17 24
-; 18 13 14 15 19 25 32 26
-; 20 21 22 23 27 33 40 34
-; 28 29 30 31 35 41 48 42
-; 36 37 38 39 43 49 50 44
-; 45 46 47 51 56 57 52 53
-; 54 55 58 59 60 61 62 63
-%undef SCAN_8x8
-%macro SCAN_8x8 5
-cglobal zigzag_scan_8x8_field, 2,3,8
-    mova       m0, [r1+ 0*SIZEOF_DCTCOEF]       ; 03 02 01 00
-    mova       m1, [r1+ 4*SIZEOF_DCTCOEF]       ; 07 06 05 04
-    mova       m2, [r1+ 8*SIZEOF_DCTCOEF]       ; 11 10 09 08
-    pshuf%1    m3, m0, q3333                    ; 03 03 03 03
-    movd      r2d, m2                           ; 09 08
-    pshuf%1    m2, m2, q0321                    ; 08 11 10 09
-    punpckl%2  m3, m1                           ; 05 03 04 03
-    pinsr%1    m0, r2d, 3                       ; 08 02 01 00
-    punpckl%2  m4, m2, m3                       ; 04 10 03 09
-    pshuf%1    m4, m4, q2310                    ; 10 04 03 09
-    mova  [r0+ 0*SIZEOF_DCTCOEF], m0            ; 08 02 01 00
-    mova  [r0+ 4*SIZEOF_DCTCOEF], m4            ; 10 04 03 09
-    mova       m3, [r1+12*SIZEOF_DCTCOEF]       ; 15 14 13 12
-    mova       m5, [r1+16*SIZEOF_DCTCOEF]       ; 19 18 17 16
-    punpckl%3  m6, m5                           ; 17 16 XX XX
-    psrl%4     m1, %5                           ; XX 07 06 05
-    punpckh%2  m6, m2                           ; 08 17 11 16
-    punpckl%3  m6, m1                           ; 06 05 11 16
-    mova  [r0+ 8*SIZEOF_DCTCOEF], m6            ; 06 05 11 16
-    psrl%4     m1, %5                           ; XX XX 07 06
-    punpckl%2  m1, m5                           ; 17 07 16 06
-    mova       m0, [r1+20*SIZEOF_DCTCOEF]       ; 23 22 21 20
-    mova       m2, [r1+24*SIZEOF_DCTCOEF]       ; 27 26 25 24
-    punpckh%3  m1, m1                           ; 17 07 17 07
-    punpckl%2  m6, m3, m2                       ; 25 13 24 12
-    pextr%1    r2d, m5, 2
-    mova [r0+24*SIZEOF_DCTCOEF], m0             ; 23 22 21 20
-    punpckl%2  m1, m6                           ; 24 17 12 07
-    mova [r0+12*SIZEOF_DCTCOEF], m1
-    pinsr%1    m3, r2d, 0                       ; 15 14 13 18
-    mova [r0+16*SIZEOF_DCTCOEF], m3             ; 15 14 13 18
-    mova       m7, [r1+28*SIZEOF_DCTCOEF]
-    mova       m0, [r1+32*SIZEOF_DCTCOEF]       ; 35 34 33 32
-    psrl%4     m5, %5*3                         ; XX XX XX 19
-    pshuf%1    m1, m2, q3321                    ; 27 27 26 25
-    punpckl%2  m5, m0                           ; 33 XX 32 19
-    psrl%4     m2, %5*3                         ; XX XX XX 27
-    punpckl%2  m5, m1                           ; 26 32 25 19
-    mova [r0+32*SIZEOF_DCTCOEF], m7
-    mova [r0+20*SIZEOF_DCTCOEF], m5             ; 26 32 25 19
-    mova       m7, [r1+36*SIZEOF_DCTCOEF]
-    mova       m1, [r1+40*SIZEOF_DCTCOEF]       ; 43 42 41 40
-    pshuf%1    m3, m0, q3321                    ; 35 35 34 33
-    punpckl%2  m2, m1                           ; 41 XX 40 27
-    mova [r0+40*SIZEOF_DCTCOEF], m7
-    punpckl%2  m2, m3                           ; 34 40 33 27
-    mova [r0+28*SIZEOF_DCTCOEF], m2
-    mova       m7, [r1+44*SIZEOF_DCTCOEF]       ; 47 46 45 44
-    mova       m2, [r1+48*SIZEOF_DCTCOEF]       ; 51 50 49 48
-    psrl%4     m0, %5*3                         ; XX XX XX 35
-    punpckl%2  m0, m2                           ; 49 XX 48 35
-    pshuf%1    m3, m1, q3321                    ; 43 43 42 41
-    punpckl%2  m0, m3                           ; 42 48 41 35
-    mova [r0+36*SIZEOF_DCTCOEF], m0
-    pextr%1     r2d, m2, 3                      ; 51
-    psrl%4      m1, %5*3                        ; XX XX XX 43
-    punpckl%2   m1, m7                          ; 45 XX 44 43
-    psrl%4      m2, %5                          ; XX 51 50 49
-    punpckl%2   m1, m2                          ; 50 44 49 43
-    pshuf%1     m1, m1, q2310                   ; 44 50 49 43
-    mova [r0+44*SIZEOF_DCTCOEF], m1
-    psrl%4      m7, %5                          ; XX 47 46 45
-    pinsr%1     m7, r2d, 3                      ; 51 47 46 45
-    mova [r0+48*SIZEOF_DCTCOEF], m7
-    mova        m0, [r1+56*SIZEOF_DCTCOEF]      ; 59 58 57 56
-    mova        m1, [r1+52*SIZEOF_DCTCOEF]      ; 55 54 53 52
-    mova        m7, [r1+60*SIZEOF_DCTCOEF]
-    punpckl%3   m2, m0, m1                      ; 53 52 57 56
-    punpckh%3   m1, m0                          ; 59 58 55 54
-    mova [r0+52*SIZEOF_DCTCOEF], m2
-    mova [r0+56*SIZEOF_DCTCOEF], m1
-    mova [r0+60*SIZEOF_DCTCOEF], m7
-    RET
-%endmacro
-INIT_MMX mmx2
-SCAN_8x8 w, wd, dq , q , 16
-
-;-----------------------------------------------------------------------------
-; void zigzag_sub_4x4_frame( int16_t level[16], const uint8_t *src, uint8_t *dst )
-;-----------------------------------------------------------------------------
-%macro ZIGZAG_SUB_4x4 2
-%ifidn %1, ac
-cglobal zigzag_sub_4x4%1_%2, 4,4,8
-%else
-cglobal zigzag_sub_4x4%1_%2, 3,3,8
-%endif
-    movd      m0, [r1+0*FENC_STRIDE]
-    movd      m1, [r1+1*FENC_STRIDE]
-    movd      m2, [r1+2*FENC_STRIDE]
-    movd      m3, [r1+3*FENC_STRIDE]
-    movd      m4, [r2+0*FDEC_STRIDE]
-    movd      m5, [r2+1*FDEC_STRIDE]
-    movd      m6, [r2+2*FDEC_STRIDE]
-    movd      m7, [r2+3*FDEC_STRIDE]
-    movd [r2+0*FDEC_STRIDE], m0
-    movd [r2+1*FDEC_STRIDE], m1
-    movd [r2+2*FDEC_STRIDE], m2
-    movd [r2+3*FDEC_STRIDE], m3
-    punpckldq  m0, m1
-    punpckldq  m2, m3
-    punpckldq  m4, m5
-    punpckldq  m6, m7
-    punpcklqdq m0, m2
-    punpcklqdq m4, m6
-    mova      m7, [pb_sub4%2]
-    pshufb    m0, m7
-    pshufb    m4, m7
-    mova      m7, [hsub_mul]
-    punpckhbw m1, m0, m4
-    punpcklbw m0, m4
-    pmaddubsw m1, m7
-    pmaddubsw m0, m7
-%ifidn %1, ac
-    movd     r2d, m0
-    pand      m0, [pb_subacmask]
-%endif
-    mova [r0+ 0], m0
-    por       m0, m1
-    pxor      m2, m2
-    mova [r0+16], m1
-    pcmpeqb   m0, m2
-    pmovmskb eax, m0
-%ifidn %1, ac
-    mov     [r3], r2w
-%endif
-    sub      eax, 0xffff
-    shr      eax, 31
-    RET
-%endmacro
-
-%if HIGH_BIT_DEPTH == 0
-INIT_XMM ssse3
-ZIGZAG_SUB_4x4   , frame
-ZIGZAG_SUB_4x4 ac, frame
-ZIGZAG_SUB_4x4   , field
-ZIGZAG_SUB_4x4 ac, field
-INIT_XMM avx
-ZIGZAG_SUB_4x4   , frame
-ZIGZAG_SUB_4x4 ac, frame
-ZIGZAG_SUB_4x4   , field
-ZIGZAG_SUB_4x4 ac, field
-%endif ; !HIGH_BIT_DEPTH
-
-
-;-----------------------------------------------------------------------------
-; void zigzag_interleave_8x8_cavlc( int16_t *dst, int16_t *src, uint8_t *nnz )
-;-----------------------------------------------------------------------------
-%macro INTERLEAVE 2
-    mova     m0, [r1+(%1*4+ 0)*SIZEOF_PIXEL]
-    mova     m1, [r1+(%1*4+ 8)*SIZEOF_PIXEL]
-    mova     m2, [r1+(%1*4+16)*SIZEOF_PIXEL]
-    mova     m3, [r1+(%1*4+24)*SIZEOF_PIXEL]
-    TRANSPOSE4x4%2 0,1,2,3,4
-    mova     [r0+(%1+ 0)*SIZEOF_PIXEL], m0
-    mova     [r0+(%1+32)*SIZEOF_PIXEL], m1
-    mova     [r0+(%1+64)*SIZEOF_PIXEL], m2
-    mova     [r0+(%1+96)*SIZEOF_PIXEL], m3
-    packsswb m0, m1
-    ACCUM   por, 6, 2, %1
-    ACCUM   por, 7, 3, %1
-    ACCUM   por, 5, 0, %1
-%endmacro
-
-%macro ZIGZAG_8x8_CAVLC 1
-cglobal zigzag_interleave_8x8_cavlc, 3,3,8
-    INTERLEAVE  0, %1
-    INTERLEAVE  8, %1
-    INTERLEAVE 16, %1
-    INTERLEAVE 24, %1
-    packsswb   m6, m7
-    packsswb   m5, m6
-    packsswb   m5, m5
-    pxor       m0, m0
-%if HIGH_BIT_DEPTH
-    packsswb   m5, m5
-%endif
-    pcmpeqb    m5, m0
-    paddb      m5, [pb_1]
-    movd      r0d, m5
-    mov    [r2+0], r0w
-    shr       r0d, 16
-    mov    [r2+8], r0w
-    RET
-%endmacro
-
-INIT_MMX mmx
-ZIGZAG_8x8_CAVLC W
-
-%macro INTERLEAVE_XMM 1
-    mova   m0, [r1+%1*4+ 0]
-    mova   m1, [r1+%1*4+16]
-    mova   m4, [r1+%1*4+32]
-    mova   m5, [r1+%1*4+48]
-    SBUTTERFLY wd, 0, 1, 6
-    SBUTTERFLY wd, 4, 5, 7
-    SBUTTERFLY wd, 0, 1, 6
-    SBUTTERFLY wd, 4, 5, 7
-    movh   [r0+%1+  0], m0
-    movhps [r0+%1+ 32], m0
-    movh   [r0+%1+ 64], m1
-    movhps [r0+%1+ 96], m1
-    movh   [r0+%1+  8], m4
-    movhps [r0+%1+ 40], m4
-    movh   [r0+%1+ 72], m5
-    movhps [r0+%1+104], m5
-    ACCUM por, 2, 0, %1
-    ACCUM por, 3, 1, %1
-    por    m2, m4
-    por    m3, m5
-%endmacro
-
-%if HIGH_BIT_DEPTH == 0
-%macro ZIGZAG_8x8_CAVLC 0
-cglobal zigzag_interleave_8x8_cavlc, 3,3,8
-    INTERLEAVE_XMM  0
-    INTERLEAVE_XMM 16
-    packsswb m2, m3
-    pxor     m5, m5
-    packsswb m2, m2
-    packsswb m2, m2
-    pcmpeqb  m5, m2
-    paddb    m5, [pb_1]
-    movd    r0d, m5
-    mov  [r2+0], r0w
-    shr     r0d, 16
-    mov  [r2+8], r0w
-    RET
-%endmacro
-
-INIT_XMM sse2
-ZIGZAG_8x8_CAVLC
-INIT_XMM avx
-ZIGZAG_8x8_CAVLC
-
-INIT_YMM avx2
-cglobal zigzag_interleave_8x8_cavlc, 3,3,6
-    mova   m0, [r1+ 0]
-    mova   m1, [r1+32]
-    mova   m2, [r1+64]
-    mova   m3, [r1+96]
-    mova   m5, [deinterleave_shufd]
-    SBUTTERFLY wd, 0, 1, 4
-    SBUTTERFLY wd, 2, 3, 4
-    SBUTTERFLY wd, 0, 1, 4
-    SBUTTERFLY wd, 2, 3, 4
-    vpermd m0, m5, m0
-    vpermd m1, m5, m1
-    vpermd m2, m5, m2
-    vpermd m3, m5, m3
-    mova [r0+  0], xm0
-    mova [r0+ 16], xm2
-    vextracti128 [r0+ 32], m0, 1
-    vextracti128 [r0+ 48], m2, 1
-    mova [r0+ 64], xm1
-    mova [r0+ 80], xm3
-    vextracti128 [r0+ 96], m1, 1
-    vextracti128 [r0+112], m3, 1
-
-    packsswb m0, m2          ; nnz0, nnz1
-    packsswb m1, m3          ; nnz2, nnz3
-    packsswb m0, m1          ; {nnz0,nnz2}, {nnz1,nnz3}
-    vpermq   m0, m0, q3120   ; {nnz0,nnz1}, {nnz2,nnz3}
-    pxor     m5, m5
-    pcmpeqq  m0, m5
-    pmovmskb r0d, m0
-    not     r0d
-    and     r0d, 0x01010101
-    mov  [r2+0], r0w
-    shr     r0d, 16
-    mov  [r2+8], r0w
-    RET
-%endif ; !HIGH_BIT_DEPTH
-
 
 ;=============================================================================
 ; SUB_DCT
@@ -2447,4 +1841,454 @@ cglobal dct2x4dc, 0, 0
     vpsubw         m3, m0, m1    
     vshufps        m0, m2, m3, 14h
     vmovdqu        [r0], m0
+    ret
+
+
+;=============================================================================
+; INTERLEAVE_8X8_CAVLC
+;=============================================================================
+INIT_YMM avx2
+cglobal zigzag_interleave_8x8_cavlc, 0, 0
+    vmovdqu        m0, [r1]
+    vmovdqu        m1, [r1 + 32]
+    vmovdqu        m2, [r1 + 64]
+    vmovdqu        m3, [r1 + 96]
+    vmovdqu        m5, [deinterleave_shufd]
+    vpunpckhwd     m4, m0, m1
+    vpunpcklwd     m0, m0, m1
+    vpunpckhwd     m1, m2, m3
+    vpunpcklwd     m2, m2, m3
+    vpunpckhwd     m3, m0, m4
+    vpunpcklwd     m0, m0, m4
+    vpunpckhwd     m4, m2, m1
+    vpunpcklwd     m2, m2, m1
+    vpermd         m0, m5, m0
+    vpermd         m3, m5, m3
+    vpermd         m2, m5, m2
+    vpermd         m4, m5, m4
+    vmovdqu        [r0], xm0
+    vmovdqu        [r0 + 16], xm2
+    vextracti128   [r0 + 32], m0, 1
+    vextracti128   [r0 + 48], m2, 1
+    vmovdqu        [r0 + 64], xm3
+    vmovdqu        [r0 + 80], xm4
+    vextracti128   [r0 + 96], m3, 1
+    vextracti128   [r0 + 112], m4, 1
+    vpacksswb      m0, m0, m2                    ; nnz0, nnz1
+    vpacksswb      m3, m3, m4                    ; nnz2, nnz3
+    vpacksswb      m0, m0, m3                    ; {nnz0,nnz2}, {nnz1,nnz3}
+    vpermq         m0, m0, 0D8h                  ; {nnz0,nnz1}, {nnz2,nnz3}
+    vpxor          m5, m5, m5
+    vpcmpeqq       m0, m0, m5
+    vpmovmskb      r0d, m0
+    not            r0d
+    and            r0d, 01010101h
+    mov            [r2], r0w
+    shr            r0d, 16
+    mov            [r2 + 8], r0w
+    RET
+
+
+;=============================================================================
+; SCAN
+;=============================================================================
+;  0  2  3  9 10 20 21 35
+;  1  4  8 11 19 22 34 36
+;  5  7 12 18 23 33 37 48
+;  6 13 17 24 32 38 47 49
+; 14 16 25 31 39 46 50 57
+; 15 26 30 40 45 51 56 58
+; 27 29 41 44 52 55 59 62
+; 28 42 43 53 54 60 61 63
+INIT_XMM avx2
+cglobal zigzag_scan_8x8_frame, 0, 0
+; 0 - 15
+    vmovd          m0, [r1]
+    vpunpcklwd     m0, m0, [r1 + 16]
+    vmovd          [r0], m0
+    mov            eax, [r1 + 2]
+    mov            [r0 + 4], eax
+    vmovd          m0, [r1 + 18]
+    vpunpcklwd     m0, m0, [r1 + 32]
+    vmovd          [r0 + 8], m0
+    vmovd          m0, [r1 + 48]
+    vpunpcklwd     m0, m0, [r1 + 34]
+    vmovd          [r0 + 12], m0
+    vmovd          m0, [r1 + 20]
+    vpunpcklwd     m0, m0, [r1 + 6]
+    vmovd          [r0 + 16], m0
+    vmovd          m0, [r1 + 8]
+    vpunpcklwd     m0, m0, [r1 + 22]
+    vmovd          [r0 + 20], m0
+    vmovd          m0, [r1 + 36]
+    vpinsrw        m0, m0, [r1 + 50], 1
+    vmovd          [r0 + 24], m0
+    vmovd          m0, [r1 + 64]
+    vpunpcklwd     m0, m0, [r1 + 80]
+    vmovd          [r0 + 28], m0
+
+; 16 - 31
+    vmovd          m0, [r1 + 66]
+    vpinsrw        m0, m0, [r1 + 52], 1
+    vmovd          [r0 + 32], m0
+    vmovd          m0, [r1 + 38]
+    vpunpcklwd     m0, m0, [r1 + 24]
+    vmovd          [r0 + 36], m0
+    mov            eax, [r1 + 10]
+    mov            [r0 + 40], eax
+    vmovd          m0, [r1 + 26]
+    vpunpcklwd     m0, m0, [r1 + 40]
+    vmovd          [r0 + 44], m0
+    vmovd          m0, [r1 + 54]
+    vpunpcklwd     m0, m0, [r1 + 68]
+    vmovd          [r0 + 48], m0
+    vmovd          m0, [r1 + 82]
+    vpunpcklwd     m0, m0, [r1 + 96]
+    vmovd          [r0 + 52], m0
+    vmovd          m0, [r1 + 112]
+    vpunpcklwd     m0, m0, [r1 + 98]
+    vmovd          [r0 + 56], m0
+    vmovd          m0, [r1 + 84]
+    vpunpcklwd     m0, m0, [r1 + 70]
+    vmovd          [r0 + 60], m0
+
+; 32 - 47
+    vmovd          m0, [r1 + 56]
+    vpunpcklwd     m0, m0, [r1 + 42]
+    vmovd          [r0 + 64], m0
+    vmovd          m0, [r1 + 28]
+    vpunpcklwd     m0, m0, [r1 + 14]
+    vmovd          [r0 + 68], m0
+    vmovd          m0, [r1 + 30]
+    vpunpcklwd     m0, m0, [r1 + 44]
+    vmovd          [r0 + 72], m0
+    vmovd          m0, [r1 + 58]
+    vpunpcklwd     m0, m0, [r1 + 72]
+    vmovd          [r0 + 76], m0
+    vmovd          m0, [r1 + 86]
+    vpunpcklwd     m0, m0, [r1 + 100]
+    vmovd          [r0 + 80], m0
+    mov            eax, [r1 + 114]
+    mov            [r0 + 84], eax
+    vmovd          m0, [r1 + 102]
+    vpunpcklwd     m0, m0, [r1 + 88]
+    vmovd          [r0 + 88], m0
+    vmovd          m0, [r1 + 74]
+    vpinsrw        m0, m0, [r1 + 60], 1
+    vmovd          [r0 + 92], m0
+
+; 48 - 63
+    vmovd          m0, [r1 + 46]
+    vpinsrw        m0, m0, [r1 + 62], 1
+    vmovd          [r0 + 96], m0
+    vmovd          m0, [r1 + 76]
+    vpunpcklwd     m0, m0, [r1 + 90]
+    vmovd          [r0 + 100], m0
+    vmovd          m0, [r1 + 104]
+    vpinsrw        m0, m0, [r1 + 118], 1
+    vmovd          [r0 + 104], m0
+    vmovd          m0, [r1 + 120]
+    vpunpcklwd     m0, m0, [r1 + 106]
+    vmovd          [r0 + 108], m0
+    vmovd          m0, [r1 + 92]
+    vpunpcklwd     m0, m0, [r1 + 78]
+    vmovd          [r0 + 112], m0
+    vmovd          m0, [r1 + 94]
+    vpunpcklwd     m0, m0, [r1 + 108]
+    vmovd          [r0 + 116], m0
+    mov            eax, [r1 + 122]
+    mov            [r0 + 120], eax
+    vmovd          m0, [r1 + 110]
+    vpinsrw        m0, m0, [r1 + 126], 1
+    vmovd          [r0 + 124], m0
+    ret
+
+; 0  2  3  9 
+; 1  4  8 10 
+; 5  7 11 14 
+; 6 12 13 15 
+INIT_XMM avx2
+cglobal zigzag_scan_4x4_frame, 0, 0
+    vmovdqu        m0, [r1]
+    vmovdqu        m1, [r1 + 16]
+    vmovdqu        m2, [scan_4x4_shuf]
+    vpshufb        m0, m0, m2
+    vpshufb        m1, m1, m2
+    vpslldq        m2, m0, 6
+    vpalignr       m2, m1, m2, 6
+    vmovdqu        [r0], m2
+    vpsrldq        m2, m1, 6
+    vpalignr       m2, m2, m0, 10
+    vmovdqu        [r0 + 16], m2
+    ret
+
+
+;=============================================================================
+; SUB
+;=============================================================================
+; 0  1  5  6 
+; 2  4  7 12 
+; 3  8 11 13 
+; 9 10 14 15 
+INIT_XMM avx2
+cglobal zigzag_sub_4x4_frame, 0, 0
+    vmovd          m0, [r1]
+    vmovd          m1, [r1 + 16]
+    vmovd          m2, [r1 + 32]
+    vmovd          m3, [r1 + 48]
+    vmovd          m4, [r2]
+    vmovd          m5, [r2 + 32]
+    vmovd          [r2], m0
+    vmovd          [r2 + 32], m1
+    vpunpckldq     m0, m0, m1
+    vpunpckldq     m4, m4, m5
+    vmovd          m5, [r2 + 64]
+    vmovd          m1, [r2 + 96]
+    vmovd          [r2 + 64], m2
+    vmovd          [r2 + 96], m3
+    vpunpckldq     m2, m2, m3
+    vpunpckldq     m5, m5, m1
+    vpunpcklqdq    m0, m0, m2
+    vpunpcklqdq    m4, m4, m5
+
+    vmovdqu        m3, [sub_4x4_shuf]
+    vpshufb        m0, m0, m3
+    vpshufb        m1, m4, m3
+    vpxor          m5, m5, m5
+    vpunpcklbw     m2, m0, m5
+    vpunpcklbw     m3, m1, m5
+    vpsubw         m2, m2, m3
+    vmovdqu        [r0], m2
+    vpunpckhbw     m3, m0, m5
+    vpunpckhbw     m4, m1, m5
+    vpsubw         m3, m3, m4
+    vmovdqu        [r0 + 16], m3
+    vpor           m0, m2, m3
+    vpcmpeqq       m0, m0, m5
+    vpmovmskb      eax, m0
+    sub            eax, 0FFFFh
+    shr            eax, 31
+    ret
+
+;  0  1  5  6 14 15 27 28
+;  2  4  7 13 16 26 29 42
+;  3  8 12 17 25 30 41 43
+;  9 11 18 24 31 40 44 53
+; 10 19 23 32 39 45 52 54
+; 20 22 33 38 46 51 55 60
+; 21 34 37 47 50 56 59 61
+; 35 36 48 49 57 58 62 63
+INIT_XMM avx2
+cglobal zigzag_sub_8x8_frame, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], m6
+    vmovdqu        [rsp + 24], m7
+    sub            rsp, 104
+    vmovdqu        [rsp], m8
+    vmovdqu        [rsp + 16], m9
+    vmovdqu        [rsp + 32], m10
+    vmovdqu        [rsp + 48], m11
+    vmovdqu        [rsp + 64], m12
+    vmovdqu        [rsp + 80], m13
+%endif
+    add            r2, 128
+    vmovq          m0, [r1]
+    vmovhps        m0, m0, [r1 + 16]
+    vmovq          m1, [r1 + 32]
+    vmovhps        m1, m1, [r1 + 48]
+    vmovq          m2, [r1 + 64]
+    vmovhps        m2, m2, [r1 + 80]
+    vmovq          m3, [r1 + 96]
+    vmovhps        m3, m3, [r1 + 112]
+    vmovq          m4, [r2 - 128]
+    vmovhps        m4, m4, [r2 - 96]
+    vmovq          m5, [r2 - 64]
+    vmovhps        m5, m5, [r2 - 32]
+    vmovq          m6, [r2]
+    vmovhps        m6, m6, [r2 + 32]
+    vmovq          m7, [r2 + 64]
+    vmovhps        m7, m7, [r2 + 96]
+
+; 0 - 15
+    vmovddup       m12, [hsub_mul]
+    vmovdqu        m8, [sub_8x8_shuf1_1]
+    vpshufb        m9, m0, m8
+    vpshufb        m10, m4, m8
+    vmovdqu        m8, [sub_8x8_shuf1_2]
+    vpshufb        m11, m1, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m5, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf1_3]
+    vpshufb        m11, m2, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m6, m8
+    vpor           m10, m10, m11
+    vpunpcklbw     m11, m9, m10
+    vpunpckhbw     m9, m9, m10
+    vpmaddubsw     m11, m11, m12
+    vpmaddubsw     m9, m9, m12
+    vmovdqu        [r0], m11
+    vmovdqu        [r0 + 16], m9
+    vpor           m13, m11, m9
+
+; 16 - 31
+    vmovdqu        m8, [sub_8x8_shuf2_1]
+    vpshufb        m9, m0, m8
+    vpshufb        m10, m4, m8
+    vmovdqu        m8, [sub_8x8_shuf2_2]
+    vpshufb        m11, m1, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m5, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf2_3]
+    vpshufb        m11, m2, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m6, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf2_4]
+    vpshufb        m11, m3, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m7, m8
+    vpor           m10, m10, m11
+    vpunpcklbw     m11, m9, m10
+    vpunpckhbw     m9, m9, m10
+    vpmaddubsw     m11, m11, m12
+    vpmaddubsw     m9, m9, m12
+    vmovdqu        [r0 + 32], m11
+    vmovdqu        [r0 + 48], m9
+    vpor           m13, m13, m11
+    vpor           m13, m13, m9
+
+; 32 - 47
+    vmovdqu        m8, [sub_8x8_shuf3_1]
+    vpshufb        m9, m0, m8
+    vpshufb        m10, m4, m8
+    vmovdqu        m8, [sub_8x8_shuf3_2]
+    vpshufb        m11, m1, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m5, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf3_3]
+    vpshufb        m11, m2, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m6, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf3_4]
+    vpshufb        m11, m3, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m7, m8
+    vpor           m10, m10, m11
+    vpunpcklbw     m11, m9, m10
+    vpunpckhbw     m9, m9, m10
+    vpmaddubsw     m11, m11, m12
+    vpmaddubsw     m9, m9, m12
+    vmovdqu        [r0 + 64], m11
+    vmovdqu        [r0 + 80], m9
+    vpor           m13, m13, m11
+    vpor           m13, m13, m9
+
+; 48 - 63
+    vmovdqu        m8, [sub_8x8_shuf4_2]
+    vpshufb        m9, m1, m8
+    vpshufb        m10, m5, m8
+    vmovdqu        m8, [sub_8x8_shuf4_3]
+    vpshufb        m11, m2, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m6, m8
+    vpor           m10, m10, m11
+    vmovdqu        m8, [sub_8x8_shuf4_4]
+    vpshufb        m11, m3, m8
+    vpor           m9, m9, m11
+    vpshufb        m11, m7, m8
+    vpor           m10, m10, m11
+    vpunpcklbw     m11, m9, m10
+    vpunpckhbw     m9, m9, m10
+    vpmaddubsw     m11, m11, m12
+    vpmaddubsw     m9, m9, m12
+    vmovdqu        [r0 + 96], m11
+    vmovdqu        [r0 + 112], m9
+    vpor           m13, m13, m11
+    vpor           m13, m13, m9
+
+; copy
+    vmovq          [r2 - 128], m0
+    vmovhps        [r2 - 96], m0
+    vmovq          [r2 - 64], m1
+    vmovhps        [r2 - 32], m1
+    vmovq          [r2], m2
+    vmovhps        [r2 + 32], m2
+    vmovq          [r2 + 64], m3
+    vmovhps        [r2 + 96], m3
+
+; nnz
+    vpxor          m0, m0, m0
+    vpcmpeqq       m0, m13, m0
+    vpmovmskb      eax, m0
+    sub            eax, 0FFFFh
+    shr            eax, 31
+
+%if WIN64
+    vmovdqu        m8, [rsp]
+    vmovdqu        m9, [rsp + 16]
+    vmovdqu        m10, [rsp + 32]
+    vmovdqu        m11, [rsp + 48]
+    vmovdqu        m12, [rsp + 64]
+    vmovdqu        m13, [rsp + 80]
+    add            rsp, 104
+    vmovdqu        m6, [rsp + 8]
+    vmovdqu        m7, [rsp + 24]
+%endif
+    ret
+
+
+;=============================================================================
+; SUB_AC
+;=============================================================================
+; 0  1  5  6 
+; 2  4  7 12 
+; 3  8 11 13 
+; 9 10 14 15 
+INIT_XMM avx2
+cglobal zigzag_sub_4x4ac_frame, 0, 0
+    vmovd          m0, [r1]
+    vmovd          m1, [r1 + 16]
+    vmovd          m2, [r1 + 32]
+    vmovd          m3, [r1 + 48]
+    vmovd          m4, [r2]
+    vmovd          m5, [r2 + 32]
+    vmovd          [r2], m0
+    vmovd          [r2 + 32], m1
+    vpunpckldq     m0, m0, m1
+    vpunpckldq     m4, m4, m5
+    vmovd          m5, [r2 + 64]
+    vmovd          m1, [r2 + 96]
+    vmovd          [r2 + 64], m2
+    vmovd          [r2 + 96], m3
+    vpunpckldq     m2, m2, m3
+    vpunpckldq     m5, m5, m1
+    vpunpcklqdq    m0, m0, m2
+    vpunpcklqdq    m4, m4, m5
+
+    vmovdqu        m3, [sub_4x4_shuf]
+    vpshufb        m0, m0, m3
+    vpshufb        m1, m4, m3
+    vpxor          m5, m5, m5
+    vpunpcklbw     m2, m0, m5
+    vpunpcklbw     m3, m1, m5
+    vpsubw         m2, m2, m3
+    vmovdqu        [r0], m2
+    vmovd          eax, m2
+    vpunpckhbw     m3, m0, m5
+    vpunpckhbw     m4, m1, m5
+    vpsubw         m3, m3, m4
+    vmovdqu        [r0 + 16], m3
+    mov            [r3], ax
+    vpor           m0, m2, m3
+    vpcmpeqq       m0, m0, m5
+    xor            eax, eax
+    mov            [r0], ax
+    vpmovmskb      eax, m0
+    sub            eax, 0FFFFh
+    shr            eax, 31
     ret
