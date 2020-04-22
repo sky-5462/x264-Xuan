@@ -26,21 +26,7 @@
 
 #include "common.h"
 
-#if HAVE_MMX
 #include "x86/mc.h"
-#endif
-#if HAVE_ALTIVEC
-#include "ppc/mc.h"
-#endif
-#if HAVE_ARMV6
-#include "arm/mc.h"
-#endif
-#if HAVE_AARCH64
-#include "aarch64/mc.h"
-#endif
-#if HAVE_MSA
-#include "mips/mc.h"
-#endif
 
 
 static inline void pixel_avg( pixel *dst,  intptr_t i_dst_stride,
@@ -614,24 +600,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 
     pf->mc_chroma = mc_chroma;
 
-    pf->avg[PIXEL_16x16]= pixel_avg_16x16;
-    pf->avg[PIXEL_16x8] = pixel_avg_16x8;
-    pf->avg[PIXEL_8x16] = pixel_avg_8x16;
-    pf->avg[PIXEL_8x8]  = pixel_avg_8x8;
-    pf->avg[PIXEL_8x4]  = pixel_avg_8x4;
-    pf->avg[PIXEL_4x16] = pixel_avg_4x16;
-    pf->avg[PIXEL_4x8]  = pixel_avg_4x8;
-    pf->avg[PIXEL_4x4]  = pixel_avg_4x4;
-    pf->avg[PIXEL_4x2]  = pixel_avg_4x2;
-    pf->avg[PIXEL_2x8]  = pixel_avg_2x8;
-    pf->avg[PIXEL_2x4]  = pixel_avg_2x4;
-    pf->avg[PIXEL_2x2]  = pixel_avg_2x2;
-
-    pf->weight    = mc_weight_wtab;
-    pf->offsetadd = mc_weight_wtab;
-    pf->offsetsub = mc_weight_wtab;
-    pf->weight_cache = weight_cache;
-
     pf->copy_16x16_unaligned = mc_copy_w16;
     pf->copy[PIXEL_16x16] = mc_copy_w16;
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
@@ -670,23 +638,7 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->mbtree_fix8_pack      = mbtree_fix8_pack;
     pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
 
-#if HAVE_MMX
     x264_mc_init_mmx( cpu, pf );
-#endif
-#if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-        x264_mc_init_altivec( pf );
-#endif
-#if HAVE_ARMV6
-    x264_mc_init_arm( cpu, pf );
-#endif
-#if HAVE_AARCH64
-    x264_mc_init_aarch64( cpu, pf );
-#endif
-#if HAVE_MSA
-    if( cpu&X264_CPU_MSA )
-        x264_mc_init_mips( cpu, pf );
-#endif
 
     if( cpu_independent )
     {
