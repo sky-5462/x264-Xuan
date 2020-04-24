@@ -605,10 +605,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
     pf->copy[PIXEL_4x4]   = mc_copy_w4;
 
-    pf->store_interleave_chroma       = store_interleave_chroma;
-    pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc;
-    pf->load_deinterleave_chroma_fdec = load_deinterleave_chroma_fdec;
-
     pf->plane_copy = x264_plane_copy_c;
     pf->plane_copy_swap = x264_plane_copy_swap_c;
     pf->plane_copy_interleave = x264_plane_copy_interleave_c;

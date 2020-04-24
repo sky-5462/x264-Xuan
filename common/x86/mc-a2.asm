@@ -32,28 +32,12 @@
 
 SECTION_RODATA 64
 
-%if HIGH_BIT_DEPTH
-v210_shuf_avx512: db  0, 0,34, 1,35,34, 4, 4,38, 5,39,38, 8, 8,42, 9, ; luma, chroma
-                  db 43,42,12,12,46,13,47,46,16,16,50,17,51,50,20,20,
-                  db 54,21,55,54,24,24,58,25,59,58,28,28,62,29,63,62
-v210_mask:        dd 0x3ff003ff, 0xc00ffc00, 0x3ff003ff, 0xc00ffc00
-v210_luma_shuf:   db  1, 2, 4, 5, 6, 7, 9,10,12,13,14,15,12,13,14,15
-v210_chroma_shuf: db  0, 1, 2, 3, 5, 6, 8, 9,10,11,13,14,10,11,13,14
-; vpermd indices {0,1,2,4,5,7,_,_} merged in the 3 lsb of each dword to save a register
-v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
-           dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
-copy_swap_shuf:       SHUFFLE_MASK_W 1,0,3,2,5,4,7,6
-deinterleave_shuf:    SHUFFLE_MASK_W 0,2,4,6,1,3,5,7
-deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
-deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
-%else
 deinterleave_rgb_shuf: db  0, 3, 6, 9, 0, 3, 6, 9, 1, 4, 7,10, 2, 5, 8,11
                        db  0, 4, 8,12, 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14
 copy_swap_shuf:        db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
 deinterleave_shuf:     db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
-%endif ; !HIGH_BIT_DEPTH
 
 pw_1024: times 16 dw 1024
 filt_mul20: times 32 db 20
@@ -191,163 +175,6 @@ cextern deinterleave_shufd
 ;%define movntps movaps
 ;%define sfence
 
-%if HIGH_BIT_DEPTH
-;-----------------------------------------------------------------------------
-; void hpel_filter_v( uint16_t *dst, uint16_t *src, int16_t *buf, intptr_t stride, intptr_t width );
-;-----------------------------------------------------------------------------
-%macro HPEL_FILTER 0
-cglobal hpel_filter_v, 5,6,11
-    FIX_STRIDES r3, r4
-    lea        r5, [r1+r3]
-    sub        r1, r3
-    sub        r1, r3
-%if num_mmregs > 8
-    mova       m8, [pad10]
-    mova       m9, [pad20]
-    mova      m10, [pad30]
-    %define s10 m8
-    %define s20 m9
-    %define s30 m10
-%else
-    %define s10 [pad10]
-    %define s20 [pad20]
-    %define s30 [pad30]
-%endif
-    add        r0, r4
-    add        r2, r4
-    neg        r4
-    mova       m7, [pw_pixel_max]
-    pxor       m0, m0
-.loop:
-    mova       m1, [r1]
-    mova       m2, [r1+r3]
-    mova       m3, [r1+r3*2]
-    mova       m4, [r1+mmsize]
-    mova       m5, [r1+r3+mmsize]
-    mova       m6, [r1+r3*2+mmsize]
-    paddw      m1, [r5+r3*2]
-    paddw      m2, [r5+r3]
-    paddw      m3, [r5]
-    paddw      m4, [r5+r3*2+mmsize]
-    paddw      m5, [r5+r3+mmsize]
-    paddw      m6, [r5+mmsize]
-    add        r1, 2*mmsize
-    add        r5, 2*mmsize
-    FILT_V2    m1, m2, m3, m4, m5, m6
-    mova       m6, [pw_16]
-    psubw      m1, s20
-    psubw      m4, s20
-    mova      [r2+r4], m1
-    mova      [r2+r4+mmsize], m4
-    paddw      m1, s30
-    paddw      m4, s30
-    FILT_PACK  m1, m4, m6, 5, s10
-    CLIPW      m1, m0, m7
-    CLIPW      m4, m0, m7
-    mova      [r0+r4], m1
-    mova      [r0+r4+mmsize], m4
-    add        r4, 2*mmsize
-    jl .loop
-    RET
-
-;-----------------------------------------------------------------------------
-; void hpel_filter_c( uint16_t *dst, int16_t *buf, intptr_t width );
-;-----------------------------------------------------------------------------
-cglobal hpel_filter_c, 3,3,10
-    add        r2, r2
-    add        r0, r2
-    add        r1, r2
-    neg        r2
-    mova       m0, [tap1]
-    mova       m7, [tap3]
-%if num_mmregs > 8
-    mova       m8, [tap2]
-    mova       m9, [depad]
-    %define s1 m8
-    %define s2 m9
-%else
-    %define s1 [tap2]
-    %define s2 [depad]
-%endif
-.loop:
-    movu       m1, [r1+r2-4]
-    movu       m2, [r1+r2-2]
-    mova       m3, [r1+r2+0]
-    movu       m4, [r1+r2+2]
-    movu       m5, [r1+r2+4]
-    movu       m6, [r1+r2+6]
-    pmaddwd    m1, m0
-    pmaddwd    m2, m0
-    pmaddwd    m3, s1
-    pmaddwd    m4, s1
-    pmaddwd    m5, m7
-    pmaddwd    m6, m7
-    paddd      m1, s2
-    paddd      m2, s2
-    paddd      m3, m5
-    paddd      m4, m6
-    paddd      m1, m3
-    paddd      m2, m4
-    psrad      m1, 10
-    psrad      m2, 10
-    pslld      m2, 16
-    pand       m1, [pd_ffff]
-    por        m1, m2
-    CLIPW      m1, [pb_0], [pw_pixel_max]
-    mova  [r0+r2], m1
-    add        r2, mmsize
-    jl .loop
-    RET
-
-;-----------------------------------------------------------------------------
-; void hpel_filter_h( uint16_t *dst, uint16_t *src, intptr_t width );
-;-----------------------------------------------------------------------------
-cglobal hpel_filter_h, 3,4,8
-    %define src r1+r2
-    add        r2, r2
-    add        r0, r2
-    add        r1, r2
-    neg        r2
-    mova       m0, [pw_pixel_max]
-.loop:
-    movu       m1, [src-4]
-    movu       m2, [src-2]
-    mova       m3, [src+0]
-    movu       m6, [src+2]
-    movu       m4, [src+4]
-    movu       m5, [src+6]
-    paddw      m3, m6 ; c0
-    paddw      m2, m4 ; b0
-    paddw      m1, m5 ; a0
-%if mmsize == 16
-    movu       m4, [src-4+mmsize]
-    movu       m5, [src-2+mmsize]
-%endif
-    movu       m7, [src+4+mmsize]
-    movu       m6, [src+6+mmsize]
-    paddw      m5, m7 ; b1
-    paddw      m4, m6 ; a1
-    movu       m7, [src+2+mmsize]
-    mova       m6, [src+0+mmsize]
-    paddw      m6, m7 ; c1
-    FILT_H2    m1, m2, m3, m4, m5, m6
-    mova       m7, [pw_1]
-    pxor       m2, m2
-    FILT_PACK  m1, m4, m7, 1
-    CLIPW      m1, m2, m0
-    CLIPW      m4, m2, m0
-    mova      [r0+r2], m1
-    mova      [r0+r2+mmsize], m4
-    add        r2, mmsize*2
-    jl .loop
-    RET
-%endmacro ; HPEL_FILTER
-
-INIT_MMX mmx2
-HPEL_FILTER
-INIT_XMM sse2
-HPEL_FILTER
-%endif ; HIGH_BIT_DEPTH
 
 %if HIGH_BIT_DEPTH == 0
 %macro HPEL_V 1
@@ -1292,21 +1119,6 @@ cglobal plane_copy_interleave_core, 6,9
     sfence
     emms
     RET
-
-;-----------------------------------------------------------------------------
-; void store_interleave_chroma( uint8_t *dst, intptr_t i_dst, uint8_t *srcu, uint8_t *srcv, int height )
-;-----------------------------------------------------------------------------
-cglobal store_interleave_chroma, 5,5
-    FIX_STRIDES r1
-.loop:
-    INTERLEAVE r0+ 0, r2+           0, r3+           0, a
-    INTERLEAVE r0+r1, r2+FDEC_STRIDEB, r3+FDEC_STRIDEB, a
-    add    r2, FDEC_STRIDEB*2
-    add    r3, FDEC_STRIDEB*2
-    lea    r0, [r0+r1*2]
-    sub   r4d, 2
-    jg .loop
-    RET
 %endmacro ; PLANE_INTERLEAVE
 
 %macro DEINTERLEAVE_START 0
@@ -1363,91 +1175,6 @@ cglobal plane_copy_deinterleave, 6,7
     jg .loop
     RET
 %endmacro ; PLANE_DEINTERLEAVE
-
-%macro LOAD_DEINTERLEAVE_CHROMA 0
-;-----------------------------------------------------------------------------
-; void load_deinterleave_chroma_fenc( pixel *dst, pixel *src, intptr_t i_src, int height )
-;-----------------------------------------------------------------------------
-cglobal load_deinterleave_chroma_fenc, 4,4
-    DEINTERLEAVE_START
-    FIX_STRIDES r2
-.loop:
-    DEINTERLEAVE r0+           0, r0+FENC_STRIDEB*1/2, r1+ 0, 1, m4, a
-    DEINTERLEAVE r0+FENC_STRIDEB, r0+FENC_STRIDEB*3/2, r1+r2, 1, m4, a
-    add    r0, FENC_STRIDEB*2
-    lea    r1, [r1+r2*2]
-    sub   r3d, 2
-    jg .loop
-    RET
-
-;-----------------------------------------------------------------------------
-; void load_deinterleave_chroma_fdec( pixel *dst, pixel *src, intptr_t i_src, int height )
-;-----------------------------------------------------------------------------
-cglobal load_deinterleave_chroma_fdec, 4,4
-    DEINTERLEAVE_START
-    FIX_STRIDES r2
-.loop:
-    DEINTERLEAVE r0+           0, r0+FDEC_STRIDEB*1/2, r1+ 0, 0, m4, a
-    DEINTERLEAVE r0+FDEC_STRIDEB, r0+FDEC_STRIDEB*3/2, r1+r2, 0, m4, a
-    add    r0, FDEC_STRIDEB*2
-    lea    r1, [r1+r2*2]
-    sub   r3d, 2
-    jg .loop
-    RET
-%endmacro ; LOAD_DEINTERLEAVE_CHROMA
-
-%macro LOAD_DEINTERLEAVE_CHROMA_FDEC_AVX512 0
-cglobal load_deinterleave_chroma_fdec, 4,5
-    vbroadcasti32x8 m0, [deinterleave_shuf32a]
-    mov            r4d, 0x3333ff00
-    kmovd           k1, r4d
-    lea             r4, [r2*3]
-    kshiftrd        k2, k1, 16
-.loop:
-    vbroadcasti128 ym1, [r1]
-    vbroadcasti32x4 m1 {k1}, [r1+r2]
-    vbroadcasti128 ym2, [r1+r2*2]
-    vbroadcasti32x4 m2 {k1}, [r1+r4]
-    lea             r1, [r1+r2*4]
-    pshufb          m1, m0
-    pshufb          m2, m0
-    vmovdqa32 [r0] {k2}, m1
-    vmovdqa32 [r0+mmsize] {k2}, m2
-    add            r0, 2*mmsize
-    sub           r3d, 4
-    jg .loop
-    RET
-%endmacro
-
-%macro LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2 0
-cglobal load_deinterleave_chroma_fenc, 4,5
-    vbroadcasti128 m0, [deinterleave_shuf]
-    lea            r4, [r2*3]
-.loop:
-    mova          xm1, [r1]         ; 0
-    vinserti128   ym1, [r1+r2], 1   ; 1
-%if mmsize == 64
-    mova          xm2, [r1+r2*4]    ; 4
-    vinserti32x4   m1, [r1+r2*2], 2 ; 2
-    vinserti32x4   m2, [r1+r4*2], 2 ; 6
-    vinserti32x4   m1, [r1+r4], 3   ; 3
-    lea            r1, [r1+r2*4]
-    vinserti32x4   m2, [r1+r2], 1   ; 5
-    vinserti32x4   m2, [r1+r4], 3   ; 7
-%else
-    mova          xm2, [r1+r2*2]    ; 2
-    vinserti128    m2, [r1+r4], 1   ; 3
-%endif
-    lea            r1, [r1+r2*4]
-    pshufb         m1, m0
-    pshufb         m2, m0
-    mova         [r0], m1
-    mova  [r0+mmsize], m2
-    add            r0, 2*mmsize
-    sub           r3d, mmsize/8
-    jg .loop
-    RET
-%endmacro ; LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 
 %macro PLANE_DEINTERLEAVE_RGB_CORE 9 ; pw, i_dsta, i_dstb, i_dstc, i_src, w, h, tmp1, tmp2
 %if mmsize == 32
@@ -1642,37 +1369,16 @@ PLANE_INTERLEAVE
 INIT_XMM sse2
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
-LOAD_DEINTERLEAVE_CHROMA
 INIT_YMM avx2
 PLANE_DEINTERLEAVE
 
-%if HIGH_BIT_DEPTH
-INIT_XMM ssse3
-PLANE_DEINTERLEAVE_V210
-INIT_XMM avx
-PLANE_INTERLEAVE
-PLANE_DEINTERLEAVE
-LOAD_DEINTERLEAVE_CHROMA
-PLANE_DEINTERLEAVE_V210
-INIT_YMM avx2
-LOAD_DEINTERLEAVE_CHROMA
-PLANE_DEINTERLEAVE_V210
-INIT_ZMM avx512
-PLANE_DEINTERLEAVE_V210
-%else
 INIT_XMM sse2
 PLANE_DEINTERLEAVE_RGB
 INIT_XMM ssse3
 PLANE_DEINTERLEAVE
-LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_RGB
 INIT_YMM avx2
-LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 PLANE_DEINTERLEAVE_RGB
-INIT_ZMM avx512
-LOAD_DEINTERLEAVE_CHROMA_FDEC_AVX512
-LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
-%endif
 
 ; These functions are not general-use; not only do they require aligned input, but memcpy
 ; requires size to be a multiple of 16 and memzero requires size to be a multiple of 128.

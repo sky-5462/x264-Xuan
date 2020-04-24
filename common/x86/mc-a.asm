@@ -42,6 +42,7 @@ ch_shuf_adj: times 8 db 0
 sq_1: times 1 dq 1
 
 ALIGN 32
+deinterleave_chroma_shuf: db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
 pb_64:     times 4 db 64
 
 SECTION .text
@@ -1288,7 +1289,7 @@ ALIGN 16
 
 
 INIT_XMM avx2
-cglobal avg_weight_2x2, 0, 0
+cglobal avg_weight_2xN, 0, 0
     vmovd          m2, [r2]
     vmovd          m4, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1319,11 +1320,11 @@ cglobal avg_weight_2x2, 0, 0
     vpextrw        [r0 + r1], m2, 3
     lea            r0, [r0 + r1 * 2]
     sub            r6d, 2
-    jg             avg_weight_2x2_avx2
+    jg             avg_weight_2xN_avx2
     ret
 
 INIT_XMM avx2
-cglobal avg_2x2, 0, 0
+cglobal avg_2xN, 0, 0
     vmovd          m0, [r2]
     vmovd          m1, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1336,7 +1337,7 @@ cglobal avg_2x2, 0, 0
     vpextrw        [r0 + r1], m1, 0
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_2x2_avx2
+    jg             avg_2xN_avx2
     ret
 
 INIT_XMM avx2
@@ -1349,7 +1350,7 @@ cglobal pixel_avg_2x4, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 2
-    je             avg_2x2_avx2
+    je             avg_2xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1360,7 +1361,7 @@ cglobal pixel_avg_2x4, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_2x2_avx2
+    jmp            avg_weight_2xN_avx2
 
 INIT_XMM avx2
 cglobal pixel_avg_2x8, 0, 0
@@ -1372,7 +1373,7 @@ cglobal pixel_avg_2x8, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 4
-    je             avg_2x2_avx2
+    je             avg_2xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1383,7 +1384,7 @@ cglobal pixel_avg_2x8, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_2x2_avx2
+    jmp            avg_weight_2xN_avx2
 
 
 
@@ -1436,7 +1437,7 @@ ALIGN 16
 
 
 INIT_XMM avx2
-cglobal avg_weight_4x2, 0, 0
+cglobal avg_weight_4xN, 0, 0
     vmovd          m2, [r2]
     vmovd          m4, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1454,11 +1455,11 @@ cglobal avg_weight_4x2, 0, 0
     vpextrd        [r0 + r1], m2, 1
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_weight_4x2_avx2
+    jg             avg_weight_4xN_avx2
     ret
 
 INIT_XMM avx2
-cglobal avg_4x2, 0, 0
+cglobal avg_4xN, 0, 0
     vmovd          m0, [r2]
     vmovd          m1, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1471,7 +1472,7 @@ cglobal avg_4x2, 0, 0
     vmovd          [r0 + r1], m1
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_4x2_avx2
+    jg             avg_4xN_avx2
     ret
 
 INIT_XMM avx2
@@ -1484,7 +1485,7 @@ cglobal pixel_avg_4x4, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 2
-    je             avg_4x2_avx2
+    je             avg_4xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1495,7 +1496,7 @@ cglobal pixel_avg_4x4, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_4x2_avx2
+    jmp            avg_weight_4xN_avx2
 
 INIT_XMM avx2
 cglobal pixel_avg_4x8, 0, 0
@@ -1507,7 +1508,7 @@ cglobal pixel_avg_4x8, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 4
-    je             avg_4x2_avx2
+    je             avg_4xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1518,7 +1519,7 @@ cglobal pixel_avg_4x8, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_4x2_avx2
+    jmp            avg_weight_4xN_avx2
 
 INIT_XMM avx2
 cglobal pixel_avg_4x16, 0, 0
@@ -1530,7 +1531,7 @@ cglobal pixel_avg_4x16, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 8
-    je             avg_4x2_avx2
+    je             avg_4xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1541,11 +1542,11 @@ cglobal pixel_avg_4x16, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_4x2_avx2
+    jmp            avg_weight_4xN_avx2
 
 
 INIT_XMM avx2
-cglobal avg_weight_8x2, 0, 0
+cglobal avg_weight_8xN, 0, 0
     vmovq          m2, [r2]
     vmovq          m4, [r4]
     vpunpcklbw     m2, m2, m4
@@ -1563,11 +1564,11 @@ cglobal avg_weight_8x2, 0, 0
     vmovhps        [r0 + r1], m2
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_weight_8x2_avx2
+    jg             avg_weight_8xN_avx2
     ret
 
 INIT_XMM avx2
-cglobal avg_8x2, 0, 0
+cglobal avg_8xN, 0, 0
     vmovq          m0, [r2]
     vmovq          m1, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1580,7 +1581,7 @@ cglobal avg_8x2, 0, 0
     vmovq          [r0 + r1], m1
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_8x2_avx2
+    jg             avg_8xN_avx2
     ret
 
 INIT_XMM avx2
@@ -1593,7 +1594,7 @@ cglobal pixel_avg_8x4, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 2
-    je             avg_8x2_avx2
+    je             avg_8xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1604,7 +1605,7 @@ cglobal pixel_avg_8x4, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_8x2_avx2
+    jmp            avg_weight_8xN_avx2
 
 INIT_XMM avx2
 cglobal pixel_avg_8x8, 0, 0
@@ -1616,7 +1617,7 @@ cglobal pixel_avg_8x8, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 4
-    je             avg_8x2_avx2
+    je             avg_8xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1627,7 +1628,7 @@ cglobal pixel_avg_8x8, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_8x2_avx2
+    jmp            avg_weight_8xN_avx2
 
 INIT_XMM avx2
 cglobal pixel_avg_8x16, 0, 0
@@ -1639,7 +1640,7 @@ cglobal pixel_avg_8x16, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 8
-    je             avg_8x2_avx2
+    je             avg_8xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1650,11 +1651,11 @@ cglobal pixel_avg_8x16, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_8x2_avx2
+    jmp            avg_weight_8xN_avx2
 
 
 INIT_YMM avx2
-cglobal avg_weight_16x2, 0, 0
+cglobal avg_weight_16xN, 0, 0
     vmovdqu        xm2, [r2]
     vinserti128    m2, m2, [r2 + r3], 1
     vmovdqu        xm3, [r4]
@@ -1672,11 +1673,11 @@ cglobal avg_weight_16x2, 0, 0
     vextracti128   [r0 + r1], m2, 1
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_weight_16x2_avx2
+    jg             avg_weight_16xN_avx2
     RET
 
 INIT_XMM avx2
-cglobal avg_16x2, 0, 0
+cglobal avg_16xN, 0, 0
     vmovdqu        xm0, [r2]
     vmovdqu        xm1, [r2 + r3]
     lea            r2, [r2 + r3 * 2]
@@ -1687,7 +1688,7 @@ cglobal avg_16x2, 0, 0
     vmovdqu        [r0 + r1], xm1
     lea            r0, [r0 + r1 * 2]
     dec            r6d
-    jg             avg_16x2_avx2
+    jg             avg_16xN_avx2
     ret
 
 INIT_YMM avx2
@@ -1700,7 +1701,7 @@ cglobal pixel_avg_16x8, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 4
-    je             avg_16x2_avx2
+    je             avg_16xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1711,7 +1712,7 @@ cglobal pixel_avg_16x8, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_16x2_avx2
+    jmp            avg_weight_16xN_avx2
 
 INIT_YMM avx2
 cglobal pixel_avg_16x16, 0, 0
@@ -1723,7 +1724,7 @@ cglobal pixel_avg_16x16, 0, 0
     cmp            dword [rsp + 8], 32
 %endif
     mov            r6d, 8
-    je             avg_16x2_avx2
+    je             avg_16xN_avx2
 
     vpbroadcastd   m5, [pw_512]
     vpbroadcastd   m1, [pb_64]
@@ -1734,7 +1735,7 @@ cglobal pixel_avg_16x16, 0, 0
 %endif
     vpsubb         m1, m1, m0
     vpunpcklbw     m0, m0, m1                    ; w1 w2 w1 w2 ....
-    jmp            avg_weight_16x2_avx2
+    jmp            avg_weight_16xN_avx2
 
 
 ;=============================================================================
@@ -2156,4 +2157,63 @@ ALIGN 16
     jg             .fastloop
     ret
 
+
+;=============================================================================
+; INTERLEAVE/DEINTERLEAVE_CHROMA
+;=============================================================================
+INIT_XMM avx2
+cglobal store_interleave_chroma, 0, 0
+%if WIN64
+    mov            r4d, [rsp + 40]
+%endif
+.loop:
+    vmovq          m0, [r2]
+    vpunpcklbw     m0, m0, [r3]
+    vmovdqu        [r0], m0
+    vmovq          m1, [r2 + 32]
+    vpunpcklbw     m1, m1, [r3 + 32]
+    vmovdqu        [r0 + r1], m1
+    add            r2, 64
+    add            r3, 64
+    lea            r0, [r0 + r1 * 2]
+    sub            r4d, 2
+    jg             .loop
+    ret
+
+INIT_YMM avx2
+cglobal load_deinterleave_chroma_fenc, 0, 0
+    vbroadcasti128 m0, [deinterleave_chroma_shuf]
+    lea            r6d, [r2 + r2 * 2]
+.loop:
+    vmovdqu        xm1, [r1]
+    vinserti128    m1, m1, [r1 + r2], 1
+    vmovdqu        xm2, [r1 + r2 * 2]
+    vinserti128    m2, m2, [r1 + r6], 1
+    lea            r1, [r1 + r2 * 4]
+    vpshufb        m1, m1, m0
+    vpshufb        m2, m2, m0
+    vmovdqu        [r0], m1
+    vmovdqu        [r0 + 32], m2
+    add            r0, 64
+    sub            r3d, 4
+    jg             .loop
+    RET
+
+INIT_XMM avx2
+cglobal load_deinterleave_chroma_fdec, 0, 0
+    vmovdqu        m4, [deinterleave_chroma_shuf]
+.loop:
+    vmovdqu        m0, [r1]
+    vmovdqu        m1, [r1 + r2]
+    vpshufb        m0, m0, m4
+    vpshufb        m1, m1, m4
+    vmovq          [r0], m0
+    vmovhps        [r0 + 16], m0
+    vmovq          [r0 + 32], m1
+    vmovhps        [r0 + 48], m1
+    add            r0, 64
+    lea            r1, [r1 + r2 * 2]
+    sub            r3d, 2
+    jg             .loop
+    ret
 

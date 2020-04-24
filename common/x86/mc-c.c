@@ -179,32 +179,12 @@ void x264_plane_copy_deinterleave_v210_avx2  ( uint16_t *dstu, intptr_t i_dstu,
 void x264_plane_copy_deinterleave_v210_avx512( uint16_t *dstu, intptr_t i_dstu,
                                                uint16_t *dstv, intptr_t i_dstv,
                                                uint32_t *src,  intptr_t i_src, int w, int h );
-#define x264_store_interleave_chroma_mmx2 x264_template(store_interleave_chroma_mmx2)
-void x264_store_interleave_chroma_mmx2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
-#define x264_store_interleave_chroma_sse2 x264_template(store_interleave_chroma_sse2)
-void x264_store_interleave_chroma_sse2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
-#define x264_store_interleave_chroma_avx x264_template(store_interleave_chroma_avx)
-void x264_store_interleave_chroma_avx ( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
-#define x264_load_deinterleave_chroma_fenc_sse2 x264_template(load_deinterleave_chroma_fenc_sse2)
-void x264_load_deinterleave_chroma_fenc_sse2( pixel *dst, pixel *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fenc_ssse3 x264_template(load_deinterleave_chroma_fenc_ssse3)
-void x264_load_deinterleave_chroma_fenc_ssse3( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fenc_avx x264_template(load_deinterleave_chroma_fenc_avx)
-void x264_load_deinterleave_chroma_fenc_avx( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
+#define x264_store_interleave_chroma_avx2 x264_template(store_interleave_chroma_avx2)
+void x264_store_interleave_chroma_avx2 ( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 #define x264_load_deinterleave_chroma_fenc_avx2 x264_template(load_deinterleave_chroma_fenc_avx2)
 void x264_load_deinterleave_chroma_fenc_avx2( pixel *dst, pixel *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fenc_avx512 x264_template(load_deinterleave_chroma_fenc_avx512)
-void x264_load_deinterleave_chroma_fenc_avx512( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fdec_sse2 x264_template(load_deinterleave_chroma_fdec_sse2)
-void x264_load_deinterleave_chroma_fdec_sse2( pixel *dst, pixel *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fdec_ssse3 x264_template(load_deinterleave_chroma_fdec_ssse3)
-void x264_load_deinterleave_chroma_fdec_ssse3( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fdec_avx x264_template(load_deinterleave_chroma_fdec_avx)
-void x264_load_deinterleave_chroma_fdec_avx( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
 #define x264_load_deinterleave_chroma_fdec_avx2 x264_template(load_deinterleave_chroma_fdec_avx2)
-void x264_load_deinterleave_chroma_fdec_avx2( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
-#define x264_load_deinterleave_chroma_fdec_avx512 x264_template(load_deinterleave_chroma_fdec_avx512)
-void x264_load_deinterleave_chroma_fdec_avx512( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
+void x264_load_deinterleave_chroma_fdec_avx2( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
 #define x264_memcpy_aligned_sse x264_template(memcpy_aligned_sse)
 void *x264_memcpy_aligned_sse   ( void *dst, const void *src, size_t n );
 #define x264_memcpy_aligned_avx x264_template(memcpy_aligned_avx)
@@ -646,6 +626,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->offsetadd = mc_offsetadd_wtab_avx2;
     pf->offsetsub = mc_offsetsub_wtab_avx2;
 
+    pf->store_interleave_chroma = x264_store_interleave_chroma_avx2;
+    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx2;
+    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx2;
+
 
     pf->copy_16x16_unaligned = x264_mc_copy_w16_mmx;
     pf->copy[PIXEL_16x16] = x264_mc_copy_w16_mmx;
@@ -663,7 +647,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->prefetch_ref  = x264_prefetch_ref_mmx2;
 
     pf->plane_copy_interleave = plane_copy_interleave_mmx2;
-    pf->store_interleave_chroma = x264_store_interleave_chroma_mmx2;
 
 
     pf->mc_luma = mc_luma_mmx2;
@@ -704,8 +687,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
     pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_sse2;
-    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
-    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
@@ -718,7 +699,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
         if( cpu&X264_CPU_SSE2_IS_FAST )
         {
-            pf->store_interleave_chroma = x264_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
             pf->plane_copy_interleave   = plane_copy_interleave_sse2;
             pf->mc_luma = mc_luma_sse2;
             pf->get_ref = get_ref_sse2;
@@ -741,8 +721,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( !(cpu&X264_CPU_SLOW_PSHUFB) )
     {
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_ssse3;
-        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_ssse3;
         pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
         pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_ssse3;
     }
@@ -804,13 +782,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->integral_init4h = x264_integral_init4h_avx2;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
         pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_avx2;
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx2;
-    }
-
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx512;
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx512;
     }
 
     if( !(cpu&X264_CPU_AVX) )
