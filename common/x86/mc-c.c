@@ -108,77 +108,16 @@ void x264_prefetch_fenc_420_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_fenc_422_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_prefetch_ref_mmx2 x264_template(prefetch_ref_mmx2)
 void x264_prefetch_ref_mmx2( pixel *, intptr_t, int );
-#define x264_plane_copy_core_sse x264_template(plane_copy_core_sse)
-void x264_plane_copy_core_sse( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_core_avx x264_template(plane_copy_core_avx)
-void x264_plane_copy_core_avx( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_avx512 x264_template(plane_copy_avx512)
-void x264_plane_copy_avx512( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_swap_core_ssse3 x264_template(plane_copy_swap_core_ssse3)
-void x264_plane_copy_swap_core_ssse3( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_swap_core_avx2 x264_template(plane_copy_swap_core_avx2)
-void x264_plane_copy_swap_core_avx2 ( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_swap_avx512 x264_template(plane_copy_swap_avx512)
-void x264_plane_copy_swap_avx512( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-#define x264_plane_copy_interleave_core_mmx2 x264_template(plane_copy_interleave_core_mmx2)
-void x264_plane_copy_interleave_core_mmx2( pixel *dst,  intptr_t i_dst,
-                                           pixel *srcu, intptr_t i_srcu,
-                                           pixel *srcv, intptr_t i_srcv, int w, int h );
-#define x264_plane_copy_interleave_core_sse2 x264_template(plane_copy_interleave_core_sse2)
-void x264_plane_copy_interleave_core_sse2( pixel *dst,  intptr_t i_dst,
-                                           pixel *srcu, intptr_t i_srcu,
-                                           pixel *srcv, intptr_t i_srcv, int w, int h );
-#define x264_plane_copy_interleave_core_avx x264_template(plane_copy_interleave_core_avx)
-void x264_plane_copy_interleave_core_avx( pixel *dst,  intptr_t i_dst,
+#define x264_plane_copy_avx2 x264_template(plane_copy_avx2)
+void x264_plane_copy_avx2( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+#define x264_plane_copy_interleave_avx2 x264_template(plane_copy_interleave_avx2)
+void x264_plane_copy_interleave_avx2( pixel *dst,  intptr_t i_dst,
                                           pixel *srcu, intptr_t i_srcu,
                                           pixel *srcv, intptr_t i_srcv, int w, int h );
-#define x264_plane_copy_deinterleave_sse2 x264_template(plane_copy_deinterleave_sse2)
-void x264_plane_copy_deinterleave_sse2( pixel *dsta, intptr_t i_dsta,
-                                        pixel *dstb, intptr_t i_dstb,
-                                        pixel *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_ssse3 x264_template(plane_copy_deinterleave_ssse3)
-void x264_plane_copy_deinterleave_ssse3( uint8_t *dsta, intptr_t i_dsta,
-                                         uint8_t *dstb, intptr_t i_dstb,
-                                         uint8_t *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_avx x264_template(plane_copy_deinterleave_avx)
-void x264_plane_copy_deinterleave_avx( uint16_t *dsta, intptr_t i_dsta,
-                                       uint16_t *dstb, intptr_t i_dstb,
-                                       uint16_t *src,  intptr_t i_src, int w, int h );
 #define x264_plane_copy_deinterleave_avx2 x264_template(plane_copy_deinterleave_avx2)
 void x264_plane_copy_deinterleave_avx2( pixel *dsta, intptr_t i_dsta,
                                         pixel *dstb, intptr_t i_dstb,
                                         pixel *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_rgb_sse2 x264_template(plane_copy_deinterleave_rgb_sse2)
-void x264_plane_copy_deinterleave_rgb_sse2 ( pixel *dsta, intptr_t i_dsta,
-                                             pixel *dstb, intptr_t i_dstb,
-                                             pixel *dstc, intptr_t i_dstc,
-                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
-#define x264_plane_copy_deinterleave_rgb_ssse3 x264_template(plane_copy_deinterleave_rgb_ssse3)
-void x264_plane_copy_deinterleave_rgb_ssse3( pixel *dsta, intptr_t i_dsta,
-                                             pixel *dstb, intptr_t i_dstb,
-                                             pixel *dstc, intptr_t i_dstc,
-                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
-#define x264_plane_copy_deinterleave_rgb_avx2 x264_template(plane_copy_deinterleave_rgb_avx2)
-void x264_plane_copy_deinterleave_rgb_avx2 ( pixel *dsta, intptr_t i_dsta,
-                                             pixel *dstb, intptr_t i_dstb,
-                                             pixel *dstc, intptr_t i_dstc,
-                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
-#define x264_plane_copy_deinterleave_v210_ssse3 x264_template(plane_copy_deinterleave_v210_ssse3)
-void x264_plane_copy_deinterleave_v210_ssse3 ( uint16_t *dstu, intptr_t i_dstu,
-                                               uint16_t *dstv, intptr_t i_dstv,
-                                               uint32_t *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_v210_avx x264_template(plane_copy_deinterleave_v210_avx)
-void x264_plane_copy_deinterleave_v210_avx   ( uint16_t *dstu, intptr_t i_dstu,
-                                               uint16_t *dstv, intptr_t i_dstv,
-                                               uint32_t *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_v210_avx2 x264_template(plane_copy_deinterleave_v210_avx2)
-void x264_plane_copy_deinterleave_v210_avx2  ( uint16_t *dstu, intptr_t i_dstu,
-                                               uint16_t *dstv, intptr_t i_dstv,
-                                               uint32_t *src,  intptr_t i_src, int w, int h );
-#define x264_plane_copy_deinterleave_v210_avx512 x264_template(plane_copy_deinterleave_v210_avx512)
-void x264_plane_copy_deinterleave_v210_avx512( uint16_t *dstu, intptr_t i_dstu,
-                                               uint16_t *dstv, intptr_t i_dstv,
-                                               uint32_t *src,  intptr_t i_src, int w, int h );
 #define x264_store_interleave_chroma_avx2 x264_template(store_interleave_chroma_avx2)
 void x264_store_interleave_chroma_avx2 ( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 #define x264_load_deinterleave_chroma_fenc_avx2 x264_template(load_deinterleave_chroma_fenc_avx2)
@@ -540,19 +479,6 @@ HPEL(16, avx, avx, avx, avx)
 HPEL(32, avx2, avx2, avx2, avx2)
 #endif
 
-PLANE_COPY(16, sse)
-PLANE_COPY(32, avx)
-
-PLANE_COPY_SWAP(16, ssse3)
-PLANE_COPY_SWAP(32, avx2)
-
-PLANE_COPY_YUYV(32, sse2)
-PLANE_COPY_YUYV(32, ssse3)
-PLANE_COPY_YUYV(64, avx2)
-
-PLANE_INTERLEAVE(mmx2)
-PLANE_INTERLEAVE(sse2)
-
 #if HAVE_X86_INLINE_ASM
 #undef MC_CLIP_ADD
 #define MC_CLIP_ADD(s,x)\
@@ -630,6 +556,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx2;
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx2;
 
+    pf->plane_copy = x264_plane_copy_avx2;
+    pf->plane_copy_interleave = x264_plane_copy_interleave_avx2;
+    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_avx2;
 
     pf->copy_16x16_unaligned = x264_mc_copy_w16_mmx;
     pf->copy[PIXEL_16x16] = x264_mc_copy_w16_mmx;
@@ -646,7 +575,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->prefetch_fenc_422 = x264_prefetch_fenc_422_mmx2;
     pf->prefetch_ref  = x264_prefetch_ref_mmx2;
 
-    pf->plane_copy_interleave = plane_copy_interleave_mmx2;
 
 
     pf->mc_luma = mc_luma_mmx2;
@@ -660,7 +588,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->memcpy_aligned  = x264_memcpy_aligned_sse;
         pf->memzero_aligned = x264_memzero_aligned_sse;
-        pf->plane_copy = plane_copy_sse;
     }
 
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
@@ -685,9 +612,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->integral_init8v = x264_integral_init8v_sse2;
     pf->hpel_filter = x264_hpel_filter_sse2_amd;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
-    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_sse2;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
@@ -699,7 +623,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
         if( cpu&X264_CPU_SSE2_IS_FAST )
         {
-            pf->plane_copy_interleave   = plane_copy_interleave_sse2;
             pf->mc_luma = mc_luma_sse2;
             pf->get_ref = get_ref_sse2;
             if( cpu&X264_CPU_CACHELINE_64 )
@@ -713,17 +636,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_SSSE3) )
         return;
 
-    pf->plane_copy_swap  = plane_copy_swap_ssse3;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
     pf->mbtree_propagate_list = mbtree_propagate_list_ssse3;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
-
-    if( !(cpu&X264_CPU_SLOW_PSHUFB) )
-    {
-        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
-        pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_ssse3;
-    }
 
     if( !(cpu&X264_CPU_SLOW_PALIGNR) )
     {
@@ -781,14 +696,12 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->integral_init8h = x264_integral_init8h_avx2;
         pf->integral_init4h = x264_integral_init4h_avx2;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
-        pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_avx2;
     }
 
     if( !(cpu&X264_CPU_AVX) )
         return;
     pf->memcpy_aligned  = x264_memcpy_aligned_avx;
     pf->memzero_aligned = x264_memzero_aligned_avx;
-    pf->plane_copy = plane_copy_avx;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
     pf->mbtree_propagate_list = mbtree_propagate_list_avx;
 
@@ -797,9 +710,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( !(cpu&X264_CPU_AVX2) )
         return;
-    pf->plane_copy_swap = plane_copy_swap_avx2;
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_avx2;
-    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_avx2;
     pf->get_ref = get_ref_avx2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
     pf->mbtree_propagate_list = mbtree_propagate_list_avx2;
@@ -810,8 +720,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
     pf->memcpy_aligned = x264_memcpy_aligned_avx512;
     pf->memzero_aligned = x264_memzero_aligned_avx512;
-    pf->plane_copy = x264_plane_copy_avx512;
-    pf->plane_copy_swap = x264_plane_copy_swap_avx512;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx512;
 #if ARCH_X86_64
     pf->mbtree_propagate_list = mbtree_propagate_list_avx512;

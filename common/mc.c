@@ -605,15 +605,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
     pf->copy[PIXEL_4x4]   = mc_copy_w4;
 
-    pf->plane_copy = x264_plane_copy_c;
-    pf->plane_copy_swap = x264_plane_copy_swap_c;
-    pf->plane_copy_interleave = x264_plane_copy_interleave_c;
-
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_c;
-    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_c;
-    pf->plane_copy_deinterleave_rgb = plane_copy_deinterleave_rgb_c;
-    pf->plane_copy_deinterleave_v210 = plane_copy_deinterleave_v210_c;
-
     pf->hpel_filter = hpel_filter;
 
     pf->prefetch_fenc_400 = prefetch_fenc_null;

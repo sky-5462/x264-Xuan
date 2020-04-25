@@ -42,7 +42,8 @@ ch_shuf_adj: times 8 db 0
 sq_1: times 1 dq 1
 
 ALIGN 32
-deinterleave_chroma_shuf: db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
+deinterleave_shuf: db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
+copy_swap_shuf:    db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
 pb_64:     times 4 db 64
 
 SECTION .text
@@ -2182,7 +2183,7 @@ cglobal store_interleave_chroma, 0, 0
 
 INIT_YMM avx2
 cglobal load_deinterleave_chroma_fenc, 0, 0
-    vbroadcasti128 m0, [deinterleave_chroma_shuf]
+    vbroadcasti128 m0, [deinterleave_shuf]
     lea            r6d, [r2 + r2 * 2]
 .loop:
     vmovdqu        xm1, [r1]
@@ -2201,7 +2202,7 @@ cglobal load_deinterleave_chroma_fenc, 0, 0
 
 INIT_XMM avx2
 cglobal load_deinterleave_chroma_fdec, 0, 0
-    vmovdqu        m4, [deinterleave_chroma_shuf]
+    vmovdqu        m4, [deinterleave_shuf]
 .loop:
     vmovdqu        m0, [r1]
     vmovdqu        m1, [r1 + r2]
@@ -2217,3 +2218,132 @@ cglobal load_deinterleave_chroma_fdec, 0, 0
     jg             .loop
     ret
 
+;=============================================================================
+; PLANE_COPY
+;=============================================================================
+INIT_YMM avx2
+cglobal plane_copy, 0, 0
+%if WIN64
+    mov            r4d, [rsp + 40]
+    mov            r5d, [rsp + 48]
+%endif
+    add            r0, r4
+    add            r2, r4
+    neg            r4
+    mov            r6, r4
+
+.loop:
+    vmovdqu        m0, [r2 + r6]
+    vmovdqu        m1, [r2 + r6 + 32]
+    vmovntdq       [r0 + r6], m0
+    vmovntdq       [r0 + r6 + 32], m1
+    add            r6, 64
+    jl             .loop
+
+    add            r0, r1
+    add            r2, r3
+    mov            r6, r4
+    sub            r5d, 1
+    jg             .loop
+    sfence
+    RET
+
+INIT_YMM avx2
+cglobal plane_copy_interleave, 0, 0
+%if WIN64
+    mov            [rsp + 8], r7
+    mov            [rsp + 16], r8
+    mov            r4, [rsp + 40]
+    mov            r5, [rsp + 48]
+    mov            r6d, [rsp + 56]
+    mov            r7d, [rsp + 64]
+%else
+    mov            [rsp - 8], r7
+    mov            [rsp - 16], r8
+    mov            r6d, [rsp + 8]
+    mov            r7d, [rsp + 16]
+%endif
+    lea            r0, [r0 + r6 * 2]
+    add            r2, r6
+    add            r4, r6
+    neg            r6
+    mov            r8, r6
+
+.loop:
+    vmovdqu        m0, [r2 + r8]
+    vmovdqu        m1, [r4 + r8]
+    vpunpcklbw     m2, m0, m1
+    vpunpckhbw     m3, m0, m1
+    vinserti128    m0, m2, xm3, 1
+    vperm2i128     m1, m2, m3, 31h
+    vmovntdq       [r0 + r8 * 2], m0
+    vmovntdq       [r0 + r8 * 2 + 32], m1
+    add            r8, 32
+    jl             .loop
+
+    add            r0, r1
+    add            r2, r3
+    add            r4, r5
+    mov            r8, r6
+    sub            r7d, 1
+    jg             .loop
+    sfence
+%if WIN64
+    mov            r7, [rsp + 8]
+    mov            r8, [rsp + 16]
+%else
+    mov            r7, [rsp - 8]
+    mov            r8, [rsp - 16]
+%endif
+    RET
+
+INIT_YMM avx2
+cglobal plane_copy_deinterleave, 0, 0
+%if WIN64
+    mov            [rsp + 8], r7
+    mov            [rsp + 16], r8
+    mov            r4, [rsp + 40]
+    mov            r5, [rsp + 48]
+    mov            r6d, [rsp + 56]
+    mov            r7d, [rsp + 64]
+%else
+    mov            [rsp - 8], r7
+    mov            [rsp - 16], r8
+    mov            r6d, [rsp + 8]
+    mov            r7d, [rsp + 16]
+%endif
+    vbroadcasti128 m5, [deinterleave_shuf]
+    add            r0, r6
+    add            r2, r6
+    lea            r4, [r4 + r6 * 2]
+    neg            r6
+    mov            r8, r6
+
+.loop:
+    vmovdqu        m0, [r4 + r8 * 2]
+    vmovdqu        m1, [r4 + r8 * 2 + 32]
+    vpshufb        m0, m0, m5
+    vpshufb        m1, m1, m5
+    vpermq         m0, m0, 0D8h
+    vpermq         m1, m1, 0D8h
+    vmovdqu        [r0 + r8], xm0
+    vextracti128   [r2 + r8], m0, 1
+    vmovdqu        [r0 + r8 + 16], xm1
+    vextracti128   [r2 + r8 + 16], m1, 1
+    add            r8, 32
+    jl             .loop
+
+    add            r0, r1
+    add            r2, r3
+    add            r4, r5
+    mov            r8, r6
+    sub            r7d, 1
+    jg             .loop
+%if WIN64
+    mov            r7, [rsp + 8]
+    mov            r8, [rsp + 16]
+%else
+    mov            r7, [rsp - 8]
+    mov            r8, [rsp - 16]
+%endif
+    RET
