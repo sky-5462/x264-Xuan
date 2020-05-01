@@ -420,64 +420,8 @@ GET_REF(cache64_ssse3)
 GET_REF(cache64_ssse3_atom)
 #endif // !HIGH_BIT_DEPTH
 
-#define x264_hpel_filter_avx x264_template(hpel_filter_avx)
 #define x264_hpel_filter_avx2 x264_template(hpel_filter_avx2)
-#define x264_hpel_filter_c_mmx2 x264_template(hpel_filter_c_mmx2)
-#define x264_hpel_filter_c_sse2 x264_template(hpel_filter_c_sse2)
-#define x264_hpel_filter_c_ssse3 x264_template(hpel_filter_c_ssse3)
-#define x264_hpel_filter_c_avx x264_template(hpel_filter_c_avx)
-#define x264_hpel_filter_c_avx2 x264_template(hpel_filter_c_avx2)
-#define x264_hpel_filter_h_mmx2 x264_template(hpel_filter_h_mmx2)
-#define x264_hpel_filter_h_sse2 x264_template(hpel_filter_h_sse2)
-#define x264_hpel_filter_h_ssse3 x264_template(hpel_filter_h_ssse3)
-#define x264_hpel_filter_h_avx x264_template(hpel_filter_h_avx)
-#define x264_hpel_filter_h_avx2 x264_template(hpel_filter_h_avx2)
-#define x264_hpel_filter_sse2 x264_template(hpel_filter_sse2)
-#define x264_hpel_filter_ssse3 x264_template(hpel_filter_ssse3)
-#define x264_hpel_filter_v_mmx2 x264_template(hpel_filter_v_mmx2)
-#define x264_hpel_filter_v_sse2 x264_template(hpel_filter_v_sse2)
-#define x264_hpel_filter_v_ssse3 x264_template(hpel_filter_v_ssse3)
-#define x264_hpel_filter_v_avx x264_template(hpel_filter_v_avx)
-#define x264_hpel_filter_v_avx2 x264_template(hpel_filter_v_avx2)
-#define HPEL(align, cpu, cpuv, cpuc, cpuh)\
-void x264_hpel_filter_v_##cpuv( pixel *dst, pixel *src, int16_t *buf, intptr_t stride, intptr_t width);\
-void x264_hpel_filter_c_##cpuc( pixel *dst, int16_t *buf, intptr_t width );\
-void x264_hpel_filter_h_##cpuh( pixel *dst, pixel *src, intptr_t width );\
-static void x264_hpel_filter_##cpu( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,\
-                                    intptr_t stride, int width, int height, int16_t *buf )\
-{\
-    intptr_t realign = (intptr_t)src & (align-1);\
-    src -= realign;\
-    dstv -= realign;\
-    dstc -= realign;\
-    dsth -= realign;\
-    width += realign;\
-    while( height-- )\
-    {\
-        x264_hpel_filter_v_##cpuv( dstv, src, buf+16, stride, width );\
-        x264_hpel_filter_c_##cpuc( dstc, buf+16, width );\
-        x264_hpel_filter_h_##cpuh( dsth, src, width );\
-        dsth += stride;\
-        dstv += stride;\
-        dstc += stride;\
-        src  += stride;\
-    }\
-    x264_sfence();\
-}
-
-HPEL(8, mmx2, mmx2, mmx2, mmx2)
-HPEL(16, sse2_amd, mmx2, mmx2, sse2)
-#if ARCH_X86_64
-void x264_hpel_filter_sse2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height, int16_t *buf );
-void x264_hpel_filter_ssse3( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height, int16_t *buf );
-void x264_hpel_filter_avx  ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height, int16_t *buf );
-void x264_hpel_filter_avx2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height, int16_t *buf );
-#else
-HPEL(16, sse2, sse2, sse2, sse2)
-HPEL(16, ssse3, ssse3, ssse3, ssse3)
-HPEL(16, avx, avx, avx, avx)
-HPEL(32, avx2, avx2, avx2, avx2)
-#endif
+void x264_hpel_filter_avx2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height);
 
 #if HAVE_X86_INLINE_ASM
 #undef MC_CLIP_ADD
@@ -560,6 +504,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_interleave = x264_plane_copy_interleave_avx2;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_avx2;
 
+    pf->hpel_filter = x264_hpel_filter_avx2;
+
+
+
     pf->copy_16x16_unaligned = x264_mc_copy_w16_mmx;
     pf->copy[PIXEL_16x16] = x264_mc_copy_w16_mmx;
     pf->copy[PIXEL_8x8]   = x264_mc_copy_w8_mmx;
@@ -580,7 +528,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->mc_luma = mc_luma_mmx2;
     pf->get_ref = get_ref_mmx2;
     pf->mc_chroma = x264_mc_chroma_mmx2;
-    pf->hpel_filter = x264_hpel_filter_mmx2;
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_mmx2;
 
@@ -610,13 +557,11 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     pf->integral_init4v = x264_integral_init4v_sse2;
     pf->integral_init8v = x264_integral_init8v_sse2;
-    pf->hpel_filter = x264_hpel_filter_sse2_amd;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
         pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-        pf->hpel_filter = x264_hpel_filter_sse2;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
         if( !(cpu&X264_CPU_STACK_MOD4) )
             pf->mc_chroma = x264_mc_chroma_sse2;
@@ -645,7 +590,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 #if ARCH_X86_64
         if( !(cpu&X264_CPU_SLOW_ATOM) ) /* The 64-bit version is slower, but the 32-bit version is faster? */
 #endif
-            pf->hpel_filter = x264_hpel_filter_ssse3;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
     }
     if( !(cpu&X264_CPU_STACK_MOD4) )
@@ -679,7 +623,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
     pf->integral_init8h = x264_integral_init8h_avx;
-    pf->hpel_filter = x264_hpel_filter_avx;
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
@@ -689,7 +632,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( cpu&X264_CPU_AVX2 )
     {
-        pf->hpel_filter = x264_hpel_filter_avx2;
         pf->mc_chroma = x264_mc_chroma_avx2;
         pf->integral_init8v = x264_integral_init8v_avx2;
         pf->integral_init4v = x264_integral_init4v_avx2;

@@ -42,9 +42,15 @@ ch_shuf_adj: times 8 db 0
 sq_1: times 1 dq 1
 
 ALIGN 32
-deinterleave_shuf: db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
-copy_swap_shuf:    db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
-pb_64:     times 4 db 64
+deinterleave_shuf:           db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
+copy_swap_shuf:              db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
+hpel_shuf:                   db  0, 8, 1, 9, 2,10, 3,11, 4,12, 5,13, 6,14, 7,15
+pb_64:               times 4 db 64
+pw_1024:             times 2 dw 1024
+filt_mul20:          times 4 db 20
+filt_mul15:          times 2 db 1, -5
+filt_mul51:          times 2 db -5, 1
+
 
 SECTION .text
 
@@ -2218,6 +2224,7 @@ cglobal load_deinterleave_chroma_fdec, 0, 0
     jg             .loop
     ret
 
+
 ;=============================================================================
 ; PLANE_COPY
 ;=============================================================================
@@ -2345,5 +2352,288 @@ cglobal plane_copy_deinterleave, 0, 0
 %else
     mov            r7, [rsp - 8]
     mov            r8, [rsp - 16]
+%endif
+    RET
+
+
+;=============================================================================
+; HPEL_FILTER
+;=============================================================================
+;The hpel_filter routines use non-temporal writes for output.
+;The following defines may be uncommented for testing.
+;Doing the hpel_filter temporal may be a win if the last level cache
+;is big enough (preliminary benching suggests on the order of 4* framesize).
+INIT_YMM avx2
+cglobal hpel_filter, 0, 0
+%if WIN64
+    push           r7
+    push           r8
+    mov            r4, [rsp + 56]
+    mov            r5d, [rsp + 64]
+    mov            r6d, [rsp + 72]
+    vmovdqu        [rsp + 24], xm6
+    vmovdqu        [rsp + 40], xm7
+    sub            rsp, 136
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+    vmovdqu        [rsp + 32], xm10
+    vmovdqu        [rsp + 48], xm11
+    vmovdqu        [rsp + 64], xm12
+    vmovdqu        [rsp + 80], xm13
+    vmovdqu        [rsp + 96], xm14
+    vmovdqu        [rsp + 112], xm15
+%else
+    push           r7
+    push           r8
+    mov            r6d, [rsp + 24]
+%endif
+    ; r0 -> dsth
+    ; r1 -> dstv
+    ; r2 -> dstc
+    ; r3 -> src
+    ; r4 -> stride
+    ; r5d -> width
+    ; r6d -> height
+    sub            r5d, 32       ; width*
+    ; align src to 32B, this is the offset
+    mov            r7d, r3d
+    and            r7d, 31
+    ; src aligned to 32B
+    sub            r3, r7
+    ; set the base to the end of array
+    add            r0, r5
+    add            r1, r5
+    add            r2, r5
+    ; array index
+    add            r7, r5
+    neg            r7
+    mov            r8, r7
+    ; row bases for filter_v
+    lea            r5, [r3 + r4]
+    sub            r3, r4
+    sub            r3, r4
+    ; r0 -> dsth + width*
+    ; r1 -> dstv + width*
+    ; r2 -> dstc + width*
+    ; r3 -> src_aligned - 2 * stride
+    ; r4 -> stride
+    ; r5 -> src_aligned + stride
+    ; r6d -> height
+    ; r7 -> -(src_offset + width*)
+    ; r8 -> -(src_offset + width*)
+    vpbroadcastd   m0, [filt_mul15]
+    vpbroadcastd   m1, [filt_mul51]
+    vpbroadcastd   m2, [filt_mul20]
+    vpbroadcastd   m3, [pw_1024]
+
+; for each y, filter_v is one step advance
+; we need to deal with the head and the tail specially
+; this can leave enough regs for remaining process
+; regs:
+; m15: current raw
+; m14: next raw
+; m13: last raw
+; m12: last v_ed
+; m4, m5: current v_ed
+; m6, m7: next v_ed
+.loopy:
+    ; first filter_v
+    vmovdqu        m4, [r3]            ; line -2
+    vmovdqu        m5, [r3 + r4]       ; line -1
+    vmovdqu        m15, [r3 + r4 * 2]  ; line  0
+    vmovdqu        m7, [r5]            ; line  1
+    vmovdqu        m8, [r5 + r4]       ; line  2
+    vmovdqu        m9, [r5 + r4 * 2]   ; line  3
+    ; interleave corresponding rows
+    ; (-2, -1)  (2, 3)  (0, 1)
+    vpunpckhbw     m10, m4, m5
+    vpunpcklbw     m4, m4, m5
+    vpunpckhbw     m5, m8, m9
+    vpunpcklbw     m8, m8, m9
+    vpunpckhbw     m9, m15, m7
+    vpunpcklbw     m6, m15, m7
+    ; row(-2) - 5 * row(-1)
+    ; -5 * row(2) + row(3)
+    ; 20 * row(0) + 20 * row(1)
+    vpmaddubsw     m10, m10, m0
+    vpmaddubsw     m4, m4, m0
+    vpmaddubsw     m5, m5, m1
+    vpmaddubsw     m8, m8, m1
+    vpmaddubsw     m9, m9, m2
+    vpmaddubsw     m6, m6, m2
+    ; add up the result  [1, -5, 20, 20, -5, 1]
+    vpaddw         m4, m4, m8
+    vpaddw         m4, m4, m6
+    vpaddw         m10, m10, m5
+    vpaddw         m10, m10, m9
+    add            r3, 32
+    add            r5, 32
+    ; round and clip to 8-bit
+    vpmulhrsw      m6, m4, m3
+    vpmulhrsw      m7, m10, m3
+    vpackuswb      m6, m6, m7
+    vmovntps       [r1 + r7], m6
+    ; permulate 128-bit lanes
+    ; e.g. m4: 0 -- 7  | 16 -- 23   -->    m4:   0 -- 7 | 8 -- 15
+    ;     m10: 8 -- 15 | 24 -- 31   -->    m5: 16 -- 23 | 24 -- 31
+    vperm2i128     m5, m4, m10, 31h
+    vinserti128    m4, m4, xm10, 1
+.loopx:
+    ; filter_v
+    ; load the next piece(right side)
+    vmovdqu        m6, [r3]
+    vmovdqu        m7, [r3 + r4]
+    vmovdqu        m14, [r3 + r4 * 2]
+    vmovdqu        m8, [r5]
+    vmovdqu        m9, [r5 + r4]
+    vmovdqu        m10, [r5 + r4 * 2]
+    vpunpckhbw     m11, m6, m7
+    vpunpcklbw     m6, m6, m7
+    vpunpckhbw     m7, m9, m10
+    vpunpcklbw     m9, m9, m10
+    vpunpckhbw     m10, m14, m8
+    vpunpcklbw     m8, m14, m8
+    vpmaddubsw     m11, m11, m0
+    vpmaddubsw     m6, m6, m0
+    vpmaddubsw     m7, m7, m1
+    vpmaddubsw     m9, m9, m1
+    vpmaddubsw     m10, m10, m2
+    vpmaddubsw     m8, m8, m2
+    vpaddw         m6, m6, m9
+    vpaddw         m6, m6, m8
+    vpaddw         m8, m11, m7
+    vpaddw         m8, m8, m10
+    add            r3, 32
+    add            r5, 32
+    vpmulhrsw      m7, m6, m3
+    vpmulhrsw      m9, m8, m3
+    vpackuswb      m7, m7, m9
+    vmovntps       [r1 + r7 + 32], m7
+    vperm2i128     m7, m6, m8, 31h
+    vinserti128    m6, m6, xm8, 1
+.lastx:
+    ; filter_c
+    vpsrlw         m3, m3, 1         ; pw_512
+    ; concatenate and shift each lane, each element is 16-bit
+    vperm2i128     m12, m4, m12, 3   ; -8 -- -1 | 0 -- 7
+    vpalignr       m8, m4, m12, 12   ; -2 -- 5  | 6 -- 13
+    vpalignr       m9, m4, m12, 14   ; -1 -- 6  | 7 -- 14
+    vperm2i128     m12, m5, m4, 3    ;  8 -- 15 | 16 -- 23
+    vpalignr       m10, m12, m4, 4   ;  2 -- 9  | 10 -- 17
+    vpalignr       m11, m12, m4, 6   ;  3 -- 10 | 11 -- 18
+    ; apply the kernel [1, -5, 20, 20, -5, 1]
+    ; use appropriate shift operations to finish the job while avoid overflow
+    ; use vpmulhrsw to do the final round
+    ; this instruction let us ignore those bits being cut off when rounding
+    vpaddw         m8, m8, m11       ; -2 + 3
+    vpaddw         m9, m9, m10       ; -1 + 2
+    vpsubw         m8, m8, m9        ; (-2 + 3) - (-1 + 2)
+    vpsraw         m8, m8, 2         ; ((-2 + 3) - (-1 + 2)) / 4
+    vpsubw         m8, m8, m9        ; ((-2 + 3) - (-1 + 2)) / 4 - (-1 + 2)
+    vpalignr       m10, m12, m4, 2   ;  1 -- 8  | 9 -- 16
+    vpaddw         m10, m4, m10      ; 0 + 1
+    vpaddw         m8, m8, m10       ;((-2 + 3) - (-1 + 2)) / 4 - (-1 + 2) + (0 + 1)
+    vpsraw         m8, m8, 2         ;(((-2 + 3) - (-1 + 2)) / 4 - (-1 + 2) + (0 + 1)) / 4
+    vpaddw         m8, m8, m10       ;(((-2 + 3) - (-1 + 2)) / 4 - (-1 + 2) + (0 + 1)) / 4 + (0 + 1)
+    ; now we have: expecting result / 16
+    ; apply vpmulhrsw with pw_512
+    vpmulhrsw      m8, m8, m3
+
+    ; 0 -- 15 done, do the save with 16 -- 31
+    vpalignr       m4, m5, m12, 12   ; 14 -- 21 | 22 -- 29
+    vpalignr       m9, m5, m12, 14   ; 15 -- 22 | 22 -- 30
+    vperm2i128     m12, m6, m5, 3    ; 24 -- 31 | 32 -- 39
+    vpalignr       m10, m12, m5, 4   ; 18 -- 25 | 26 -- 33
+    vpalignr       m11, m12, m5, 6   ; 19 -- 26 | 27 -- 34
+    vpaddw         m4, m4, m11       ; -2 + 3
+    vpaddw         m9, m9, m10       ; -1 + 2
+    vpsubw         m4, m4, m9
+    vpsraw         m4, m4, 2
+    vpsubw         m4, m4, m9
+    vpalignr       m10, m12, m5, 2   ; 17 -- 24 | 25 -- 32
+    vpaddw         m10, m5, m10      ; 0 + 1
+    vpaddw         m4, m4, m10
+    vpsraw         m4, m4, 2
+    vpaddw         m4, m4, m10
+    vpmulhrsw      m4, m4, m3
+
+    ; clip to 8-bit and store
+    vpackuswb      m8, m8, m4        ; 0 -- 7, 16 -- 23 | 8 -- 15, 24 -- 31
+    vpermq         m8, m8, q3120     ; 0 -- 15 | 16 -- 31
+    vmovntps       [r2 + r7], m8
+    ; setup regs for next iteration
+    vpaddw         m3, m3, m3        ; pw_1024
+    vmovdqu        m12, m5
+    vmovdqu        m4, m6
+    vmovdqu        m5, m7
+
+    ; filter_h
+    ; each element is 8-bit
+    vperm2i128     m6, m15, m13, 3   ; -16 -- -1 | 0 -- 15
+    vpalignr       m7, m15, m6, 14   ;  -2 -- 13 | 14 -- 29
+    vpalignr       m8, m15, m6, 15   ;  -1 -- 14 | 15 -- 30
+    vpmaddubsw     m7, m7, m0        ; [1 -5]
+    vpmaddubsw     m8, m8, m0        ; [1 -5]
+    vperm2i128     m6, m14, m15, 3   ;  16 -- 31 | 32 -- 47
+    vpalignr       m9, m6, m15, 2    ;   2 -- 17 | 18 -- 33
+    vpalignr       m10, m6, m15, 3   ;   3 -- 18 | 19 -- 34
+    vpmaddubsw     m9, m9, m1        ; [-5, 1]
+    vpmaddubsw     m10, m10, m1      ; [-5, 1]
+    vpalignr       m11, m6, m15, 1   ;   1 -- 16 | 17 -- 32
+    vpmaddubsw     m6, m15, m2       ; [20, 20]
+    vpmaddubsw     m11, m11, m2      ; [20, 20]
+    vpaddw         m7, m7, m9
+    vpaddw         m8, m8, m10
+    vpaddw         m7, m7, m6
+    vpaddw         m8, m8, m11
+    vpmulhrsw      m7, m7, m3
+    vpmulhrsw      m8, m8, m3
+    ; m7: 0, 2, 4, 6, 8, 10, 12, 14 | 16, 18, 20, 22, 24, 26, 28, 30
+    ; m8: 1, 3, 5, 7, 9, 11, 13, 15 | 17, 19, 21, 23, 25, 27, 29, 31
+    vpackuswb      m7, m7, m8
+    vbroadcasti128 m8, [hpel_shuf]
+    vpshufb        m7, m7, m8
+    vmovntps       [r0 + r7], m7
+    ; setup regs for next iteration
+    vmovdqu        m13, m15
+    vmovdqu        m15, m14
+    add            r7, 32
+    jl             .loopx
+    cmp            r7, 32
+    jl             .lastx
+
+    ; at this moment, some regs:
+    ; r7 -> 32 * N -(src_offset + width*)
+    ; r3 -> 32 * N + src_aligned - 2 * stride
+    ; r5 -> 32 * N + src_aligned + stride
+    sub            r7, r8            ; 32 * N
+    sub            r7, r4            ; 32 * N - stride
+    sub            r3, r7            ; (src_aligned + stride) - 2 * stride
+    sub            r5, r7            ; (src_aligned + stride) + stride
+    add            r0, r4
+    add            r1, r4
+    add            r2, r4
+    mov            r7, r8
+    sub            r6d, 1
+    jg             .loopy
+    sfence
+
+%if WIN64
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    vmovdqu        xm10, [rsp + 32]
+    vmovdqu        xm11, [rsp + 48]
+    vmovdqu        xm12, [rsp + 64]
+    vmovdqu        xm13, [rsp + 80]
+    vmovdqu        xm14, [rsp + 96]
+    vmovdqu        xm15, [rsp + 112]
+    add            rsp, 136
+    vmovdqu        xm6, [rsp + 24]
+    vmovdqu        xm7, [rsp + 40]
+    pop            r8
+    pop            r7
+%else
+    pop            r8
+    pop            r7
 %endif
     RET

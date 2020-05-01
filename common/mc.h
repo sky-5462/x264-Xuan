@@ -304,7 +304,7 @@ typedef struct
                                           pixel *dstc, intptr_t i_dstc,
                                           uint32_t *src, intptr_t i_src, int w, int h );
     void (*hpel_filter)( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
-                         intptr_t i_stride, int i_width, int i_height, int16_t *buf );
+                         intptr_t i_stride, int i_width, int i_height);
 
     /* prefetch the next few macroblocks of fenc or fdec */
     void (*prefetch_fenc)    ( pixel *pix_y, intptr_t stride_y, pixel *pix_uv, intptr_t stride_uv, int mb_x );
