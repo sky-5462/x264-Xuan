@@ -612,12 +612,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->prefetch_ref  = prefetch_ref_null;
     pf->memcpy_aligned = memcpy;
     pf->memzero_aligned = memzero_aligned;
-    pf->frame_init_lowres_core = frame_init_lowres_core;
-
-    pf->integral_init4h = integral_init4h;
-    pf->integral_init8h = integral_init8h;
-    pf->integral_init4v = integral_init4v;
-    pf->integral_init8v = integral_init8v;
 
     pf->mbtree_propagate_cost = mbtree_propagate_cost;
     pf->mbtree_propagate_list = mbtree_propagate_list;

@@ -40,30 +40,23 @@
 #define x264_pixel_avg_8x16_avx2 x264_template(pixel_avg_8x16_avx2)
 #define x264_pixel_avg_16x8_avx2 x264_template(pixel_avg_16x8_avx2)
 #define x264_pixel_avg_16x16_avx2 x264_template(pixel_avg_16x16_avx2)
-#define DECL_SUF( func, args )\
-    void func##_avx2 args;
-
-DECL_SUF( x264_pixel_avg_16x16, ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_16x8,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_8x16,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_8x8,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_8x4,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_4x16,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_4x8,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_4x4,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_4x2,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_2x8,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_2x4,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-DECL_SUF( x264_pixel_avg_2x2,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
-#undef DECL_SUF
+void x264_pixel_avg_2x2_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_2x4_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_2x8_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_4x2_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_4x4_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_4x8_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_4x16_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_8x4_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_8x8_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_8x16_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_16x8_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_pixel_avg_16x16_avx2( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 
 #define x264_mc_weight_w4_avx2 x264_template(mc_weight_w4_avx2)
 #define x264_mc_weight_w8_avx2 x264_template(mc_weight_w8_avx2)
 #define x264_mc_weight_w16_avx2 x264_template(mc_weight_w16_avx2)
 #define x264_mc_weight_w20_avx2 x264_template(mc_weight_w20_avx2)
-#define MC_WEIGHT(w,type) \
-    void x264_mc_weight_w##w##_##type( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );
-
 #define x264_mc_offsetadd_w4_avx2 x264_template(mc_offsetadd_w4_avx2)
 #define x264_mc_offsetadd_w8_avx2 x264_template(mc_offsetadd_w8_avx2)
 #define x264_mc_offsetadd_w16_avx2 x264_template(mc_offsetadd_w16_avx2)
@@ -75,14 +68,13 @@ DECL_SUF( x264_pixel_avg_2x2,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *,
 #define MC_WEIGHT_OFFSET(w,type) \
     void x264_mc_offsetadd_w##w##_##type( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int ); \
     void x264_mc_offsetsub_w##w##_##type( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int ); \
-    MC_WEIGHT(w,type)
+    void x264_mc_weight_w##w##_##type( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );
 
 MC_WEIGHT_OFFSET( 4, avx2 )
 MC_WEIGHT_OFFSET( 8, avx2 )
 MC_WEIGHT_OFFSET( 16, avx2 )
 MC_WEIGHT_OFFSET( 20, avx2 )
 #undef MC_WEIGHT_OFFSET
-#undef MC_WEIGHT
 
 #define x264_mc_copy_w4_mmx x264_template(mc_copy_w4_mmx)
 void x264_mc_copy_w4_mmx ( pixel *, intptr_t, pixel *, intptr_t, int );
@@ -136,28 +128,12 @@ void x264_memzero_aligned_sse   ( void *dst, size_t n );
 void x264_memzero_aligned_avx   ( void *dst, size_t n );
 #define x264_memzero_aligned_avx512 x264_template(memzero_aligned_avx512)
 void x264_memzero_aligned_avx512( void *dst, size_t n );
-#define x264_integral_init4h_sse4 x264_template(integral_init4h_sse4)
-void x264_integral_init4h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
 #define x264_integral_init4h_avx2 x264_template(integral_init4h_avx2)
 void x264_integral_init4h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
-#define x264_integral_init8h_sse4 x264_template(integral_init8h_sse4)
-void x264_integral_init8h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
-#define x264_integral_init8h_avx x264_template(integral_init8h_avx)
-void x264_integral_init8h_avx ( uint16_t *sum, uint8_t *pix, intptr_t stride );
 #define x264_integral_init8h_avx2 x264_template(integral_init8h_avx2)
 void x264_integral_init8h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
-#define x264_integral_init4v_mmx x264_template(integral_init4v_mmx)
-void x264_integral_init4v_mmx  ( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
-#define x264_integral_init4v_sse2 x264_template(integral_init4v_sse2)
-void x264_integral_init4v_sse2 ( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
-#define x264_integral_init4v_ssse3 x264_template(integral_init4v_ssse3)
-void x264_integral_init4v_ssse3( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
 #define x264_integral_init4v_avx2 x264_template(integral_init4v_avx2)
 void x264_integral_init4v_avx2( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
-#define x264_integral_init8v_mmx x264_template(integral_init8v_mmx)
-void x264_integral_init8v_mmx ( uint16_t *sum8, intptr_t stride );
-#define x264_integral_init8v_sse2 x264_template(integral_init8v_sse2)
-void x264_integral_init8v_sse2( uint16_t *sum8, intptr_t stride );
 #define x264_integral_init8v_avx2 x264_template(integral_init8v_avx2)
 void x264_integral_init8v_avx2( uint16_t *sum8, intptr_t stride );
 #define x264_mbtree_propagate_cost_sse2 x264_template(mbtree_propagate_cost_sse2)
@@ -205,24 +181,9 @@ MC_CHROMA(avx)
 MC_CHROMA(avx2)
 #undef MC_CHROMA
 
-#define x264_frame_init_lowres_core_avx x264_template(frame_init_lowres_core_avx)
 #define x264_frame_init_lowres_core_avx2 x264_template(frame_init_lowres_core_avx2)
-#define x264_frame_init_lowres_core_mmx2 x264_template(frame_init_lowres_core_mmx2)
-#define x264_frame_init_lowres_core_cache32_mmx2 x264_template(frame_init_lowres_core_cache32_mmx2)
-#define x264_frame_init_lowres_core_sse2 x264_template(frame_init_lowres_core_sse2)
-#define x264_frame_init_lowres_core_ssse3 x264_template(frame_init_lowres_core_ssse3)
-#define x264_frame_init_lowres_core_xop x264_template(frame_init_lowres_core_xop)
-#define LOWRES(cpu)\
-void x264_frame_init_lowres_core_##cpu( pixel *src0, pixel *dst0, pixel *dsth, pixel *dstv, pixel *dstc,\
-                                        intptr_t src_stride, intptr_t dst_stride, int width, int height );
-LOWRES(mmx2)
-LOWRES(cache32_mmx2)
-LOWRES(sse2)
-LOWRES(ssse3)
-LOWRES(avx)
-LOWRES(xop)
-LOWRES(avx2)
-#undef LOWRES
+void x264_frame_init_lowres_core_avx2( pixel *src0, pixel *dst0, pixel *dsth, pixel *dstv, pixel *dstc,
+                                       intptr_t src_stride, intptr_t dst_stride, int width, int height );
 
 #define x264_pixel_avg2_w10_mmx2 x264_template(pixel_avg2_w10_mmx2)
 #define x264_pixel_avg2_w10_sse2 x264_template(pixel_avg2_w10_sse2)
@@ -505,6 +466,12 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_avx2;
 
     pf->hpel_filter = x264_hpel_filter_avx2;
+    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
+
+    pf->integral_init4h = x264_integral_init4h_avx2;
+    pf->integral_init8h = x264_integral_init8h_avx2;
+    pf->integral_init4v = x264_integral_init4v_avx2;
+    pf->integral_init8v = x264_integral_init8v_avx2;
 
 
 
@@ -512,11 +479,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->copy[PIXEL_16x16] = x264_mc_copy_w16_mmx;
     pf->copy[PIXEL_8x8]   = x264_mc_copy_w8_mmx;
     pf->copy[PIXEL_4x4]   = x264_mc_copy_w4_mmx;
-    pf->integral_init4v = x264_integral_init4v_mmx;
-    pf->integral_init8v = x264_integral_init8v_mmx;
-
-    if( !(cpu&X264_CPU_MMX2) )
-        return;
 
     pf->prefetch_fenc_400 = x264_prefetch_fenc_400_mmx2;
     pf->prefetch_fenc_420 = x264_prefetch_fenc_420_mmx2;
@@ -529,7 +491,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->get_ref = get_ref_mmx2;
     pf->mc_chroma = x264_mc_chroma_mmx2;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_mmx2;
 
     if( cpu&X264_CPU_SSE )
     {
@@ -542,27 +503,19 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->mc_luma = mc_luma_cache32_mmx2;
         pf->get_ref = get_ref_cache32_mmx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_cache32_mmx2;
     }
     else if( cpu&X264_CPU_CACHELINE_64 )
     {
         pf->mc_luma = mc_luma_cache64_mmx2;
         pf->get_ref = get_ref_cache64_mmx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_cache32_mmx2;
     }
 #endif
 
-    if( !(cpu&X264_CPU_SSE2) )
-        return;
-
-    pf->integral_init4v = x264_integral_init4v_sse2;
-    pf->integral_init8v = x264_integral_init8v_sse2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
         pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
         if( !(cpu&X264_CPU_STACK_MOD4) )
             pf->mc_chroma = x264_mc_chroma_sse2;
 
@@ -578,20 +531,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         }
     }
 
-    if( !(cpu&X264_CPU_SSSE3) )
-        return;
-
     pf->mbtree_propagate_list = mbtree_propagate_list_ssse3;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
-    if( !(cpu&X264_CPU_SLOW_PALIGNR) )
-    {
-#if ARCH_X86_64
-        if( !(cpu&X264_CPU_SLOW_ATOM) ) /* The 64-bit version is slower, but the 32-bit version is faster? */
-#endif
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
-    }
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_ssse3;
 
@@ -608,40 +551,14 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         }
     }
 
-
-    if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
-        pf->integral_init4v = x264_integral_init4v_ssse3;
-
-    if( !(cpu&X264_CPU_SSE4) )
-        return;
-
-    pf->integral_init4h = x264_integral_init4h_sse4;
-    pf->integral_init8h = x264_integral_init8h_sse4;
-
-    if( !(cpu&X264_CPU_AVX) )
-        return;
-
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
-    pf->integral_init8h = x264_integral_init8h_avx;
-
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
-
-    if( cpu&X264_CPU_XOP )
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
 
     if( cpu&X264_CPU_AVX2 )
     {
         pf->mc_chroma = x264_mc_chroma_avx2;
-        pf->integral_init8v = x264_integral_init8v_avx2;
-        pf->integral_init4v = x264_integral_init4v_avx2;
-        pf->integral_init8h = x264_integral_init8h_avx2;
-        pf->integral_init4h = x264_integral_init4h_avx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
     }
 
-    if( !(cpu&X264_CPU_AVX) )
-        return;
     pf->memcpy_aligned  = x264_memcpy_aligned_avx;
     pf->memzero_aligned = x264_memzero_aligned_avx;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
@@ -650,8 +567,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( cpu&X264_CPU_FMA4 )
         pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
 
-    if( !(cpu&X264_CPU_AVX2) )
-        return;
     pf->get_ref = get_ref_avx2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
     pf->mbtree_propagate_list = mbtree_propagate_list_avx2;

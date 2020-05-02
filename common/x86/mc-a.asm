@@ -2365,9 +2365,9 @@ cglobal plane_copy_deinterleave, 0, 0
 ;is big enough (preliminary benching suggests on the order of 4* framesize).
 INIT_YMM avx2
 cglobal hpel_filter, 0, 0
-%if WIN64
     push           r7
     push           r8
+%if WIN64
     mov            r4, [rsp + 56]
     mov            r5d, [rsp + 64]
     mov            r6d, [rsp + 72]
@@ -2383,8 +2383,6 @@ cglobal hpel_filter, 0, 0
     vmovdqu        [rsp + 96], xm14
     vmovdqu        [rsp + 112], xm15
 %else
-    push           r7
-    push           r8
     mov            r6d, [rsp + 24]
 %endif
     ; r0 -> dsth
@@ -2630,10 +2628,212 @@ cglobal hpel_filter, 0, 0
     add            rsp, 136
     vmovdqu        xm6, [rsp + 24]
     vmovdqu        xm7, [rsp + 40]
-    pop            r8
-    pop            r7
-%else
-    pop            r8
-    pop            r7
 %endif
+    pop            r8
+    pop            r7
+    RET
+
+
+;=============================================================================
+; frame_init_lowres_core
+;=============================================================================
+INIT_YMM avx2
+cglobal frame_init_lowres_core, 0, 0
+    push           r7
+    push           r8
+    push           r9
+%if WIN64
+    vmovdqu        [rsp + 32], xm6
+    mov            r4, [rsp + 64]
+    mov            r5, [rsp + 72]
+    mov            r6, [rsp + 80]
+    mov            r7d, [rsp + 88]
+    mov            r8d, [rsp + 96]
+%else
+    mov            r6, [rsp + 32]
+    mov            r7d, [rsp + 40]
+    mov            r8d, [rsp + 48]
+%endif
+    ; setup base and index
+    ; r0 -> src0
+    ; r1 -> dst0 + width
+    ; r2 -> dsth + width
+    ; r3 -> dstv + width
+    ; r4 -> dstc + width
+    ; r5 -> src_stride
+    ; r6 -> dst_stride
+    ; r7 -> -width
+    ; r8 -> height
+    ; r9 -> -width
+    add            r1, r7
+    add            r2, r7
+    add            r3, r7
+    add            r4, r7
+    neg            r7
+    mov            r9, r7
+    vbroadcasti128 m6, [deinterleave_shuf]
+
+.loop:
+    ; load two 32B blocks each iteration to produce 32B result
+    ; vertical average: dst0, dstv
+    vmovdqu        m1, [r0 + r5]
+    vpavgb         m0, m1, [r0]
+    vpavgb         m1, m1, [r0 + r5 * 2]
+    ; vertical average: dsth, dstc
+    vmovdqu        m3, [r0 + r5 + 1]
+    vpavgb         m2, m3, [r0 + 1]
+    vpavgb         m3, m3, [r0 + r5 * 2 + 1]
+    ; horizontal average
+    vpavgb         m0, m0, m2          ; dst0, dsth, dst0, dsth, ...
+    vpavgb         m1, m1, m3          ; dstv, dstc, dstv, dstc, ...
+
+    ; vertical average: dst0 + 32, dstv + 32
+    vmovdqu        m3, [r0 + r5 + 32]
+    vpavgb         m2, m3, [r0 + 32]
+    vpavgb         m3, m3, [r0 + r5 * 2 + 32]
+    ; vertical average: dsth + 32, dstc + 32
+    vmovdqu        m5, [r0 + r5 + 33]
+    vpavgb         m4, m5, [r0 + 33]
+    vpavgb         m5, m5, [r0 + r5 * 2 + 33]
+    ; horizontal average
+    vpavgb         m2, m2, m4          ; dst0 + 32, dsth + 32, dst0 + 32, dsth + 32, ...
+    vpavgb         m3, m3, m5          ; dstv + 32, dstc + 32, dstv + 32, dstc + 32, ...
+
+    vpshufb        m0, m0, m6          ; dst0..., dsth... | dst0..., dsth...
+    vpshufb        m1, m1, m6          ; dstv..., dstc... | dstv..., dstc...
+    vpshufb        m2, m2, m6
+    vpshufb        m3, m3, m6
+    vpunpcklqdq    m4, m0, m2          ; dst0, dst0 + 32 | dst0, dst0 + 32
+    vpunpckhqdq    m5, m0, m2          ; dsth, dsth + 32 | dsth, dsth + 32
+    vpunpcklqdq    m0, m1, m3          ; dstv, dstv + 32 | dstv, dstv + 32
+    vpunpckhqdq    m1, m1, m3          ; dstc, dstc + 32 | dstc, dstc + 32
+    vpermq         m4, m4, q3120       ; dst0 | dst0 + 32
+    vpermq         m5, m5, q3120       ; dsth | dsth + 32
+    vpermq         m0, m0, q3120       ; dstv | dstv + 32
+    vpermq         m1, m1, q3120       ; dstc | dstc + 32
+    vmovdqu        [r1 + r7], m4
+    vmovdqu        [r2 + r7], m5
+    vmovdqu        [r3 + r7], m0
+    vmovdqu        [r4 + r7], m1
+    add            r0, 64
+    add            r7, 32
+    jl             .loop
+
+    sub            r7, r9          ; N * 16
+    add            r7, r7          ; N * 32
+    lea            r0, [r0 + r5 * 2] ; src + N * 32 + 2 * src_stride
+    sub            r0, r7          ; src + 2 * src_stride
+    add            r1, r6          ; dst + dst_stride
+    add            r2, r6
+    add            r3, r6
+    add            r4, r6
+    mov            r7, r9
+    sub            r8d, 1
+    jg             .loop
+
+%if WIN64
+    vmovdqu        xm6, [rsp + 32]
+%endif
+    pop            r9
+    pop            r8
+    pop            r7
+    RET
+
+
+;=============================================================================
+; integral_init
+;=============================================================================
+INIT_YMM avx2
+cglobal integral_init4h, 0, 0
+    ; sum[x-stride], each element is 2B
+    mov            r6, r0
+    sub            r6, r2
+    sub            r6, r2
+    vpxor          m2, m2, m2
+.loop:
+    ; vmpsadbw can only process 8 blocks once
+    ; load a 32B block and split to 2 processing lanes
+    vpermq         m0, [r1], q2110
+    vpermq         m1, [r1 + 16], q2110
+    vmpsadbw       m0, m0, m2, 0
+    vmpsadbw       m1, m1, m2, 0
+    vpaddw         m0, m0, [r6]
+    vpaddw         m1, m1, [r6 + 32]
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    add            r0, 64
+    add            r6, 64
+    add            r1, 32
+    sub            r2, 32
+    jg             .loop
+    RET
+
+INIT_YMM avx2
+cglobal integral_init8h, 0, 0
+    ; sum[x-stride], each element is 2B
+    mov            r6, r0
+    sub            r6, r2
+    sub            r6, r2
+    vpxor          m4, m4, m4
+.loop:
+    vmovdqu        xm0, [r1]
+    vmovdqu        xm1, [r1 + 16]
+    vinserti128    m0, m0, [r1 + 8], 1
+    vinserti128    m1, m1, [r1 + 24], 1
+    ; use 2 vmpsadbw to add up 8 elements
+    vmpsadbw       m2, m0, m4, 0
+    vmpsadbw       m3, m1, m4, 0
+    vmpsadbw       m0, m0, m4, 24h
+    vmpsadbw       m1, m1, m4, 24h
+    vpaddw         m2, m2, [r6]       ; sum - 2 * stride -> sum[x-stride]
+    vpaddw         m3, m3, [r6 + 32]  ; processed 16 elements, 2B per element
+    vpaddw         m0, m0, m2
+    vpaddw         m1, m1, m3
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    add            r0, 64
+    add            r6, 64
+    add            r1, 32
+    sub            r2, 32
+    jg             .loop
+    RET
+
+INIT_YMM avx2
+cglobal integral_init4v, 0, 0
+    add            r2, r2             ; double the counter since each element is 2B
+    lea            r3, [r0 + r2 * 4]  ; sum8[x+4*stride]
+    lea            r6, [r0 + r2 * 8]  ; sum8[x+8*stride]
+.loop:
+    vmovdqu        m0, [r0]           ; sum8[x]
+    vmovdqa        m1, [r3]           ; sum8[x+4*stride]
+    vpsubw         m1, m1, m0
+    vmovdqu        [r1], m1           ; sum4
+    vpaddw         m0, m0, [r0 + 8]   ; sum8[x] + sum8[x+4]
+    vmovdqu        m1, [r6]           ; sum8[x+8*stride]
+    vpaddw         m1, m1, [r6 + 8]   ; sum8[x+8*stride] + sum8[x+8*stride+4]
+    vpsubw         m1, m1, m0
+    vmovdqu        [r0], m1           ; sum8
+    add            r0, 32
+    add            r1, 32
+    add            r3, 32
+    add            r6, 32
+    sub            r2, 32
+    jg             .loop
+    RET
+
+INIT_YMM avx2
+cglobal integral_init8v, 0, 0
+    add            r1, r1             ; double the counter since each element is 2B
+    lea            r6, [r0 + r1 * 8]  ; sum8[x+8*stride]
+.loop:
+    vmovdqu        m0, [r6]
+    vmovdqu        m1, [r6 + 32]
+    vpsubw         m0, m0, [r0]
+    vpsubw         m1, m1, [r0 + 32]
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    add            r0, 64
+    add            r6, 64
+    sub            r1, 64
+    jg             .loop
     RET
