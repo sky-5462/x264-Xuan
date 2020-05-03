@@ -489,97 +489,6 @@ static void frame_init_lowres_core( pixel *src0, pixel *dst0, pixel *dsth, pixel
     }
 }
 
-/* Estimate the total amount of influence on future quality that could be had if we
- * were to improve the reference samples used to inter predict any given macroblock. */
-static void mbtree_propagate_cost( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                   uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len )
-{
-    float fps = *fps_factor;
-    for( int i = 0; i < len; i++ )
-    {
-        int intra_cost = intra_costs[i];
-        int inter_cost = X264_MIN(intra_costs[i], inter_costs[i] & LOWRES_COST_MASK);
-        float propagate_intra  = intra_cost * inv_qscales[i];
-        float propagate_amount = propagate_in[i] + propagate_intra*fps;
-        float propagate_num    = intra_cost - inter_cost;
-        float propagate_denom  = intra_cost;
-        dst[i] = X264_MIN((int)(propagate_amount * propagate_num / propagate_denom + 0.5f), 32767);
-    }
-}
-
-static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
-                                   int16_t *propagate_amount, uint16_t *lowres_costs,
-                                   int bipred_weight, int mb_y, int len, int list )
-{
-    unsigned stride = h->mb.i_mb_stride;
-    unsigned width = h->mb.i_mb_width;
-    unsigned height = h->mb.i_mb_height;
-
-    for( unsigned i = 0; i < len; i++ )
-    {
-        int lists_used = lowres_costs[i]>>LOWRES_COST_SHIFT;
-
-        if( !(lists_used & (1 << list)) )
-            continue;
-
-        int listamount = propagate_amount[i];
-        /* Apply bipred weighting. */
-        if( lists_used == 3 )
-            listamount = (listamount * bipred_weight + 32) >> 6;
-
-        /* Early termination for simple case of mv0. */
-        if( !M32( mvs[i] ) )
-        {
-            MC_CLIP_ADD( ref_costs[mb_y*stride + i], listamount );
-            continue;
-        }
-
-        int x = mvs[i][0];
-        int y = mvs[i][1];
-        unsigned mbx = (x>>5)+i;
-        unsigned mby = (y>>5)+mb_y;
-        unsigned idx0 = mbx + mby * stride;
-        unsigned idx2 = idx0 + stride;
-        x &= 31;
-        y &= 31;
-        int idx0weight = (32-y)*(32-x);
-        int idx1weight = (32-y)*x;
-        int idx2weight = y*(32-x);
-        int idx3weight = y*x;
-        idx0weight = (idx0weight * listamount + 512) >> 10;
-        idx1weight = (idx1weight * listamount + 512) >> 10;
-        idx2weight = (idx2weight * listamount + 512) >> 10;
-        idx3weight = (idx3weight * listamount + 512) >> 10;
-
-        if( mbx < width-1 && mby < height-1 )
-        {
-            MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
-            MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
-            MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
-            MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
-        }
-        else
-        {
-            /* Note: this takes advantage of unsigned representation to
-             * catch negative mbx/mby. */
-            if( mby < height )
-            {
-                if( mbx < width )
-                    MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
-                if( mbx+1 < width )
-                    MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
-            }
-            if( mby+1 < height )
-            {
-                if( mbx < width )
-                    MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
-                if( mbx+1 < width )
-                    MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
-            }
-        }
-    }
-}
-
 /* Conversion between float and Q8.8 fixed point (big-endian) for storage */
 static void mbtree_fix8_pack( uint16_t *dst, float *src, int count )
 {
@@ -593,7 +502,7 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
 
-void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
+void x264_mc_init( int cpu, x264_mc_functions_t *pf )
 {
     pf->mc_luma   = mc_luma;
     pf->get_ref   = get_ref;
@@ -613,17 +522,10 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->memcpy_aligned = memcpy;
     pf->memzero_aligned = memzero_aligned;
 
-    pf->mbtree_propagate_list = mbtree_propagate_list;
     pf->mbtree_fix8_pack      = mbtree_fix8_pack;
     pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
 
     x264_mc_init_mmx( cpu, pf );
-
-    if( cpu_independent )
-    {
-        pf->mbtree_propagate_cost = mbtree_propagate_cost;
-        pf->mbtree_propagate_list = mbtree_propagate_list;
-    }
 }
 
 void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )

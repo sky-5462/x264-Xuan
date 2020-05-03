@@ -39,11 +39,9 @@ ch_shuf_adj: times 8 db 0
              times 8 db 2
              times 8 db 4
              times 8 db 6
-sq_1: times 1 dq 1
 
 ALIGN 32
 deinterleave_shuf:           db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
-copy_swap_shuf:              db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
 hpel_shuf:                   db  0, 8, 1, 9, 2,10, 3,11, 4,12, 5,13, 6,14, 7,15
 pb_64:               times 4 db 64
 pw_1024:             times 2 dw 1024
@@ -2836,62 +2834,3 @@ cglobal integral_init8v, 0, 0
     add            r1, 96
     jl             .loop
     RET
-
-
-;=============================================================================
-; mbtree_propagate
-;=============================================================================
-INIT_YMM avx2
-cglobal mbtree_propagate_cost, 0, 0
-%if WIN64
-    mov            r4, [rsp + 40]
-    mov            r6, [rsp + 48]
-    vbroadcastss   m5, [r6]            ; fps
-    mov            r6d, [rsp + 56]
-%else
-    mov            r6d, [rsp + 8]
-    vbroadcastss   m5, [r5]            ; fps
-%endif
-    vpbroadcastd   xm4, [pw_3fff]      ; low 14-bit mask(LOWRES_COST_MASK)
-    lea            r1, [r1 + r6 * 2]   ; double the length for 16-bit elements addressing
-    lea            r2, [r2 + r6 * 2]
-    add            r6d, r6d
-    add            r3, r6
-    add            r4, r6
-    neg            r6
-.loop:
-    ; convert 16-bit to 32bit for int-to-float conversion
-    vpmovzxwd      m0, [r2 + r6]       ; intra_cost
-    vpand          xm1, xm4, [r3 + r6]
-    vpmovzxwd      m2, [r4 + r6]       ; inv_qscales
-    vpmovzxwd      m3, [r1 + r6]       ; propagate_in
-    vpmovzxwd      m1, xm1
-    vpsubusw       m1, m0, m1          ; intra_cost - inter_cost, combine MIN and SUB
-    vpmaddwd       m2, m2, m0          ; propagate_intra
-    ; convert to float
-    vcvtdq2ps      m0, m0              ; propagate_denom
-    vcvtdq2ps      m1, m1              ; propagate_num
-    vcvtdq2ps      m2, m2
-    vcvtdq2ps      m3, m3
-    vfmadd231ps    m3, m2, m5          ; propagate_amount
-    vmulps         m3, m3, m1          ; propagate_amount * propagate_num
-    ; calculate the reciprocal of propagate_denom to avoid division
-    ; the result of rcp have a precision of 12 bits, which is not enough
-    ; we use the Newton-Raphson method to increase precision
-    ; let input = a, then we have:
-    ; b = rcp(a)
-    ; output = b * (2 - a * b) = 2 * b - a * b * b
-    vrcpps         m1, m0              ; b = rcp(propagate_denom)
-    vmulps         m0, m0, m1          ; a * b
-    vaddps         m2, m1, m1          ; 2 * b
-    vfnmadd132ps   m0, m2, m1          ; -((a * b) * b) + (2 * b)
-    vmulps         m0, m0, m3          ; propagate_amount * propagate_num / propagate_denom
-    vcvtps2dq      m0, m0              ; round to int, equivalent to (int)(result + 0.5f)
-    vextracti128   xm1, m0, 1
-    vpackssdw      xm0, xm0, xm1       ; clip to int_16
-    vmovdqu        [r0], xm0
-    add            r0, 16
-    add            r6, 16
-    jl             .loop
-    RET
-
