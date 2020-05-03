@@ -613,7 +613,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->memcpy_aligned = memcpy;
     pf->memzero_aligned = memzero_aligned;
 
-    pf->mbtree_propagate_cost = mbtree_propagate_cost;
     pf->mbtree_propagate_list = mbtree_propagate_list;
     pf->mbtree_fix8_pack      = mbtree_fix8_pack;
     pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;

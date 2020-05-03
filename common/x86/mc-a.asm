@@ -66,6 +66,7 @@ cextern pw_pixel_max
 cextern sw_64
 cextern pd_32
 cextern deinterleave_shufd
+cextern pw_3fff
 
 ;=============================================================================
 ; pixel avg2
@@ -2745,95 +2746,152 @@ cglobal frame_init_lowres_core, 0, 0
 ;=============================================================================
 INIT_YMM avx2
 cglobal integral_init4h, 0, 0
-    ; sum[x-stride], each element is 2B
-    mov            r6, r0
-    sub            r6, r2
-    sub            r6, r2
+    mov            r6, r0    ; sum[x-stride + stride], set the base to the end of array
+    add            r1, r2
+    neg            r2
     vpxor          m2, m2, m2
 .loop:
     ; vmpsadbw can only process 8 blocks once
     ; load a 32B block and split to 2 processing lanes
-    vpermq         m0, [r1], q2110
-    vpermq         m1, [r1 + 16], q2110
+    vpermq         m0, [r1 + r2], q2110
+    vpermq         m1, [r1 + r2 + 16], q2110
     vmpsadbw       m0, m0, m2, 0
     vmpsadbw       m1, m1, m2, 0
-    vpaddw         m0, m0, [r6]
-    vpaddw         m1, m1, [r6 + 32]
+    vpaddw         m0, m0, [r6 + r2 * 2]
+    vpaddw         m1, m1, [r6 + r2 * 2 + 32]
     vmovdqu        [r0], m0
     vmovdqu        [r0 + 32], m1
     add            r0, 64
-    add            r6, 64
-    add            r1, 32
-    sub            r2, 32
-    jg             .loop
+    add            r2, 32
+    jl             .loop
     RET
 
 INIT_YMM avx2
 cglobal integral_init8h, 0, 0
-    ; sum[x-stride], each element is 2B
-    mov            r6, r0
-    sub            r6, r2
-    sub            r6, r2
+    mov            r6, r0    ; sum[x-stride + stride], set the base to the end of array
+    add            r1, r2
+    neg            r2
     vpxor          m4, m4, m4
 .loop:
-    vmovdqu        xm0, [r1]
-    vmovdqu        xm1, [r1 + 16]
-    vinserti128    m0, m0, [r1 + 8], 1
-    vinserti128    m1, m1, [r1 + 24], 1
+    vmovdqu        xm0, [r1 + r2]
+    vmovdqu        xm1, [r1 + r2 + 16]
+    vinserti128    m0, m0, [r1 + r2 + 8], 1
+    vinserti128    m1, m1, [r1 + r2 + 24], 1
     ; use 2 vmpsadbw to add up 8 elements
     vmpsadbw       m2, m0, m4, 0
     vmpsadbw       m3, m1, m4, 0
     vmpsadbw       m0, m0, m4, 24h
     vmpsadbw       m1, m1, m4, 24h
-    vpaddw         m2, m2, [r6]       ; sum - 2 * stride -> sum[x-stride]
-    vpaddw         m3, m3, [r6 + 32]  ; processed 16 elements, 2B per element
+    vpaddw         m2, m2, [r6 + r2 * 2]
+    vpaddw         m3, m3, [r6 + r2 * 2 + 32]
     vpaddw         m0, m0, m2
     vpaddw         m1, m1, m3
     vmovdqu        [r0], m0
     vmovdqu        [r0 + 32], m1
     add            r0, 64
-    add            r6, 64
-    add            r1, 32
-    sub            r2, 32
-    jg             .loop
+    add            r2, 32
+    jl             .loop
     RET
 
 INIT_YMM avx2
 cglobal integral_init4v, 0, 0
-    add            r2, r2             ; double the counter since each element is 2B
-    lea            r3, [r0 + r2 * 4]  ; sum8[x+4*stride]
-    lea            r6, [r0 + r2 * 8]  ; sum8[x+8*stride]
+    lea            r3, [r0 + r2 * 2]       ; set the base of sum8 to the end of array(copy it)
+    add            r2, r2                  ; double the counter since each element is 2B
+    lea            r6, [r3 + r2 * 8]       ; sum8[x+8*stride]
+    lea            r3, [r3 + r2 * 4]       ; sum8[x+4*stride]
+    neg            r2
 .loop:
-    vmovdqu        m0, [r0]           ; sum8[x]
-    vmovdqa        m1, [r3]           ; sum8[x+4*stride]
+    vmovdqu        m0, [r0]                ; sum8[x]
+    vmovdqa        m1, [r3 + r2]           ; sum8[x+4*stride]
     vpsubw         m1, m1, m0
-    vmovdqu        [r1], m1           ; sum4
-    vpaddw         m0, m0, [r0 + 8]   ; sum8[x] + sum8[x+4]
-    vmovdqu        m1, [r6]           ; sum8[x+8*stride]
-    vpaddw         m1, m1, [r6 + 8]   ; sum8[x+8*stride] + sum8[x+8*stride+4]
+    vmovdqu        [r1], m1                ; sum4
+    vpaddw         m0, m0, [r0 + 8]        ; sum8[x] + sum8[x+4]
+    vmovdqu        m1, [r6 + r2]           ; sum8[x+8*stride]
+    vpaddw         m1, m1, [r6 + r2 + 8]   ; sum8[x+8*stride] + sum8[x+8*stride+4]
     vpsubw         m1, m1, m0
-    vmovdqu        [r0], m1           ; sum8
+    vmovdqu        [r0], m1                ; sum8
     add            r0, 32
     add            r1, 32
-    add            r3, 32
-    add            r6, 32
-    sub            r2, 32
-    jg             .loop
+    add            r2, 32
+    jl             .loop
     RET
 
 INIT_YMM avx2
 cglobal integral_init8v, 0, 0
+    lea            r6, [r0 + r1 * 2]  ; set the base of sum8 to the end of array(copy it)
     add            r1, r1             ; double the counter since each element is 2B
-    lea            r6, [r0 + r1 * 8]  ; sum8[x+8*stride]
+    lea            r6, [r6 + r1 * 8]  ; sum8[x+8*stride]
+    neg            r1
 .loop:
-    vmovdqu        m0, [r6]
-    vmovdqu        m1, [r6 + 32]
+    vmovdqu        m0, [r6 + r1]
+    vmovdqu        m1, [r6 + r1 + 32]
+    vmovdqu        m2, [r6 + r1 + 64]
     vpsubw         m0, m0, [r0]
     vpsubw         m1, m1, [r0 + 32]
+    vpsubw         m2, m2, [r0 + 64]
     vmovdqu        [r0], m0
     vmovdqu        [r0 + 32], m1
-    add            r0, 64
-    add            r6, 64
-    sub            r1, 64
-    jg             .loop
+    vmovdqu        [r0 + 64], m2
+    add            r0, 96
+    add            r1, 96
+    jl             .loop
     RET
+
+
+;=============================================================================
+; mbtree_propagate
+;=============================================================================
+INIT_YMM avx2
+cglobal mbtree_propagate_cost, 0, 0
+%if WIN64
+    mov            r4, [rsp + 40]
+    mov            r6, [rsp + 48]
+    vbroadcastss   m5, [r6]            ; fps
+    mov            r6d, [rsp + 56]
+%else
+    mov            r6d, [rsp + 8]
+    vbroadcastss   m5, [r5]            ; fps
+%endif
+    vpbroadcastd   xm4, [pw_3fff]      ; low 14-bit mask(LOWRES_COST_MASK)
+    lea            r1, [r1 + r6 * 2]   ; double the length for 16-bit elements addressing
+    lea            r2, [r2 + r6 * 2]
+    add            r6d, r6d
+    add            r3, r6
+    add            r4, r6
+    neg            r6
+.loop:
+    ; convert 16-bit to 32bit for int-to-float conversion
+    vpmovzxwd      m0, [r2 + r6]       ; intra_cost
+    vpand          xm1, xm4, [r3 + r6]
+    vpmovzxwd      m2, [r4 + r6]       ; inv_qscales
+    vpmovzxwd      m3, [r1 + r6]       ; propagate_in
+    vpmovzxwd      m1, xm1
+    vpsubusw       m1, m0, m1          ; intra_cost - inter_cost, combine MIN and SUB
+    vpmaddwd       m2, m2, m0          ; propagate_intra
+    ; convert to float
+    vcvtdq2ps      m0, m0              ; propagate_denom
+    vcvtdq2ps      m1, m1              ; propagate_num
+    vcvtdq2ps      m2, m2
+    vcvtdq2ps      m3, m3
+    vfmadd231ps    m3, m2, m5          ; propagate_amount
+    vmulps         m3, m3, m1          ; propagate_amount * propagate_num
+    ; calculate the reciprocal of propagate_denom to avoid division
+    ; the result of rcp have a precision of 12 bits, which is not enough
+    ; we use the Newton-Raphson method to increase precision
+    ; let input = a, then we have:
+    ; b = rcp(a)
+    ; output = b * (2 - a * b) = 2 * b - a * b * b
+    vrcpps         m1, m0              ; b = rcp(propagate_denom)
+    vmulps         m0, m0, m1          ; a * b
+    vaddps         m2, m1, m1          ; 2 * b
+    vfnmadd132ps   m0, m2, m1          ; -((a * b) * b) + (2 * b)
+    vmulps         m0, m0, m3          ; propagate_amount * propagate_num / propagate_denom
+    vcvtps2dq      m0, m0              ; round to int, equivalent to (int)(result + 0.5f)
+    vextracti128   xm1, m0, 1
+    vpackssdw      xm0, xm0, xm1       ; clip to int_16
+    vmovdqu        [r0], xm0
+    add            r0, 16
+    add            r6, 16
+    jl             .loop
+    RET
+
