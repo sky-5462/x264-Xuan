@@ -392,13 +392,6 @@ static void load_deinterleave_chroma_fdec( pixel *dst, pixel *src, intptr_t i_sr
     x264_plane_copy_deinterleave_c( dst, FDEC_STRIDE, dst+FDEC_STRIDE/2, FDEC_STRIDE, src, i_src, 8, height );
 }
 
-static void prefetch_fenc_null( pixel *pix_y,  intptr_t stride_y,
-                                pixel *pix_uv, intptr_t stride_uv, int mb_x )
-{}
-
-static void prefetch_ref_null( pixel *pix, intptr_t stride, int parity )
-{}
-
 static void memzero_aligned( void * dst, size_t n )
 {
     memset( dst, 0, n );
@@ -513,12 +506,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf )
     pf->copy[PIXEL_16x16] = mc_copy_w16;
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
     pf->copy[PIXEL_4x4]   = mc_copy_w4;
-
-
-    pf->prefetch_fenc_400 = prefetch_fenc_null;
-    pf->prefetch_fenc_420 = prefetch_fenc_null;
-    pf->prefetch_fenc_422 = prefetch_fenc_null;
-    pf->prefetch_ref  = prefetch_ref_null;
 
     x264_mc_init_mmx( cpu, pf );
 }

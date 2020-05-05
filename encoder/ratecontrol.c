@@ -7,7 +7,7 @@
  *          Michael Niedermayer <michaelni@gmx.at>
  *          Gabriel Bouvigne <gabriel.bouvigne@joost.com>
  *          Fiona Glaser <fiona@x264.com>
- *          Måns Rullgård <mru@mru.ath.cx>
+ *          Mï¿½ns Rullgï¿½rd <mru@mru.ath.cx>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -263,7 +263,6 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
      * function and make sure that its always called before the float math.  Noinline makes
      * sure no reordering goes on. */
     uint32_t var;
-    x264_prefetch_fenc( h, frame, mb_x, mb_y );
     if( h->mb.b_adaptive_mbaff )
     {
         /* We don't know the super-MB mode we're going to pick yet, so

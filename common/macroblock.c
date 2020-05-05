@@ -548,16 +548,6 @@ void x264_macroblock_thread_init( x264_t *h )
     }
 }
 
-void x264_prefetch_fenc( x264_t *h, x264_frame_t *fenc, int i_mb_x, int i_mb_y )
-{
-    int stride_y  = fenc->i_stride[0];
-    int stride_uv = fenc->i_stride[1];
-    int off_y  = 16 * i_mb_x + 16 * i_mb_y * stride_y;
-    int off_uv = 16 * i_mb_x + (16 * i_mb_y * stride_uv >> CHROMA_V_SHIFT);
-    h->mc.prefetch_fenc( fenc->plane[0]+off_y, stride_y,
-                         fenc->plane[1]+off_uv, stride_uv, i_mb_x );
-}
-
 NOINLINE void x264_copy_column8( pixel *dst, pixel *src )
 {
     // input pointers are offset by 4 rows because that's faster (smaller instruction size on x86)
@@ -1040,8 +1030,6 @@ static ALWAYS_INLINE void macroblock_cache_load( x264_t *h, int mb_x, int mb_y, 
             for( int i = 0; i < h->mb.pic.i_fref[list]; i++ )
                 h->mb.pic.p_integral[list][i] = &h->fref[list][i]->integral[offset];
     }
-
-    x264_prefetch_fenc( h, h->fenc, mb_x, mb_y );
 
     /* load ref/mv/mvd */
     for( int l = 0; l < lists; l++ )
@@ -1713,8 +1701,6 @@ void x264_macroblock_cache_save( x264_t *h )
         else if( CHROMA_FORMAT )
             macroblock_store_pic( h, h->mb.i_mb_x, h->mb.i_mb_y, 1, 1, 0 );
     }
-
-    x264_prefetch_fenc( h, h->fdec, h->mb.i_mb_x, h->mb.i_mb_y );
 
     h->mb.type[i_mb_xy] = i_mb_type;
     h->mb.slice_table[i_mb_xy] = h->sh.i_first_mb;

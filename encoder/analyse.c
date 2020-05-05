@@ -2944,8 +2944,6 @@ intra_analysis:
     {
         int b_skip = 0;
 
-        h->mc.prefetch_ref( h->mb.pic.p_fref[0][0][h->mb.i_mb_x&3], h->mb.pic.i_stride[0], 0 );
-
         analysis.b_try_skip = 0;
         if( analysis.b_force_intra )
         {
@@ -3003,8 +3001,6 @@ intra_analysis:
                     b_skip = x264_macroblock_probe_pskip( h );
             }
         }
-
-        h->mc.prefetch_ref( h->mb.pic.p_fref[0][0][h->mb.i_mb_x&3], h->mb.pic.i_stride[0], 1 );
 
         if( b_skip )
         {
