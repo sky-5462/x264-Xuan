@@ -519,11 +519,6 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf )
     pf->prefetch_fenc_420 = prefetch_fenc_null;
     pf->prefetch_fenc_422 = prefetch_fenc_null;
     pf->prefetch_ref  = prefetch_ref_null;
-    pf->memcpy_aligned = memcpy;
-    pf->memzero_aligned = memzero_aligned;
-
-    pf->mbtree_fix8_pack      = mbtree_fix8_pack;
-    pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
 
     x264_mc_init_mmx( cpu, pf );
 }

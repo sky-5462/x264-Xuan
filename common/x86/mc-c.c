@@ -116,18 +116,10 @@ void x264_store_interleave_chroma_avx2 ( pixel *dst, intptr_t i_dst, pixel *srcu
 void x264_load_deinterleave_chroma_fenc_avx2( pixel *dst, pixel *src, intptr_t i_src, int height );
 #define x264_load_deinterleave_chroma_fdec_avx2 x264_template(load_deinterleave_chroma_fdec_avx2)
 void x264_load_deinterleave_chroma_fdec_avx2( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
-#define x264_memcpy_aligned_sse x264_template(memcpy_aligned_sse)
-void *x264_memcpy_aligned_sse   ( void *dst, const void *src, size_t n );
-#define x264_memcpy_aligned_avx x264_template(memcpy_aligned_avx)
-void *x264_memcpy_aligned_avx   ( void *dst, const void *src, size_t n );
-#define x264_memcpy_aligned_avx512 x264_template(memcpy_aligned_avx512)
-void *x264_memcpy_aligned_avx512( void *dst, const void *src, size_t n );
-#define x264_memzero_aligned_sse x264_template(memzero_aligned_sse)
-void x264_memzero_aligned_sse   ( void *dst, size_t n );
-#define x264_memzero_aligned_avx x264_template(memzero_aligned_avx)
-void x264_memzero_aligned_avx   ( void *dst, size_t n );
-#define x264_memzero_aligned_avx512 x264_template(memzero_aligned_avx512)
-void x264_memzero_aligned_avx512( void *dst, size_t n );
+#define x264_memcpy_aligned_avx2 x264_template(memcpy_aligned_avx2)
+void *x264_memcpy_aligned_avx2   ( void *dst, const void *src, size_t n );
+#define x264_memzero_aligned_avx2 x264_template(memzero_aligned_avx2)
+void x264_memzero_aligned_avx2   ( void *dst, size_t n );
 #define x264_integral_init4h_avx2 x264_template(integral_init4h_avx2)
 void x264_integral_init4h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
 #define x264_integral_init8h_avx2 x264_template(integral_init8h_avx2)
@@ -136,21 +128,10 @@ void x264_integral_init8h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init4v_avx2( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
 #define x264_integral_init8v_avx2 x264_template(integral_init8v_avx2)
 void x264_integral_init8v_avx2( uint16_t *sum8, intptr_t stride );
-#define x264_mbtree_propagate_cost_avx2 x264_template(mbtree_propagate_cost_avx2)
-void x264_mbtree_propagate_cost_avx2  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-#define x264_mbtree_fix8_pack_ssse3 x264_template(mbtree_fix8_pack_ssse3)
-void x264_mbtree_fix8_pack_ssse3( uint16_t *dst, float *src, int count );
 #define x264_mbtree_fix8_pack_avx2 x264_template(mbtree_fix8_pack_avx2)
 void x264_mbtree_fix8_pack_avx2 ( uint16_t *dst, float *src, int count );
-#define x264_mbtree_fix8_pack_avx512 x264_template(mbtree_fix8_pack_avx512)
-void x264_mbtree_fix8_pack_avx512( uint16_t *dst, float *src, int count );
-#define x264_mbtree_fix8_unpack_ssse3 x264_template(mbtree_fix8_unpack_ssse3)
-void x264_mbtree_fix8_unpack_ssse3( float *dst, uint16_t *src, int count );
 #define x264_mbtree_fix8_unpack_avx2 x264_template(mbtree_fix8_unpack_avx2)
 void x264_mbtree_fix8_unpack_avx2 ( float *dst, uint16_t *src, int count );
-#define x264_mbtree_fix8_unpack_avx512 x264_template(mbtree_fix8_unpack_avx512)
-void x264_mbtree_fix8_unpack_avx512( float *dst, uint16_t *src, int count );
 
 #define x264_mc_chroma_avx x264_template(mc_chroma_avx)
 #define x264_mc_chroma_avx2 x264_template(mc_chroma_avx2)
@@ -409,6 +390,11 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->integral_init4v = x264_integral_init4v_avx2;
     pf->integral_init8v = x264_integral_init8v_avx2;
 
+    pf->mbtree_fix8_pack = x264_mbtree_fix8_pack_avx2;
+    pf->mbtree_fix8_unpack = x264_mbtree_fix8_unpack_avx2;
+
+    pf->memcpy_aligned  = x264_memcpy_aligned_avx2;
+    pf->memzero_aligned = x264_memzero_aligned_avx2;
 
 
     pf->copy_16x16_unaligned = x264_mc_copy_w16_mmx;
@@ -427,12 +413,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->get_ref = get_ref_mmx2;
     pf->mc_chroma = x264_mc_chroma_mmx2;
 
-
-    if( cpu&X264_CPU_SSE )
-    {
-        pf->memcpy_aligned  = x264_memcpy_aligned_sse;
-        pf->memzero_aligned = x264_memzero_aligned_sse;
-    }
 
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
     if( cpu&X264_CPU_CACHELINE_32 )
@@ -466,8 +446,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         }
     }
 
-    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
-    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_ssse3;
@@ -493,17 +471,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->mc_chroma = x264_mc_chroma_avx2;
     }
 
-    pf->memcpy_aligned  = x264_memcpy_aligned_avx;
-    pf->memzero_aligned = x264_memzero_aligned_avx;
 
     pf->get_ref = get_ref_avx2;
-    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx2;
-    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx2;
-
-    if( !(cpu&X264_CPU_AVX512) )
-        return;
-    pf->memcpy_aligned = x264_memcpy_aligned_avx512;
-    pf->memzero_aligned = x264_memzero_aligned_avx512;
-    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx512;
-    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx512;
 }

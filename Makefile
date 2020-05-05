@@ -107,7 +107,6 @@ SRCASM_X += common/x86/bitstream-a.asm \
             common/x86/dct-a.asm \
             common/x86/deblock-a.asm \
             common/x86/mc-a.asm \
-            common/x86/mc-a2.asm \
             common/x86/pixel-a.asm \
             common/x86/predict-a.asm \
             common/x86/quant-a.asm
@@ -123,76 +122,6 @@ OBJASM += $(SRCASM_X:%.asm=%-10.o) common/x86/sad16-a-10.o
 endif
 
 OBJCHK += tools/checkasm-a.o
-endif
-
-# AltiVec optims
-ifeq ($(SYS_ARCH),PPC)
-SRCS_X += common/ppc/dct.c \
-          common/ppc/deblock.c \
-          common/ppc/mc.c \
-          common/ppc/pixel.c \
-          common/ppc/predict.c \
-          common/ppc/quant.c
-endif
-
-# NEON optims
-ifeq ($(SYS_ARCH),ARM)
-SRCASM_X  = common/arm/bitstream-a.S \
-            common/arm/dct-a.S \
-            common/arm/deblock-a.S \
-            common/arm/mc-a.S \
-            common/arm/pixel-a.S \
-            common/arm/predict-a.S \
-            common/arm/quant-a.S
-SRCS_X   += common/arm/mc-c.c \
-            common/arm/predict-c.c
-
-OBJASM += common/arm/cpu-a.o
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-8.o)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-10.o)
-endif
-
-OBJCHK += tools/checkasm-arm.o
-endif
-
-# AArch64 NEON optims
-ifeq ($(SYS_ARCH),AARCH64)
-SRCASM_X  = common/aarch64/bitstream-a.S \
-            common/aarch64/cabac-a.S \
-            common/aarch64/dct-a.S \
-            common/aarch64/deblock-a.S \
-            common/aarch64/mc-a.S \
-            common/aarch64/pixel-a.S \
-            common/aarch64/predict-a.S \
-            common/aarch64/quant-a.S
-SRCS_X   += common/aarch64/asm-offsets.c \
-            common/aarch64/mc-c.c \
-            common/aarch64/predict-c.c
-
-OBJASM +=
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-8.o)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-10.o)
-endif
-
-OBJCHK += tools/checkasm-aarch64.o
-endif
-
-# MSA optims
-ifeq ($(SYS_ARCH),MIPS)
-ifneq ($(findstring HAVE_MSA 1, $(CONFIG)),)
-SRCS_X += common/mips/dct-c.c \
-          common/mips/deblock-c.c \
-          common/mips/mc-c.c \
-          common/mips/pixel-c.c \
-          common/mips/predict-c.c \
-          common/mips/quant-c.c
-endif
 endif
 
 endif

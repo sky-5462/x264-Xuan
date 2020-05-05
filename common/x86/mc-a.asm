@@ -41,13 +41,20 @@ ch_shuf_adj: times 8 db 0
              times 8 db 6
 
 ALIGN 32
-deinterleave_shuf:           db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
-hpel_shuf:                   db  0, 8, 1, 9, 2,10, 3,11, 4,12, 5,13, 6,14, 7,15
-pb_64:               times 4 db 64
-pw_1024:             times 2 dw 1024
-filt_mul20:          times 4 db 20
-filt_mul15:          times 2 db 1, -5
-filt_mul51:          times 2 db -5, 1
+mbtree_fix8_last_mask:   times 32 db  0
+                         times 32 db -1
+mbtree_fix8_unpack_shuf: db -1,-1, 1, 0,-1,-1, 3, 2,-1,-1, 5, 4,-1,-1, 7, 6
+                         db -1,-1, 9, 8,-1,-1,11,10,-1,-1,13,12,-1,-1,15,14
+mbtree_fix8_pack_shuf:   db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
+deinterleave_shuf:       db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
+hpel_shuf:               db  0, 8, 1, 9, 2,10, 3,11, 4,12, 5,13, 6,14, 7,15
+pf_256:                  dd  256.0
+pf_inv16777216:          dd  0x1p-24
+pb_64:                   times 4 db 64
+pw_1024:                 times 2 dw 1024
+filt_mul20:              times 4 db 20
+filt_mul15:              times 2 db 1, -5
+filt_mul51:              times 2 db -5, 1
 
 
 SECTION .text
@@ -2833,4 +2840,147 @@ cglobal integral_init8v, 0, 0
     add            r0, 96
     add            r1, 96
     jl             .loop
+    RET
+
+
+;=============================================================================
+; mbtree_fix8
+;=============================================================================
+INIT_YMM avx2
+cglobal mbtree_fix8_pack, 0, 0
+    vbroadcastss   m0, [pf_256]
+    vbroadcasti128 m1, [mbtree_fix8_pack_shuf]
+    sub            r2d, 16             ; subtract the last block
+    jle            .skip
+.vector_loop:
+    vmulps         m2, m0, [r1]
+    vmulps         m3, m0, [r1 + 32]
+    vcvttps2dq     m2, m2
+    vcvttps2dq     m3, m3
+    vpackssdw      m2, m2, m3          ; 0 2 | 1 3
+    vpshufb        m2, m2, m1          ; convert to big-endian
+    vpermq         m2, m2, q3120       ; 0 1 | 2 3
+    vmovdqu        [r0], m2
+    add            r0, 32
+    add            r1, 64
+    sub            r2d, 16
+    jg             .vector_loop
+
+.skip:
+    vmulps         m2, m0, [r1]
+    vmulps         m3, m0, [r1 + 32]
+    vcvttps2dq     m2, m2
+    vcvttps2dq     m3, m3
+    vpackssdw      m2, m2, m3          ; 0 2 | 1 3
+    vpshufb        m2, m2, m1          ; convert to big-endian
+    vpermq         m2, m2, q3120       ; 0 1 | 2 3
+    lea            r1, [mbtree_fix8_last_mask]
+    neg            r2d                 ; convert to positive index
+    ; load the mask
+    vmovdqu        m3, [r1 + r2 * 2]
+    ; mask merge
+    vpblendvb      m2, m2, [r0], m3
+    vmovdqu        [r0], m2
+    RET
+
+INIT_YMM avx2
+cglobal mbtree_fix8_unpack, 0, 0
+    vbroadcastss   m0, [pf_inv16777216]
+    vmovdqu        m1, [mbtree_fix8_unpack_shuf]
+    sub            r2d, 16             ; subtract the last block
+    jle            .skip
+.vector_loop:
+    vbroadcasti128 m2, [r1]
+    vbroadcasti128 m3, [r1 + 16]
+    ; convert 16 bit to 32 bit
+    ; left-align values to keep signed, equivalent to multiply 65536
+    vpshufb        m2, m2, m1
+    vpshufb        m3, m3, m1
+    vcvtdq2ps      m2, m2
+    vcvtdq2ps      m3, m3
+    ; multiply 1 / 256 / 65536
+    vmulps         m2, m2, m0
+    vmulps         m3, m3, m0
+    vmovdqu        [r0], m2
+    vmovdqu        [r0 + 32], m3
+    add            r0, 64
+    add            r1, 32
+    sub            r2d, 16
+    jg             .vector_loop
+
+.skip:
+    vbroadcasti128 m2, [r1]
+    vbroadcasti128 m3, [r1 + 16]
+    vpshufb        m2, m2, m1
+    vpshufb        m3, m3, m1
+    vcvtdq2ps      m2, m2
+    vcvtdq2ps      m3, m3
+    vmulps         m2, m2, m0
+    vmulps         m3, m3, m0
+    lea            r1, [mbtree_fix8_last_mask]
+    neg            r2d                 ; upper half index
+    mov            r3d, r2d
+    ; limit upper index to [0, 8]
+    mov            r6d, 8
+    cmp            r2d, 8
+    cmovg          r2d, r6d
+    ; the lower index will fall into [0, 7]
+    sub            r3d, r2d
+    ; load the mask
+    vmovdqu        m4, [r1 + r3 * 4]
+    vmovdqu        m5, [r1 + r2 * 4]
+    ; mask merge
+    vpblendvb      m2, m2, [r0], m4
+    vpblendvb      m3, m3, [r0 + 32], m5
+    vmovdqu        [r0], m2
+    vmovdqu        [r0 + 32], m3
+    RET
+
+
+;=============================================================================
+; memcpy/memzero
+;=============================================================================
+; These functions are not general-use; not only do they require aligned input, but memcpy
+; requires size to be a multiple of 16 and memzero requires size to be a multiple of 128.
+ALIGN 32
+INIT_YMM avx2
+cglobal memcpy_aligned, 0, 0
+    lea            r6, [r0 + r2]       ; deal with the trailer
+    test           r2d, 16             ; end with 16?
+    jz             .copy32
+    vmovdqu        xm0, [r1 + r2 - 16]
+    vmovdqu        [r6 - 16], xm0
+    sub            r6, 16
+    sub            r2d, 16
+    jle            .ret
+.copy32:
+    test           r2d, 32             ; end with 32?
+    jz             .loop
+    vmovdqu        m0, [r1 + r2 - 32]
+    vmovdqu        [r6 - 32], m0
+    sub            r2d, 32
+    jle            .ret
+ALIGN 16
+.loop:
+    vmovdqu        m0, [r1]
+    vmovdqu        m1, [r1 + 32]
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    add            r0, 64
+    add            r1, 64
+    sub            r2d, 64
+    jg             .loop
+.ret:
+    RET
+
+INIT_YMM avx2
+cglobal memzero_aligned, 0, 0
+    vpxor          m0, m0, m0
+.loop:
+    vmovdqu        [r0 + r1 - 32], m0
+    vmovdqu        [r0 + r1 - 64], m0
+    vmovdqu        [r0 + r1 - 96], m0
+    vmovdqu        [r0 + r1 - 128], m0
+    sub            r1d, 128
+    jg             .loop
     RET
