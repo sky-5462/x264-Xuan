@@ -285,17 +285,6 @@ void x264_plane_copy_c( pixel *dst, intptr_t i_dst,
     }
 }
 
-void x264_plane_copy_swap_c( pixel *dst, intptr_t i_dst,
-                             pixel *src, intptr_t i_src, int w, int h )
-{
-    for( int y=0; y<h; y++, dst+=i_dst, src+=i_src )
-        for( int x=0; x<2*w; x+=2 )
-        {
-            dst[x]   = src[x+1];
-            dst[x+1] = src[x];
-        }
-}
-
 void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h )
@@ -317,59 +306,6 @@ void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, 
             dsta[x] = src[2*x];
             dstb[x] = src[2*x+1];
         }
-}
-
-static void plane_copy_deinterleave_rgb_c( pixel *dsta, intptr_t i_dsta,
-                                           pixel *dstb, intptr_t i_dstb,
-                                           pixel *dstc, intptr_t i_dstc,
-                                           pixel *src,  intptr_t i_src, int pw, int w, int h )
-{
-    for( int y=0; y<h; y++, dsta+=i_dsta, dstb+=i_dstb, dstc+=i_dstc, src+=i_src )
-    {
-        for( int x=0; x<w; x++ )
-        {
-            dsta[x] = src[x*pw];
-            dstb[x] = src[x*pw+1];
-            dstc[x] = src[x*pw+2];
-        }
-    }
-}
-
-#if WORDS_BIGENDIAN
-static ALWAYS_INLINE uint32_t v210_endian_fix32( uint32_t x )
-{
-    return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
-}
-#else
-#define v210_endian_fix32(x) (x)
-#endif
-
-static void plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
-                                            pixel *dstc, intptr_t i_dstc,
-                                            uint32_t *src, intptr_t i_src, int w, int h )
-{
-    for( int l = 0; l < h; l++ )
-    {
-        pixel *dsty0 = dsty;
-        pixel *dstc0 = dstc;
-        uint32_t *src0 = src;
-
-        for( int n = 0; n < w; n += 3 )
-        {
-            uint32_t s = v210_endian_fix32( *src0++ );
-            *dstc0++ = s & 0x03FF;
-            *dsty0++ = (s >> 10) & 0x03FF;
-            *dstc0++ = (s >> 20) & 0x03FF;
-            s = v210_endian_fix32( *src0++ );
-            *dsty0++ = s & 0x03FF;
-            *dstc0++ = (s >> 10) & 0x03FF;
-            *dsty0++ = (s >> 20) & 0x03FF;
-        }
-
-        dsty += i_dsty;
-        dstc += i_dstc;
-        src  += i_src;
-    }
 }
 
 static void store_interleave_chroma( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height )
