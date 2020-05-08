@@ -25,7 +25,6 @@ Configuration options:
   --system-libx264         use system libx264 instead of internal
   --enable-shared          build shared library
   --enable-static          build static library
-  --disable-opencl         disable OpenCL features
   --disable-gpl            disable GPL-only features
   --disable-thread         disable multithreaded encoding
   --disable-win32thread    disable win32threads (windows only)
@@ -383,7 +382,6 @@ bit_depth="8"
 chroma_format="all"
 compiler="GNU"
 compiler_style="GNU"
-opencl="no"
 vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
@@ -404,7 +402,7 @@ NL="
 
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON AARCH64 BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
-             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
+             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
              MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
 
 # parse options
@@ -859,7 +857,6 @@ if [ $SYS = WINDOWS ]; then
             LDFLAGS="$LDFLAGS -lWindowsApp"
         fi
         cli="no"
-        opencl="no"
     fi
 fi
 
@@ -1328,15 +1325,7 @@ if [ $compiler = ICC -o $compiler = ICL ] ; then
     fi
 fi
 
-if [ "$bit_depth" = "all" ]; then
-    define HAVE_BITDEPTH8
-    define HAVE_BITDEPTH10
-elif [ "$bit_depth" -eq "8" ]; then
-    define HAVE_BITDEPTH8
-elif [ "$bit_depth" -eq "10" ]; then
-    define HAVE_BITDEPTH10
-    opencl="no"
-fi
+define HAVE_BITDEPTH8
 
 if [ "$chroma_format" != "all" ]; then
     define CHROMA_FORMAT CHROMA_$chroma_format
@@ -1347,19 +1336,6 @@ fi
 [ $interlaced = yes ] && define HAVE_INTERLACED && x264_interlaced=1 || x264_interlaced=0
 
 libdl=""
-if [ "$opencl" = "yes" ]; then
-    opencl="no"
-    # cygwin can use opencl if it can use LoadLibrary
-    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
-        opencl="yes"
-        define HAVE_OPENCL "(BIT_DEPTH==8)"
-    elif [ "$SYS" = "LINUX" -o "$SYS" = "MACOSX" ] ; then
-        opencl="yes"
-        define HAVE_OPENCL "(BIT_DEPTH==8)"
-        libdl="-ldl"
-    fi
-    LDFLAGS="$LDFLAGS $libdl"
-fi
 
 #define undefined vars as 0
 for var in $CONFIG_HAVE; do
@@ -1502,7 +1478,6 @@ PROF_GEN_CC=$PROF_GEN_CC
 PROF_GEN_LD=$PROF_GEN_LD
 PROF_USE_CC=$PROF_USE_CC
 PROF_USE_LD=$PROF_USE_LD
-HAVE_OPENCL=$opencl
 EOF
 
 if [ $compiler_style = MS ]; then
@@ -1582,7 +1557,6 @@ ffms:          $ffms
 mp4:           $mp4
 gpl:           $gpl
 thread:        $thread
-opencl:        $opencl
 filters:       $filters
 lto:           $lto
 debug:         $debug

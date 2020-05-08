@@ -113,9 +113,6 @@
 /****************************************************************************
  * Includes
  ****************************************************************************/
-#if HAVE_OPENCL
-#include "opencl.h"
-#endif
 #include "cabac.h"
 #include "bitstream.h"
 #include "set.h"
@@ -749,10 +746,6 @@ struct x264_t
     x264_bitstream_function_t bsf;
 
     x264_lookahead_t *lookahead;
-
-#if HAVE_OPENCL
-    x264_opencl_t opencl;
-#endif
 };
 
 typedef struct
