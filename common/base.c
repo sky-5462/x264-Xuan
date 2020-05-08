@@ -1012,8 +1012,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
             p->i_bframe_pyramid = atoi(value);
         }
     }
-    OPT("open-gop")
-        p->b_open_gop = atobool(value);
     OPT("nf")
         p->b_deblocking_filter = !atobool(value);
     OPT2("filter", "deblock")
@@ -1381,9 +1379,9 @@ char *x264_param2string( x264_param_t *p, int b_res )
     s += sprintf( s, " bframes=%d", p->i_bframe );
     if( p->i_bframe )
     {
-        s += sprintf( s, " b_pyramid=%d b_adapt=%d b_bias=%d direct=%d weightb=%d open_gop=%d",
+        s += sprintf( s, " b_pyramid=%d b_adapt=%d b_bias=%d direct=%d weightb=%d",
                       p->i_bframe_pyramid, p->i_bframe_adaptive, p->i_bframe_bias,
-                      p->analyse.i_direct_mv_pred, p->analyse.b_weighted_bipred, p->b_open_gop );
+                      p->analyse.i_direct_mv_pred, p->analyse.b_weighted_bipred );
     }
     s += sprintf( s, " weightp=%d", p->analyse.i_weighted_pred > 0 ? p->analyse.i_weighted_pred : 0 );
 

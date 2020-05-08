@@ -200,7 +200,6 @@ static const char * const opts_standalone[] =
     "--no-scenecut",
     "--no-weightb",
     "--non-deterministic",
-    "--open-gop",
     "--opencl",
     "--pic-struct",
     "--psnr",

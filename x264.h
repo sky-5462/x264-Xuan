@@ -269,7 +269,7 @@ static const char * const x264_avcintra_flavor_names[] = { "panasonic", "sony", 
 #define X264_TYPE_P             0x0003
 #define X264_TYPE_BREF          0x0004  /* Non-disposable B-frame */
 #define X264_TYPE_B             0x0005
-#define X264_TYPE_KEYFRAME      0x0006  /* IDR or I depending on b_open_gop option */
+#define X264_TYPE_KEYFRAME      0x0006
 #define IS_X264_TYPE_I(x) ((x)==X264_TYPE_I || (x)==X264_TYPE_IDR || (x)==X264_TYPE_KEYFRAME)
 #define IS_X264_TYPE_B(x) ((x)==X264_TYPE_B || (x)==X264_TYPE_BREF)
 
@@ -358,7 +358,6 @@ typedef struct x264_param_t
     int         i_bframe_adaptive;
     int         i_bframe_bias;
     int         i_bframe_pyramid;   /* Keep some B-frames as references: 0=off, 1=strict hierarchical, 2=normal */
-    int         b_open_gop;
     int         b_bluray_compat;
     int         i_avcintra_class;
     int         i_avcintra_flavor;

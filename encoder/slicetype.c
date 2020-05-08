@@ -1503,8 +1503,6 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
      * more RD-optimal. */
     if( (h->param.analyse.b_psy && h->param.rc.b_mb_tree) || b_vbv_lookahead )
         num_frames = framecnt;
-    else if( h->param.b_open_gop && num_frames < framecnt )
-        num_frames++;
     else if( num_frames == 0 )
     {
         frames[1]->i_type = X264_TYPE_I;
@@ -1527,7 +1525,7 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
     for( int j = 1; j <= num_frames; j++ )
     {
         if( frames[j]->i_type == X264_TYPE_KEYFRAME )
-            frames[j]->i_type = h->param.b_open_gop ? X264_TYPE_I : X264_TYPE_IDR;
+            frames[j]->i_type = X264_TYPE_IDR;
     }
 
     /* Close GOP at IDR-frames */
@@ -1681,7 +1679,7 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
 
             if( IS_X264_TYPE_AUTO_OR_I( frm->i_forced_type ) )
             {
-                if( h->param.b_open_gop || !IS_X264_TYPE_B( frames[j-1]->i_forced_type ) )
+                if( !IS_X264_TYPE_B( frames[j-1]->i_forced_type ) )
                     last_possible = j;
             }
             if( keyframe_dist >= h->param.i_keyint_max )
@@ -1694,23 +1692,11 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
                 }
                 last_possible = 0;
                 if( frm->i_type != X264_TYPE_IDR )
-                    frm->i_type = h->param.b_open_gop ? X264_TYPE_I : X264_TYPE_IDR;
+                    frm->i_type = X264_TYPE_IDR;
             }
             if( frm->i_type == X264_TYPE_I && keyframe_dist >= h->param.i_keyint_min )
             {
-                if( h->param.b_open_gop )
-                {
-                    last_keyframe = frm->i_frame;
-                    if( h->param.b_bluray_compat )
-                    {
-                        // Use bluray order
-                        int bframes = 0;
-                        while( bframes < j-1 && IS_X264_TYPE_B( frames[j-1-bframes]->i_type ) )
-                            bframes++;
-                        last_keyframe -= bframes;
-                    }
-                }
-                else if( frm->i_forced_type != X264_TYPE_I )
+                if( frm->i_forced_type != X264_TYPE_I )
                     frm->i_type = X264_TYPE_IDR;
             }
             if( frm->i_type == X264_TYPE_IDR )
@@ -1817,33 +1803,23 @@ void x264_slicetype_decide( x264_t *h )
         }
 
         if( frm->i_type == X264_TYPE_KEYFRAME )
-            frm->i_type = h->param.b_open_gop ? X264_TYPE_I : X264_TYPE_IDR;
+            frm->i_type = X264_TYPE_IDR;
 
         /* Limit GOP size */
         if( (!h->param.b_intra_refresh || frm->i_frame == 0) && frm->i_frame - h->lookahead->i_last_keyframe >= h->param.i_keyint_max )
         {
             if( frm->i_type == X264_TYPE_AUTO || frm->i_type == X264_TYPE_I )
-                frm->i_type = h->param.b_open_gop && h->lookahead->i_last_keyframe >= 0 ? X264_TYPE_I : X264_TYPE_IDR;
+                frm->i_type = X264_TYPE_IDR;
             int warn = frm->i_type != X264_TYPE_IDR;
-            if( warn && h->param.b_open_gop )
-                warn &= frm->i_type != X264_TYPE_I;
             if( warn )
             {
                 x264_log( h, X264_LOG_WARNING, "specified frame type (%d) at %d is not compatible with keyframe interval\n", frm->i_type, frm->i_frame );
-                frm->i_type = h->param.b_open_gop && h->lookahead->i_last_keyframe >= 0 ? X264_TYPE_I : X264_TYPE_IDR;
+                frm->i_type = X264_TYPE_IDR;
             }
         }
         if( frm->i_type == X264_TYPE_I && frm->i_frame - h->lookahead->i_last_keyframe >= h->param.i_keyint_min )
         {
-            if( h->param.b_open_gop )
-            {
-                h->lookahead->i_last_keyframe = frm->i_frame; // Use display order
-                if( h->param.b_bluray_compat )
-                    h->lookahead->i_last_keyframe -= bframes; // Use bluray order
-                frm->b_keyframe = 1;
-            }
-            else
-                frm->i_type = X264_TYPE_IDR;
+            frm->i_type = X264_TYPE_IDR;
         }
         if( frm->i_type == X264_TYPE_IDR )
         {

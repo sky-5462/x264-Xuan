@@ -49,22 +49,6 @@
 
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "x264", __VA_ARGS__ )
 
-#if HAVE_LAVF
-#undef DECLARE_ALIGNED
-#include <libavformat/avformat.h>
-#include <libavutil/pixfmt.h>
-#include <libavutil/pixdesc.h>
-#endif
-
-#if HAVE_SWSCALE
-#undef DECLARE_ALIGNED
-#include <libswscale/swscale.h>
-#endif
-
-#if HAVE_FFMS
-#include <ffms.h>
-#endif
-
 #ifdef _WIN32
 #define CONSOLE_TITLE_SIZE 200
 static wchar_t org_console_title[CONSOLE_TITLE_SIZE] = L"";
@@ -501,16 +485,12 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "x264 core:%d%s\n"
         "Syntax: x264 [options] -o outfile infile\n"
         "\n"
-        "Infile can be raw (in which case resolution is required),\n"
-        "  or YUV4MPEG (*.y4m),\n"
-        "  or Avisynth if compiled with support (%s).\n"
-        "  or libav* formats if compiled with lavf support (%s) or ffms support (%s).\n"
+        "Infile must be YUV4MPEG (*.y4m)\n"
         "Outfile type is selected by filename:\n"
         " .264 -> Raw bytestream\n"
         " .mkv -> Matroska\n"
         " .flv -> Flash Video\n"
-        " .mp4 -> MP4 if compiled with GPAC or L-SMASH support (%s)\n"
-        "Output bit depth: %s\n."
+        "Output bit depth: 8\n."
         "\n"
         "Options:\n"
         "\n"
@@ -518,38 +498,7 @@ static void help( x264_param_t *defaults, int longhelp )
         "      --longhelp              List more options\n"
         "      --fullhelp              List all options\n"
         "\n",
-        X264_BUILD, X264_VERSION,
-#if HAVE_AVS
-        "yes",
-#else
-        "no",
-#endif
-#if HAVE_LAVF
-        "yes",
-#else
-        "no",
-#endif
-#if HAVE_FFMS
-        "yes",
-#else
-        "no",
-#endif
-#if HAVE_GPAC
-        "gpac",
-#elif HAVE_LSMASH
-        "lsmash",
-#else
-        "no",
-#endif
-#if HAVE_BITDEPTH8 && HAVE_BITDEPTH10
-        "8/10"
-#elif HAVE_BITDEPTH8
-        "8"
-#elif HAVE_BITDEPTH10
-        "10"
-#else
-        "none"
-#endif
+        X264_BUILD, X264_VERSION
       );
     H0( "Example usage:\n" );
     H0( "\n" );
@@ -574,35 +523,19 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --profile <string>      Force the limits of an H.264 profile\n"
         "                                  Overrides all settings.\n" );
     H2(
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if HAVE_BITDEPTH8
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
         "                                    --cqm flat --weightp 0\n"
-        "                                    No interlaced.\n"
         "                                    No lossless.\n"
         "                                  - main:\n"
         "                                    --no-8x8dct --cqm flat\n"
         "                                    No lossless.\n"
-#endif
         "                                  - high:\n"
         "                                    No lossless.\n"
-#endif
-#if HAVE_BITDEPTH10
-        "                                  - high10:\n"
-        "                                    No lossless.\n"
-        "                                    Support for bit depth 8-10.\n"
-#endif
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
         "                                  - high422:\n"
         "                                    No lossless.\n"
-        "                                    Support for bit depth 8-10.\n"
         "                                    Support for 4:2:0/4:2:2 chroma subsampling.\n"
-#endif
         "                                  - high444:\n"
-        "                                    Support for bit depth 8-10.\n"
         "                                    Support for 4:2:0/4:2:2/4:4:4 chroma subsampling.\n" );
     else H0( "                                  - %s\n", stringify_names( buf, x264_valid_profile_names ) );
     H0( "      --preset <string>       Use a preset to select encoding settings [medium]\n"
@@ -708,8 +641,6 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - strict: Strictly hierarchical pyramid\n"
         "                                  - normal: Non-strict (not Blu-ray compatible)\n",
         strtable_lookup( x264_b_pyramid_names, defaults->i_bframe_pyramid ) );
-    H1( "      --open-gop              Use recovery points to close GOPs\n"
-        "                              Only available with b-frames\n" );
     H1( "      --no-cabac              Disable CABAC\n" );
     H1( "  -r, --ref <integer>         Number of reference frames [%d]\n", defaults->i_frame_reference );
     H1( "      --no-deblock            Disable loop filter\n" );
@@ -723,14 +654,9 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --slice-max-size <integer> Limit the size of each slice in bytes\n");
     H2( "      --slice-max-mbs <integer> Limit the size of each slice in macroblocks (max)\n");
     H2( "      --slice-min-mbs <integer> Limit the size of each slice in macroblocks (min)\n");
-    H0( "      --tff                   Enable interlaced mode (top field first)\n" );
-    H0( "      --bff                   Enable interlaced mode (bottom field first)\n" );
     H2( "      --constrained-intra     Enable constrained intra prediction.\n" );
     H0( "      --pulldown <string>     Use soft pulldown to change frame rate\n"
         "                                  - none, 22, 32, 64, double, triple, euro (requires cfr input)\n" );
-    H2( "      --fake-interlaced       Flag stream as interlaced but encode progressive.\n"
-        "                              Makes it possible to encode 25p and 30p Blu-Ray\n"
-        "                              streams. Ignored in interlaced mode.\n" );
     H2( "      --frame-packing <integer> For stereoscopic videos define frame arrangement\n"
         "                                  - 0: checkerboard - pixels are alternatively from L and R\n"
         "                                  - 1: column alternation - L and R are interlaced by column\n"
@@ -1036,7 +962,6 @@ static struct option long_options[] =
     { "no-b-adapt",        no_argument, NULL, 0 },
     { "b-bias",      required_argument, NULL, 0 },
     { "b-pyramid",   required_argument, NULL, 0 },
-    { "open-gop",          no_argument, NULL, 0 },
     { "bluray-compat",     no_argument, NULL, 0 },
     { "avcintra-class", required_argument, NULL, 0 },
     { "avcintra-flavor", required_argument, NULL, 0 },
@@ -1199,19 +1124,8 @@ static int select_output( const char *muxer, char *filename, x264_param_t *param
 
     if( !strcasecmp( ext, "mp4" ) )
     {
-#if HAVE_GPAC || HAVE_LSMASH
-        cli_output = mp4_output;
-        param->b_annexb = 0;
-        param->b_repeat_headers = 0;
-        if( param->i_nal_hrd == X264_NAL_HRD_CBR )
-        {
-            x264_cli_log( "x264", X264_LOG_WARNING, "cbr nal-hrd is not compatible with mp4\n" );
-            param->i_nal_hrd = X264_NAL_HRD_VBR;
-        }
-#else
         x264_cli_log( "x264", X264_LOG_ERROR, "not compiled with MP4 output support\n" );
         return -1;
-#endif
     }
     else if( !strcasecmp( ext, "mkv" ) )
     {
@@ -1252,13 +1166,8 @@ static int select_input( const char *demuxer, char *used_demuxer, char *filename
 
     if( !strcasecmp( module, "avs" ) || !strcasecmp( ext, "d2v" ) || !strcasecmp( ext, "dga" ) )
     {
-#if HAVE_AVS
-        cli_input = avs_input;
-        module = "avs";
-#else
         x264_cli_log( "x264", X264_LOG_ERROR, "not compiled with AVS input support\n" );
         return -1;
-#endif
     }
     else if( !strcasecmp( module, "y4m" ) )
         cli_input = y4m_input;
@@ -1266,33 +1175,6 @@ static int select_input( const char *demuxer, char *used_demuxer, char *filename
         cli_input = raw_input;
     else
     {
-#if HAVE_FFMS
-        if( b_regular && (b_auto || !strcasecmp( demuxer, "ffms" )) &&
-            !ffms_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "ffms";
-            b_auto = 0;
-            cli_input = ffms_input;
-        }
-#endif
-#if HAVE_LAVF
-        if( (b_auto || !strcasecmp( demuxer, "lavf" )) &&
-            !lavf_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "lavf";
-            b_auto = 0;
-            cli_input = lavf_input;
-        }
-#endif
-#if HAVE_AVS
-        if( b_regular && (b_auto || !strcasecmp( demuxer, "avs" )) &&
-            !avs_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "avs";
-            b_auto = 0;
-            cli_input = avs_input;
-        }
-#endif
         if( b_auto && !raw_input.open_file( filename, p_handle, info, opt ) )
         {
             module = "raw";

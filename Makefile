@@ -56,11 +56,6 @@ OBJEXAMPLE =
 
 CONFIG := $(shell cat config.h)
 
-# Optional module sources
-ifneq ($(findstring HAVE_AVS 1, $(CONFIG)),)
-SRCCLI += input/avs.c
-endif
-
 ifneq ($(findstring HAVE_THREAD 1, $(CONFIG)),)
 SRCS_X   += common/threadpool.c
 SRCCLI_X += input/thread.c
@@ -70,31 +65,10 @@ ifneq ($(findstring HAVE_WIN32THREAD 1, $(CONFIG)),)
 SRCS += common/win32thread.c
 endif
 
-ifneq ($(findstring HAVE_LAVF 1, $(CONFIG)),)
-SRCCLI += input/lavf.c
-endif
-
-ifneq ($(findstring HAVE_FFMS 1, $(CONFIG)),)
-SRCCLI += input/ffms.c
-endif
-
-ifneq ($(findstring HAVE_GPAC 1, $(CONFIG)),)
-SRCCLI += output/mp4.c
-endif
-
-ifneq ($(findstring HAVE_LSMASH 1, $(CONFIG)),)
-SRCCLI += output/mp4_lsmash.c
-endif
-
 ifneq ($(AS),)
 
 # MMX/SSE optims
 SRCASM_X =
-ifeq ($(SYS_ARCH),X86)
-ARCH_X86 = yes
-SRCASM_X += common/x86/dct-32.asm \
-            common/x86/pixel-32.asm
-endif
 ifeq ($(SYS_ARCH),X86_64)
 ARCH_X86 = yes
 SRCASM_X += common/x86/trellis-64.asm
@@ -138,13 +112,6 @@ OBJSO  += $(if $(RC), x264res.dll.o)
 endif
 endif
 
-ifeq ($(HAVE_OPENCL),yes)
-common/oclobj.h: common/opencl/x264-cl.h $(wildcard $(SRCPATH)/common/opencl/*.cl)
-	cat $^ | $(SRCPATH)/tools/cltostr.sh $@
-GENERATED += common/oclobj.h
-SRCS_8 += common/opencl.c encoder/slicetype-cl.c
-endif
-
 OBJS   += $(SRCS:%.c=%.o)
 OBJCLI += $(SRCCLI:%.c=%.o)
 OBJSO  += $(SRCSO:%.c=%.o)
@@ -155,12 +122,6 @@ OBJS      += $(SRCS_X:%.c=%-8.o) $(SRCS_8:%.c=%-8.o)
 OBJCLI    += $(SRCCLI_X:%.c=%-8.o)
 OBJCHK_8  += $(SRCCHK_X:%.c=%-8.o)
 checkasm: checkasm8$(EXE)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJS      += $(SRCS_X:%.c=%-10.o)
-OBJCLI    += $(SRCCLI_X:%.c=%-10.o)
-OBJCHK_10 += $(SRCCHK_X:%.c=%-10.o)
-checkasm: checkasm10$(EXE)
 endif
 
 .PHONY: all default fprofiled clean distclean install install-* uninstall cli lib-* checkasm etags

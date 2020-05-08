@@ -939,7 +939,6 @@ int x264_ratecontrol_new( x264_t *h )
             CMP_OPT_FIRST_PASS( "bframes", h->param.i_bframe );
             CMP_OPT_FIRST_PASS( "b_pyramid", h->param.i_bframe_pyramid );
             CMP_OPT_FIRST_PASS( "intra_refresh", h->param.b_intra_refresh );
-            CMP_OPT_FIRST_PASS( "open_gop", h->param.b_open_gop );
             CMP_OPT_FIRST_PASS( "bluray_compat", h->param.b_bluray_compat );
             CMP_OPT_FIRST_PASS( "mbtree", h->param.rc.b_mb_tree );
 

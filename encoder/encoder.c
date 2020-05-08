@@ -1028,7 +1028,6 @@ static int validate_parameters( x264_t *h, int b_open )
         h->param.i_bframe_adaptive = X264_B_ADAPT_NONE;
         h->param.analyse.i_direct_mv_pred = 0;
         h->param.analyse.b_weighted_bipred = 0;
-        h->param.b_open_gop = 0;
     }
     if( h->param.b_intra_refresh && h->param.i_bframe_pyramid == X264_B_PYRAMID_NORMAL )
     {
@@ -1040,11 +1039,6 @@ static int validate_parameters( x264_t *h, int b_open )
         x264_log( h, X264_LOG_WARNING, "ref > 1 + intra-refresh is not supported\n" );
         h->param.i_frame_reference = 1;
         h->param.i_dpb_size = 1;
-    }
-    if( h->param.b_intra_refresh && h->param.b_open_gop )
-    {
-        x264_log( h, X264_LOG_WARNING, "intra-refresh is not compatible with open-gop\n" );
-        h->param.b_open_gop = 0;
     }
     if( !h->param.i_fps_num || !h->param.i_fps_den )
     {
@@ -1329,7 +1323,6 @@ static int validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_tff );
     BOOLIFY( b_pic_struct );
     BOOLIFY( b_fake_interlaced );
-    BOOLIFY( b_open_gop );
     BOOLIFY( b_bluray_compat );
     BOOLIFY( b_stitchable );
     BOOLIFY( b_full_recon );
@@ -1553,7 +1546,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->frames.i_last_keyframe = - h->param.i_keyint_max;
     h->frames.i_input    = 0;
     h->frames.i_largest_pts = h->frames.i_second_largest_pts = -1;
-    h->frames.i_poc_last_open_gop = -1;
 
     CHECKED_MALLOCZERO( h->cost_table, sizeof(*h->cost_table) );
     CHECKED_MALLOCZERO( h->frames.unused[0], (h->frames.i_delay + 3) * sizeof(x264_frame_t *) );
@@ -2498,7 +2490,7 @@ static inline void reference_hierarchy_reset( x264_t *h )
                         != h->frames.current[i]->i_frame + h->sps->vui.i_num_reorder_frames;
 
     /* This function must handle b-pyramid and clear frames for open-gop */
-    if( h->param.i_bframe_pyramid != X264_B_PYRAMID_STRICT && !b_hasdelayframe && h->frames.i_poc_last_open_gop == -1 )
+    if( h->param.i_bframe_pyramid != X264_B_PYRAMID_STRICT && !b_hasdelayframe )
         return;
 
     /* Remove last BREF. There will never be old BREFs in the
@@ -2507,7 +2499,7 @@ static inline void reference_hierarchy_reset( x264_t *h )
     {
         if( ( h->param.i_bframe_pyramid == X264_B_PYRAMID_STRICT
             && h->frames.reference[ref]->i_type == X264_TYPE_BREF )
-            || ( h->frames.reference[ref]->i_poc < h->frames.i_poc_last_open_gop
+            || ( h->frames.reference[ref]->i_poc < -1
             && h->sh.i_type != SLICE_TYPE_B ) )
         {
             int diff = h->i_frame_num - h->frames.reference[ref]->i_frame_num;
@@ -3439,7 +3431,6 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_ref_idc = NAL_PRIORITY_HIGHEST;
         h->sh.i_type = SLICE_TYPE_I;
         reference_reset( h );
-        h->frames.i_poc_last_open_gop = -1;
     }
     else if( h->fenc->i_type == X264_TYPE_I )
     {
@@ -3447,8 +3438,6 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_ref_idc = NAL_PRIORITY_HIGH; /* Not completely true but for now it is (as all I/P are kept as ref)*/
         h->sh.i_type = SLICE_TYPE_I;
         reference_hierarchy_reset( h );
-        if( h->param.b_open_gop )
-            h->frames.i_poc_last_open_gop = h->fenc->b_keyframe ? h->fenc->i_poc : -1;
     }
     else if( h->fenc->i_type == X264_TYPE_P )
     {
@@ -3456,7 +3445,6 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_ref_idc = NAL_PRIORITY_HIGH; /* Not completely true but for now it is (as all I/P are kept as ref)*/
         h->sh.i_type = SLICE_TYPE_P;
         reference_hierarchy_reset( h );
-        h->frames.i_poc_last_open_gop = -1;
     }
     else if( h->fenc->i_type == X264_TYPE_BREF )
     {
@@ -3659,7 +3647,7 @@ int     x264_encoder_encode( x264_t *h,
 
         if( h->fenc->i_type != X264_TYPE_IDR )
         {
-            int time_to_recovery = h->param.b_open_gop ? 0 : X264_MIN( h->mb.i_mb_width - 1, h->param.i_keyint_max ) + h->param.i_bframe - 1;
+            int time_to_recovery = X264_MIN( h->mb.i_mb_width - 1, h->param.i_keyint_max ) + h->param.i_bframe - 1;
             nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
             x264_sei_recovery_point_write( h, &h->out.bs, time_to_recovery );
             if( nal_end( h ) )
