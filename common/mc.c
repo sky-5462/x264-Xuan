@@ -433,16 +433,6 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
 
 void x264_mc_init( int cpu, x264_mc_functions_t *pf )
 {
-    pf->mc_luma   = mc_luma;
-    pf->get_ref   = get_ref;
-
-    pf->mc_chroma = mc_chroma;
-
-    pf->copy_16x16_unaligned = mc_copy_w16;
-    pf->copy[PIXEL_16x16] = mc_copy_w16;
-    pf->copy[PIXEL_8x8]   = mc_copy_w8;
-    pf->copy[PIXEL_4x4]   = mc_copy_w4;
-
     x264_mc_init_mmx( cpu, pf );
 }
 
