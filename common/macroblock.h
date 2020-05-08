@@ -370,52 +370,27 @@ void x264_mb_mc_8x8( x264_t *h, int i8 );
 
 static ALWAYS_INLINE uint32_t pack16to32( uint32_t a, uint32_t b )
 {
-#if WORDS_BIGENDIAN
-   return b + (a<<16);
-#else
    return a + (b<<16);
-#endif
 }
 static ALWAYS_INLINE uint32_t pack8to16( uint32_t a, uint32_t b )
 {
-#if WORDS_BIGENDIAN
-   return b + (a<<8);
-#else
    return a + (b<<8);
-#endif
 }
 static ALWAYS_INLINE uint32_t pack8to32( uint32_t a, uint32_t b, uint32_t c, uint32_t d )
 {
-#if WORDS_BIGENDIAN
-   return d + (c<<8) + (b<<16) + (a<<24);
-#else
    return a + (b<<8) + (c<<16) + (d<<24);
-#endif
 }
 static ALWAYS_INLINE uint32_t pack16to32_mask( int a, int b )
 {
-#if WORDS_BIGENDIAN
-   return (b&0xFFFF) + (a<<16);
-#else
    return (a&0xFFFF) + (b<<16);
-#endif
 }
 static ALWAYS_INLINE uint64_t pack32to64( uint32_t a, uint32_t b )
 {
-#if WORDS_BIGENDIAN
-   return b + ((uint64_t)a<<32);
-#else
    return a + ((uint64_t)b<<32);
-#endif
 }
 
-#if HIGH_BIT_DEPTH
-#   define pack_pixel_1to2 pack16to32
-#   define pack_pixel_2to4 pack32to64
-#else
-#   define pack_pixel_1to2 pack8to16
-#   define pack_pixel_2to4 pack16to32
-#endif
+#define pack_pixel_1to2 pack8to16
+#define pack_pixel_2to4 pack16to32
 
 static ALWAYS_INLINE int x264_mb_predict_intra4x4_mode( x264_t *h, int idx )
 {

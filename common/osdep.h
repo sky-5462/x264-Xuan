@@ -221,29 +221,8 @@ static inline int x264_is_pipe( const char *path )
 #define ALIGNED_4( var )  DECLARE_ALIGNED( var, 4 )
 #define ALIGNED_8( var )  DECLARE_ALIGNED( var, 8 )
 #define ALIGNED_16( var ) DECLARE_ALIGNED( var, 16 )
-
-// ARM compiliers don't reliably align stack variables
-// - EABI requires only 8 byte stack alignment to be maintained
-// - gcc can't align stack variables to more even if the stack were to be correctly aligned outside the function
-// - armcc can't either, but is nice enough to actually tell you so
-// - Apple gcc only maintains 4 byte alignment
-// - llvm can align the stack, but only in svn and (unrelated) it exposes bugs in all released GNU binutils...
-
-#define ALIGNED_ARRAY_EMU( mask, type, name, sub1, ... )\
-    uint8_t name##_u [sizeof(type sub1 __VA_ARGS__) + mask]; \
-    type (*name) __VA_ARGS__ = (void*)((intptr_t)(name##_u+mask) & ~mask)
-
-#if ARCH_ARM && SYS_MACOSX
-#define ALIGNED_ARRAY_8( ... ) EXPAND( ALIGNED_ARRAY_EMU( 7, __VA_ARGS__ ) )
-#else
 #define ALIGNED_ARRAY_8( type, name, sub1, ... ) ALIGNED_8( type name sub1 __VA_ARGS__ )
-#endif
-
-#if ARCH_ARM
-#define ALIGNED_ARRAY_16( ... ) EXPAND( ALIGNED_ARRAY_EMU( 15, __VA_ARGS__ ) )
-#else
 #define ALIGNED_ARRAY_16( type, name, sub1, ... ) ALIGNED_16( type name sub1 __VA_ARGS__ )
-#endif
 
 #define EXPAND(x) x
 
@@ -357,12 +336,6 @@ static ALWAYS_INLINE int x264_pthread_fetch_and_add( int *val, int add, x264_pth
 
 #define asm __asm__
 
-#if WORDS_BIGENDIAN
-#define endian_fix(x) (x)
-#define endian_fix64(x) (x)
-#define endian_fix32(x) (x)
-#define endian_fix16(x) (x)
-#else
 #if HAVE_X86_INLINE_ASM
 static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
@@ -395,7 +368,6 @@ static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
 {
     return (x<<8)|(x>>8);
 }
-#endif
 
 /* For values with 4 bits or less. */
 static ALWAYS_INLINE int x264_ctz_4bit( uint32_t x )
@@ -459,10 +431,6 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
     sp.sched_priority -= p;\
     pthread_setschedparam( handle, policy, &sp );\
 }
-#elif SYS_HAIKU
-#include <OS.h>
-#define x264_lower_thread_priority(p)\
-    { UNUSED status_t nice_ret = set_thread_priority( find_thread( NULL ), B_LOW_PRIORITY ); }
 #else
 #include <unistd.h>
 #define x264_lower_thread_priority(p) { UNUSED int nice_ret = nice(p); }
