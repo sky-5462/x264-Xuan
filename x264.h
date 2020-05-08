@@ -297,7 +297,6 @@ typedef struct x264_param_t
     int         i_lookahead_threads; /* multiple threads for lookahead analysis */
     int         b_sliced_threads;  /* Whether to use slice-based threading. */
     int         b_deterministic; /* whether to allow non-deterministic optimizations when threaded */
-    int         b_cpu_independent; /* force canonical behavior rather than cpu-dependent optimal algorithms */
     int         i_sync_lookahead; /* threaded lookahead buffer */
 
     /* Video Properties */

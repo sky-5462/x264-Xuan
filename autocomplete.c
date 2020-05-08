@@ -169,7 +169,6 @@ static const char * const opts_standalone[] =
     "--bluray-compat",
     "--cabac",
     "--constrained-intra",
-    "--cpu-independent",
     "--dts-compress",
     "--fake-interlaced",
     "--fast-pskip",
