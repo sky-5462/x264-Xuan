@@ -76,19 +76,9 @@ void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val );
 #define x264_cabac_encode_flush x264_template(cabac_encode_flush)
 void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb );
 
-#if HAVE_MMX
 #define x264_cabac_encode_decision x264_cabac_encode_decision_asm
 #define x264_cabac_encode_bypass x264_cabac_encode_bypass_asm
 #define x264_cabac_encode_terminal x264_cabac_encode_terminal_asm
-#elif HAVE_AARCH64
-#define x264_cabac_encode_decision x264_cabac_encode_decision_asm
-#define x264_cabac_encode_bypass x264_cabac_encode_bypass_asm
-#define x264_cabac_encode_terminal x264_cabac_encode_terminal_asm
-#else
-#define x264_cabac_encode_decision x264_cabac_encode_decision_c
-#define x264_cabac_encode_bypass x264_cabac_encode_bypass_c
-#define x264_cabac_encode_terminal x264_cabac_encode_terminal_c
-#endif
 #define x264_cabac_encode_decision_noup x264_cabac_encode_decision
 
 static ALWAYS_INLINE int x264_cabac_pos( x264_cabac_t *cb )

@@ -45,14 +45,6 @@ Cross-compilation:
   --cross-prefix=PREFIX    use PREFIX for compilation tools
   --sysroot=SYSROOT        root of cross-build tree
 
-External library support:
-  --disable-avs            disable avisynth support
-  --disable-swscale        disable swscale support
-  --disable-lavf           disable libavformat support
-  --disable-ffms           disable ffmpegsource support
-  --disable-gpac           disable gpac support
-  --disable-lsmash         disable lsmash support
-
 EOF
 exit 1
 fi
@@ -119,7 +111,6 @@ cl_ldflags() {
 
         arg=${arg/pthreadGC/pthreadVC}
         [ "$arg" = avifil32.lib ] && arg=vfw32.lib
-        [ "$arg" = gpac_static.lib ] && arg=libgpac_static.lib
         [ "$arg" = x264.lib ] && arg=libx264.lib
 
         [ -n "$arg" ] && echo -n "$arg "
@@ -362,15 +353,9 @@ cli="yes"
 cli_libx264="internal"
 shared="no"
 static="no"
-avs="auto"
-lavf="auto"
-ffms="auto"
-gpac="auto"
-lsmash="auto"
 mp4="no"
 gpl="yes"
 thread="auto"
-swscale="auto"
 asm="auto"
 interlaced="no"
 lto="no"
@@ -382,7 +367,6 @@ bit_depth="8"
 chroma_format="all"
 compiler="GNU"
 compiler_style="GNU"
-vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
 CFLAGSSO="$CFLAGSSO"
@@ -401,9 +385,9 @@ NL="
 "
 
 # list of all preprocessor HAVE values we can define
-CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON AARCH64 BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
-             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
+CONFIG_HAVE="MALLOC_H POSIXTHREAD WIN32THREAD THREAD LOG2F \
+             GPL VECTOREXT INTERLACED CPU_COUNT THP X86_INLINE_ASM INTEL_DISPATCHER \
+             MMAP WINRT STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
 
 # parse options
 
@@ -440,21 +424,6 @@ for opt do
         --disable-asm)
             asm="no"
             ;;
-        --disable-avs)
-            avs="no"
-            ;;
-        --disable-lavf)
-            lavf="no"
-            ;;
-        --disable-ffms)
-            ffms="no"
-            ;;
-        --disable-gpac)
-            gpac="no"
-            ;;
-        --disable-lsmash)
-            lsmash="no"
-            ;;
         --disable-gpl)
             gpl="no"
             ;;
@@ -476,9 +445,6 @@ for opt do
         --disable-win32thread)
             [ "$thread" != "no" ] && thread="posix"
             ;;
-        --disable-swscale)
-            swscale="no"
-            ;;
         --enable-lto)
             lto="auto"
             ;;
@@ -498,9 +464,6 @@ for opt do
             ;;
         --host=*)
             host="$optarg"
-            ;;
-        --disable-vsx)
-            vsx="no"
             ;;
         --cross-prefix=*)
             cross_prefix="$optarg"
@@ -707,32 +670,6 @@ LDFLAGS="$LDFLAGS $libm"
 
 stack_alignment=4
 case $host_cpu in
-    i*86)
-        ARCH="X86"
-        AS="${AS-nasm}"
-        AS_EXT=".asm"
-        ASFLAGS="$ASFLAGS -DARCH_X86_64=0 -I\$(SRCPATH)/common/x86/"
-        if [ $compiler = GNU ]; then
-            if [[ "$asm" == auto && "$CFLAGS" != *-march* ]]; then
-                CFLAGS="$CFLAGS -march=i686"
-            fi
-            if [[ "$asm" == auto && "$CFLAGS" != *-mfpmath* ]]; then
-                CFLAGS="$CFLAGS -mfpmath=sse -msse -msse2"
-            fi
-            CFLAGS="-m32 $CFLAGS"
-            LDFLAGS="-m32 $LDFLAGS"
-        fi
-        if [ "$SYS" = MACOSX ]; then
-            ASFLAGS="$ASFLAGS -f macho32 -DPREFIX"
-        elif [ "$SYS" = WINDOWS -o "$SYS" = CYGWIN ]; then
-            ASFLAGS="$ASFLAGS -f win32 -DPREFIX"
-            LDFLAGS="$LDFLAGS -Wl,--large-address-aware"
-            [ $compiler = GNU ] && LDFLAGS="$LDFLAGS -Wl,--dynamicbase,--nxcompat,--tsaware"
-            [ $compiler = GNU ] && RCFLAGS="--target=pe-i386 $RCFLAGS"
-        else
-            ASFLAGS="$ASFLAGS -f elf32"
-        fi
-        ;;
     x86_64)
         ARCH="X86_64"
         AS="nasm.exe"
@@ -761,84 +698,10 @@ case $host_cpu in
             ASFLAGS="$ASFLAGS -f elf64"
         fi
         ;;
-    powerpc*)
-        ARCH="PPC"
-        if [ $asm = auto ] ; then
-            define HAVE_ALTIVEC
-            AS="${AS-${CC}}"
-            AS_EXT=".c"
-            if [ $SYS = MACOSX ] ; then
-                CFLAGS="$CFLAGS -faltivec -fastf -mcpu=G4"
-            else
-                CFLAGS="$CFLAGS -maltivec -mabi=altivec"
-                define HAVE_ALTIVEC_H
-            fi
-            if [ "$vsx" != "no" ] ; then
-                vsx="no"
-                if cc_check "" "-mvsx" ; then
-                    CFLAGS="$CFLAGS -mvsx"
-                    define HAVE_VSX
-                    vsx="yes"
-                fi
-            fi
-        fi
-        ;;
-    sparc)
-        ARCH="SPARC"
-        ;;
-    mips*)
-        ARCH="MIPS"
-        AS="${AS-${CC}}"
-        AS_EXT=".c"
-        ;;
-    arm*)
-        ARCH="ARM"
-        if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-${CC}}"
-            ASFLAGS="$ASFLAGS -DPREFIX -DPIC"  # apple's ld doesn't support movw/movt relocations at all
-            # build for armv7 by default
-            if ! echo $CFLAGS | grep -Eq '\-arch' ; then
-                CFLAGS="$CFLAGS -arch armv7"
-                LDFLAGS="$LDFLAGS -arch armv7"
-            fi
-        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type armasm -force-thumb -- armasm -nologo -ignore 4509}"
-        elif [ "$SYS" = WINDOWS ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type clang -force-thumb -- ${CC} -mimplicit-it=always}"
-        else
-            AS="${AS-${CC}}"
-        fi
-        ;;
-    aarch64)
-        ARCH="AARCH64"
-        stack_alignment=16
-        if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-${CC}}"
-            ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
-        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
-        else
-            AS="${AS-${CC}}"
-        fi
-        ;;
-    s390|s390x)
-        ARCH="S390"
-        ;;
-    hppa*|parisc*)
-        ARCH="PARISC"
-        ;;
-    ia64)
-        ARCH="IA64"
-        ;;
-    alpha*)
-        ARCH="ALPHA"
-        ;;
     *)
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
 esac
-
-[ "$vsx" != "yes" ] && vsx="no"
 
 if [ $SYS = WINDOWS ]; then
     if ! rc_check "0 RCDATA {0}" ; then
@@ -884,10 +747,6 @@ if [ $compiler_style = GNU ]; then
     fi
 fi
 
-if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" -o $ARCH = "ARM" -o $ARCH = "IA64" -o $ARCH = "PARISC" -o $ARCH = "MIPS" -o $ARCH = "AARCH64" \) ] ; then
-    pic="yes"
-fi
-
 if cc_check '' '' '' '__attribute__((force_align_arg_pointer))' ; then
     if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
         if cc_check '' -mpreferred-stack-boundary=6 ; then
@@ -930,61 +789,6 @@ if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
         exit 1
     fi
     cc_check '' '' '__asm__("pabsw %xmm0, %xmm0");' && define HAVE_X86_INLINE_ASM
-    define HAVE_MMX
-fi
-
-if [ $asm = auto -a $ARCH = ARM ] ; then
-    # set flags so neon is built by default
-    [ $compiler == CL ] || echo $CFLAGS | grep -Eq '(-mcpu|-march|-mfpu)' || CFLAGS="$CFLAGS -mcpu=cortex-a8 -mfpu=neon"
-
-    cc_check '' '' '__asm__("add r0, r1, r2");' && define HAVE_ARM_INLINE_ASM
-    if [ $compiler = CL ] && cpp_check '' '' 'defined(_M_ARM) && _M_ARM >= 7' ; then
-        define HAVE_ARMV6
-        define HAVE_ARMV6T2
-        define HAVE_NEON
-    elif cc_check '' '' '__asm__("rev ip, ip");' ; then     define HAVE_ARMV6
-        cc_check '' '' '__asm__("movt r0, #0");'         && define HAVE_ARMV6T2
-        cc_check '' '' '__asm__("vadd.i16 q0, q0, q0");' && define HAVE_NEON
-        ASFLAGS="$ASFLAGS -c"
-    else
-        echo "You specified a pre-ARMv6 or Thumb-1 CPU in your CFLAGS."
-        echo "If you really want to run on such a CPU, configure with --disable-asm."
-        exit 1
-    fi
-fi
-
-if [ $asm = auto -a $ARCH = AARCH64 ] ; then
-    if [ $compiler = CL ] && cpp_check '' '' 'defined(_M_ARM64)' ; then
-        define HAVE_AARCH64
-        define HAVE_NEON
-    elif cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then
-        define HAVE_AARCH64
-        define HAVE_NEON
-        ASFLAGS="$ASFLAGS -c"
-    else
-        echo "no NEON support, try adding -mfpu=neon to CFLAGS"
-        echo "If you really want to run on such a CPU, configure with --disable-asm."
-        exit 1
-    fi
-fi
-
-if [ $asm = auto -a \( $ARCH = ARM -o $ARCH = AARCH64 \) ] ; then
-    # check if the assembler supports '.func' (clang 3.5 does not)
-    as_check ".func test${NL}.endfunc" && define HAVE_AS_FUNC 1
-fi
-
-if [ $asm = auto -a $ARCH = MIPS ] ; then
-    if ! echo $CFLAGS | grep -Eq '(-march|-mmsa|-mno-msa)' ; then
-        cc_check '' '-mmsa -mfp64 -mhard-float' && CFLAGS="-mmsa -mfp64 -mhard-float $CFLAGS"
-    fi
-
-    if cc_check '' '' '__asm__("addvi.b $w0, $w1, 1");' ; then
-        define HAVE_MSA
-    else
-        echo "You specified a pre-MSA CPU in your CFLAGS."
-        echo "If you really want to run on such a CPU, configure with --disable-asm."
-        exit 1
-    fi
 fi
 
 [ $asm = no ] && AS=""
@@ -1044,10 +848,6 @@ if [ "$SYS" = "WINDOWS" -a "$thread" = "posix" ] ; then
 elif [ "$thread" != "no" ] ; then
     thread="no"
     case $SYS in
-        BEOS)
-            thread="beos"
-            define HAVE_BEOSTHREAD
-            ;;
         WINDOWS)
             thread="win32"
             define HAVE_WIN32THREAD
@@ -1095,165 +895,6 @@ fi
 
 if [ "$SYS" = "LINUX" -a \( "$ARCH" = "X86" -o "$ARCH" = "X86_64" \) ] && cc_check "sys/mman.h" "" "MADV_HUGEPAGE;" ; then
     define HAVE_THP
-fi
-
-if [ "$cli" = "no" ] ; then
-    avs="no"
-    lavf="no"
-    ffms="no"
-    gpac="no"
-    lsmash="no"
-    mp4="no"
-    swscale="no"
-fi
-
-if [ "$swscale" = "auto" ] ; then
-    swscale="no"
-    if pkg_check 'libswscale libavutil' ; then
-        SWSCALE_LIBS="$SWSCALE_LIBS $($PKGCONFIG --libs libswscale libavutil)"
-        SWSCALE_CFLAGS="$SWSCALE_CFLAGS $($PKGCONFIG --cflags libswscale libavutil)"
-    fi
-    [ -z "$SWSCALE_LIBS" ] && SWSCALE_LIBS="-lswscale -lavutil"
-
-    if cc_check "libswscale/swscale.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "sws_init_context(0,0,0);" ; then
-        if cc_check "libavutil/pixdesc.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "AVComponentDescriptor x; x.depth = 8;" ; then
-            swscale="yes"
-        else
-            echo "Warning: libswscale is too old"
-        fi
-    fi
-fi
-
-if [ "$lavf" = "auto" ] ; then
-    lavf="no"
-    if pkg_check 'libavformat libavcodec libavutil' ; then
-        LAVF_LIBS="$LAVF_LIBS $($PKGCONFIG --libs libavformat libavcodec libavutil)"
-        LAVF_CFLAGS="$LAVF_CFLAGS $($PKGCONFIG --cflags libavformat libavcodec libavutil)"
-    fi
-    if [ -z "$LAVF_LIBS" ] && cc_check '' -lavformat ; then
-        LAVF_LIBS="-lavformat"
-        for lib in -lavcodec -lavresample -lswresample -lavutil -lbz2 -lz $libpthread -lole32 -luser32 -lws2_32 -lsecur32 ; do
-            cc_check "" $lib && LAVF_LIBS="$LAVF_LIBS $lib"
-        done
-    fi
-
-    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_register_all();" ; then
-        if cc_check libavcodec/avcodec.h "$LAVF_CFLAGS $LAVF_LIBS" "avcodec_send_packet(0,0);" ; then
-            lavf="yes"
-        else
-            echo "Warning: libavformat is too old"
-        fi
-    fi
-    if [ "$lavf" = "yes" -a "$swscale" = "no" ]; then
-        echo "Warning: libavformat is not supported without swscale support"
-        lavf="no"
-    fi
-fi
-
-if [ "$ffms" = "auto" ] ; then
-    ffms_major="2"; ffms_minor="21"; ffms_micro="0"; ffms_bump="0"
-    ffms="no"
-
-    if pkg_check ffms2 ; then
-        FFMS2_LIBS="$FFMS2_LIBS $($PKGCONFIG --libs ffms2)"
-        FFMS2_CFLAGS="$FFMS2_CFLAGS $($PKGCONFIG --cflags ffms2)"
-    fi
-    [ -z "$FFMS2_LIBS" ] && FFMS2_LIBS="-lffms2"
-
-    if cc_check ffms.h "$FFMS2_CFLAGS $FFMS2_LIBS" "FFMS_DestroyVideoSource(0);" ; then
-        ffms="yes"
-    elif cc_check ffms.h "$FFMS2_CFLAGS $FFMS2_LIBS -lstdc++ $LAVF_LIBS" "FFMS_DestroyVideoSource(0);" ; then
-        ffms="yes"
-        FFMS2_LIBS="$FFMS2_LIBS -lstdc++ $LAVF_LIBS"
-    fi
-
-    error="ffms must be at least version $ffms_major.$ffms_minor.$ffms_micro.$ffms_bump"
-    if [ $ffms = "yes" ] && ! cpp_check "ffms.h" "$FFMS2_CFLAGS" "FFMS_VERSION >= (($ffms_major << 24) | ($ffms_minor << 16) | ($ffms_micro << 8) | $ffms_bump)" "$error"; then
-       ffms="no"
-       echo "Warning: $error"
-    fi
-    if [ "$ffms" = "yes" -a "$swscale" = "no" ]; then
-        echo "Warning: ffms is not supported without swscale support"
-        ffms="no"
-    fi
-fi
-
-if [ "$swscale" = "yes" ]; then
-    LDFLAGSCLI="$SWSCALE_LIBS $LDFLAGSCLI"
-    CFLAGS="$CFLAGS $SWSCALE_CFLAGS"
-    define HAVE_SWSCALE
-    if [ "$lavf" = "yes" ]; then
-        LDFLAGSCLI="$LAVF_LIBS $LDFLAGSCLI"
-        CFLAGS="$CFLAGS $LAVF_CFLAGS"
-        define HAVE_LAVF
-    fi
-    if [ "$ffms" = "yes" ]; then
-        LDFLAGSCLI="$FFMS2_LIBS $LDFLAGSCLI"
-        CFLAGS="$CFLAGS $FFMS2_CFLAGS"
-        define HAVE_FFMS
-    fi
-fi
-
-if [ "$lsmash" = "auto" ] ; then
-    lsmash="no"
-    if pkg_check liblsmash ; then
-        LSMASH_LIBS="$LSMASH_LIBS $($PKGCONFIG --libs liblsmash)"
-        LSMASH_CFLAGS="$LSMASH_CFLAGS $($PKGCONFIG --cflags liblsmash)"
-    fi
-    [ -z "$LSMASH_LIBS" ] && LSMASH_LIBS="-llsmash"
-
-    if cc_check lsmash.h "$LSMASH_CFLAGS $LSMASH_LIBS" "lsmash_destroy_root(0);" ; then
-        if cpp_check lsmash.h "$LSMASH_CFLAGS" "LSMASH_VERSION_MAJOR > 1 || (LSMASH_VERSION_MAJOR == 1 && LSMASH_VERSION_MINOR >= 5)" ; then
-            lsmash="yes"
-        else
-            echo "Warning: lsmash is too old, update to rev.895 or later"
-        fi
-    fi
-fi
-
-if [ "$gpac" = "auto" -a "$lsmash" != "yes" ] ; then
-    gpac="no"
-    GPAC_LIBS="-lgpac_static"
-    cc_check "" -lz && GPAC_LIBS="$GPAC_LIBS -lz"
-    if [ "$SYS" = "WINDOWS" ] ; then
-        cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
-        cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
-    fi
-    if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_close(0);" ; then
-        if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0);" ; then
-            gpac="yes"
-        else
-            echo "Warning: gpac is too old, update to 2007-06-21 UTC or later"
-        fi
-    fi
-fi
-
-if [ "$lsmash" = "yes" ] ; then
-    mp4="lsmash"
-    LDFLAGSCLI="$LSMASH_LIBS $LDFLAGSCLI"
-    CFLAGS="$CFLAGS $LSMASH_CFLAGS"
-    define HAVE_LSMASH
-elif [ "$gpac" = "yes" ] ; then
-    mp4="gpac"
-    LDFLAGSCLI="$GPAC_LIBS $LDFLAGSCLI"
-    define HAVE_GPAC
-fi
-
-if [ "$avs" = "auto" ] ; then
-    avs="no"
-    # cygwin can use avisynth if it can use LoadLibrary
-    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
-        avs="avisynth"
-        define HAVE_AVS
-        define USE_AVXSYNTH 0
-    elif [ "$SYS" = "LINUX" -o "$SYS" = "MACOSX" ] ; then
-    # AvxSynth currently only supports Linux and OSX
-        avs="avxsynth"
-        define HAVE_AVS
-        define USE_AVXSYNTH 1
-        AVS_LIBS="-ldl"
-        LDFLAGSCLI="$AVS_LIBS $LDFLAGSCLI"
-    fi
 fi
 
 cc_check "stdint.h" "" "uint32_t test_vec __attribute__ ((vector_size (16))) = {0,1,2,3};" && define HAVE_VECTOREXT
@@ -1539,7 +1180,6 @@ Cflags: -I$includedir $([ "$shared" = "yes" ] && echo "-DX264_API_IMPORTS")
 EOF
 
 filters="crop select_every"
-[ $swscale = yes ] && filters="resize $filters"
 
 cat > conftest.log <<EOF
 platform:      $ARCH
@@ -1551,9 +1191,6 @@ shared:        $shared
 static:        $static
 asm:           $asm
 interlaced:    $interlaced
-avs:           $avs
-lavf:          $lavf
-ffms:          $ffms
 mp4:           $mp4
 gpl:           $gpl
 thread:        $thread
@@ -1570,9 +1207,6 @@ EOF
 echo >> config.log
 cat conftest.log >> config.log
 cat conftest.log
-
-[ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
-mkdir -p common/{aarch64,arm,mips,ppc,x86} encoder extras filters/video input output tools
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."

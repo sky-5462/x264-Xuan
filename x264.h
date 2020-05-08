@@ -169,18 +169,6 @@ typedef struct x264_nal_t
 #define X264_CPU_SLOW_PSHUFB        (1<<24) /* such as on the Intel Atom */
 #define X264_CPU_SLOW_PALIGNR       (1<<25) /* such as on the AMD Bobcat */
 
-/* PowerPC */
-#define X264_CPU_ALTIVEC         0x0000001
-
-/* ARM and AArch64 */
-#define X264_CPU_ARMV6           0x0000001
-#define X264_CPU_NEON            0x0000002  /* ARM NEON */
-#define X264_CPU_FAST_NEON_MRC   0x0000004  /* Transfer from NEON to ARM register is fast (Cortex-A9) */
-#define X264_CPU_ARMV8           0x0000008
-
-/* MIPS */
-#define X264_CPU_MSA             0x0000001  /* MIPS MSA */
-
 /* Analyse flags */
 #define X264_ANALYSE_I4x4       0x0001  /* Analyse i4x4 */
 #define X264_ANALYSE_I8x8       0x0002  /* Analyse i8x8 (requires 8x8 transform) */

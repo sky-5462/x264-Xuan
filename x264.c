@@ -177,15 +177,10 @@ const char * const x264_output_csp_names[] =
 const char * const x264_valid_profile_names[] =
 {
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if HAVE_BITDEPTH8
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "baseline", "main",
 #endif
     "high",
-#endif
-#if HAVE_BITDEPTH10
-   "high10",
-#endif
 #endif
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
    "high422",
@@ -196,24 +191,12 @@ const char * const x264_valid_profile_names[] =
 const char * const x264_demuxer_names[] =
 {
     "auto", "raw", "y4m",
-#if HAVE_AVS
-    "avs",
-#endif
-#if HAVE_LAVF
-    "lavf",
-#endif
-#if HAVE_FFMS
-    "ffms",
-#endif
     0
 };
 
 const char * const x264_muxer_names[] =
 {
     "auto", "raw", "mkv", "flv",
-#if HAVE_GPAC || HAVE_LSMASH
-    "mp4",
-#endif
     0
 };
 
@@ -320,15 +303,6 @@ static void print_version_info( void )
 #else
     printf( "x264 0.%d.X\n", X264_BUILD );
 #endif
-#if HAVE_SWSCALE
-    printf( "(libswscale %d.%d.%d)\n", LIBSWSCALE_VERSION_MAJOR, LIBSWSCALE_VERSION_MINOR, LIBSWSCALE_VERSION_MICRO );
-#endif
-#if HAVE_LAVF
-    printf( "(libavformat %d.%d.%d)\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO );
-#endif
-#if HAVE_FFMS
-    printf( "(ffmpegsource %d.%d.%d.%d)\n", FFMS_VERSION >> 24, (FFMS_VERSION & 0xff0000) >> 16, (FFMS_VERSION & 0xff00) >> 8, FFMS_VERSION & 0xff );
-#endif
     printf( "built on " __DATE__ ", " );
 #ifdef __INTEL_COMPILER
     printf( "intel: %.2f (%d)\n", __INTEL_COMPILER / 100.f, __INTEL_COMPILER_BUILD_DATE );
@@ -346,14 +320,6 @@ static void print_version_info( void )
     printf( "GPL version 2 or later\n" );
 #else
     printf( "Non-GPL commercial\n" );
-#endif
-#if HAVE_SWSCALE
-    const char *license = swscale_license();
-    printf( "libswscale%s%s license: %s\n", HAVE_LAVF ? "/libavformat" : "", HAVE_FFMS ? "/ffmpegsource" : "" , license );
-    if( !strcmp( license, "nonfree and unredistributable" ) ||
-       (!HAVE_GPL && (!strcmp( license, "GPL version 2 or later" )
-                  ||  !strcmp( license, "GPL version 3 or later" ))))
-        printf( "WARNING: This binary is unredistributable!\n" );
 #endif
 }
 
@@ -465,14 +431,6 @@ static void print_csp_names( int longhelp )
     size_t line_len = INDENT_LEN;
     for( int i = X264_CSP_NONE+1; i < X264_CSP_CLI_MAX; i++ )
         print_csp_name_internal( x264_cli_csps[i].name, &line_len, i == X264_CSP_CLI_MAX-1 );
-#if HAVE_LAVF
-    printf( "\n" );
-    printf( "                              - valid csps for `lavf' demuxer:\n" );
-    printf( INDENT );
-    line_len = INDENT_LEN;
-    for( enum AVPixelFormat i = AV_PIX_FMT_NONE+1; i < AV_PIX_FMT_NB; i++ )
-        print_csp_name_internal( av_get_pix_fmt_name( i ), &line_len, i == AV_PIX_FMT_NB-1 );
-#endif
     printf( "\n" );
 }
 
@@ -835,7 +793,6 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - %s\n", x264_muxer_names[0], stringify_names( buf, x264_muxer_names ) );
     H1( "      --demuxer <string>      Specify input container format [\"%s\"]\n"
         "                                  - %s\n", x264_demuxer_names[0], stringify_names( buf, x264_demuxer_names ) );
-    H1( "      --input-fmt <string>    Specify input file format (requires lavf support)\n" );
     H1( "      --input-csp <string>    Specify input colorspace format for raw input\n" );
     print_csp_names( longhelp );
     H1( "      --output-csp <string>   Specify output colorspace [\"%s\"]\n"
@@ -1097,7 +1054,6 @@ static struct option long_options[] =
     { "alternative-transfer", required_argument, NULL, 0 },
     { "vf",          required_argument, NULL, OPT_VIDEO_FILTER },
     { "video-filter", required_argument, NULL, OPT_VIDEO_FILTER },
-    { "input-fmt",   required_argument, NULL, OPT_INPUT_FMT },
     { "input-res",   required_argument, NULL, OPT_INPUT_RES },
     { "input-csp",   required_argument, NULL, OPT_INPUT_CSP },
     { "input-depth", required_argument, NULL, OPT_INPUT_DEPTH },

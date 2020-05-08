@@ -338,7 +338,6 @@ int x264_pthread_num_processors_np( void )
 
     /* GetProcessAffinityMask returns affinities of 0 when the process has threads in multiple processor groups.
      * On platforms that support processor grouping, use GetThreadGroupAffinity to get the current thread's affinity instead. */
-#if ARCH_X86_64
     /* find function pointers to API functions specific to x86_64 platforms, if they exist */
     HANDLE kernel_dll = GetModuleHandleW( L"kernel32.dll" );
     BOOL (*get_thread_affinity)( HANDLE thread, void *group_affinity ) = (void*)GetProcAddress( kernel_dll, "GetThreadGroupAffinity" );
@@ -354,7 +353,6 @@ int x264_pthread_num_processors_np( void )
         if( get_thread_affinity( GetCurrentThread(), &thread_affinity ) )
             process_cpus = thread_affinity.mask;
     }
-#endif
     if( !process_cpus )
         GetProcessAffinityMask( GetCurrentProcess(), &process_cpus, &system_cpus );
     for( DWORD_PTR bit = 1; bit; bit <<= 1 )

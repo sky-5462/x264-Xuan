@@ -39,15 +39,7 @@ static uint8_t *nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
     return dst;
 }
 
-#if HAVE_MMX
 #include "x86/bitstream.h"
-#endif
-#if HAVE_ARMV6
-#include "arm/bitstream.h"
-#endif
-#if HAVE_AARCH64
-#include "aarch64/bitstream.h"
-#endif
 
 /****************************************************************************
  * x264_nal_encode:
@@ -108,7 +100,6 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
     memset( pf, 0, sizeof(*pf) );
 
     pf->nal_escape = nal_escape_c;
-#if HAVE_MMX
 #if ARCH_X86_64 && !defined( __MACH__ )
     pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;
     pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2;
@@ -153,14 +144,5 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
         pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_avx512;
         pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_avx512;
     }
-#endif
-#endif
-#if HAVE_ARMV6
-    if( cpu&X264_CPU_NEON )
-        pf->nal_escape = x264_nal_escape_neon;
-#endif
-#if HAVE_AARCH64
-    if( cpu&X264_CPU_NEON )
-        pf->nal_escape = x264_nal_escape_neon;
 #endif
 }

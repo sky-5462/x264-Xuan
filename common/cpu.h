@@ -30,7 +30,7 @@ X264_API uint32_t x264_cpu_detect( void );
 X264_API int      x264_cpu_num_processors( void );
 void     x264_cpu_emms( void );
 void     x264_cpu_sfence( void );
-#if HAVE_MMX
+
 /* There is no way to forbid the compiler from using float instructions
  * before the emms so miscompilation could theoretically occur in the
  * unlikely event that the compiler reorders emms and float instructions. */
@@ -40,9 +40,6 @@ void     x264_cpu_sfence( void );
                                   "st(3)","st(4)","st(5)","st(6)","st(7)" )
 #else
 #define x264_emms() x264_cpu_emms()
-#endif
-#else
-#define x264_emms()
 #endif
 #define x264_sfence x264_cpu_sfence
 

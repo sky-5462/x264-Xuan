@@ -64,17 +64,11 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV << PARAM_INTERLACED;
     int align = 16;
-#if ARCH_X86 || ARCH_X86_64
     if( h->param.cpu&X264_CPU_CACHELINE_64 || h->param.cpu&X264_CPU_AVX512 )
         align = 64;
     else if( h->param.cpu&X264_CPU_CACHELINE_32 || h->param.cpu&X264_CPU_AVX )
         align = 32;
-#endif
-#if ARCH_PPC
-    int disalign = 1<<9;
-#else
     int disalign = 1<<10;
-#endif
 
     /* ensure frame alignment after PADH is added */
     int padh_align = X264_MAX( align - PADH * sizeof(pixel), 0 ) / sizeof(pixel);

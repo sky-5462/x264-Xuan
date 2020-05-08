@@ -247,19 +247,11 @@ static inline int x264_is_pipe( const char *path )
 
 #define EXPAND(x) x
 
-#if ARCH_X86 || ARCH_X86_64
 #define NATIVE_ALIGN 64
 #define ALIGNED_32( var ) DECLARE_ALIGNED( var, 32 )
 #define ALIGNED_64( var ) DECLARE_ALIGNED( var, 64 )
 #define ALIGNED_ARRAY_32( type, name, sub1, ... ) ALIGNED_32( type name sub1 __VA_ARGS__ )
 #define ALIGNED_ARRAY_64( type, name, sub1, ... ) ALIGNED_64( type name sub1 __VA_ARGS__ )
-#else
-#define NATIVE_ALIGN 16
-#define ALIGNED_32 ALIGNED_16
-#define ALIGNED_64 ALIGNED_16
-#define ALIGNED_ARRAY_32 ALIGNED_ARRAY_16
-#define ALIGNED_ARRAY_64 ALIGNED_ARRAY_16
-#endif
 
 #if STACK_ALIGNMENT > 16 || (ARCH_X86 && STACK_ALIGNMENT > 4)
 #define REALIGN_STACK __attribute__((force_align_arg_pointer))
@@ -289,21 +281,7 @@ static inline int x264_is_pipe( const char *path )
 #endif
 
 /* threads */
-#if HAVE_BEOSTHREAD
-#include <kernel/OS.h>
-#define x264_pthread_t               thread_id
-static inline int x264_pthread_create( x264_pthread_t *t, void *a, void *(*f)(void *), void *d )
-{
-     *t = spawn_thread( f, "", 10, d );
-     if( *t < B_NO_ERROR )
-         return -1;
-     resume_thread( *t );
-     return 0;
-}
-#define x264_pthread_join(t,s)       { long tmp; \
-                                       wait_for_thread(t,(s)?(long*)(s):&tmp); }
-
-#elif HAVE_POSIXTHREAD
+#if HAVE_POSIXTHREAD
 #include <pthread.h>
 #define x264_pthread_t               pthread_t
 #define x264_pthread_create          pthread_create
@@ -359,7 +337,7 @@ X264_API int x264_threading_init( void );
 static ALWAYS_INLINE int x264_pthread_fetch_and_add( int *val, int add, x264_pthread_mutex_t *mutex )
 {
 #if HAVE_THREAD
-#if defined(__GNUC__) && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ > 0) && (ARCH_X86 || ARCH_X86_64)
+#if defined(__GNUC__) && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ > 0)
     return __sync_fetch_and_add( val, add );
 #else
     x264_pthread_mutex_lock( mutex );
@@ -385,16 +363,10 @@ static ALWAYS_INLINE int x264_pthread_fetch_and_add( int *val, int add, x264_pth
 #define endian_fix32(x) (x)
 #define endian_fix16(x) (x)
 #else
-#if HAVE_X86_INLINE_ASM && HAVE_MMX
+#if HAVE_X86_INLINE_ASM
 static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
     asm("bswap %0":"+r"(x));
-    return x;
-}
-#elif defined(__GNUC__) && HAVE_ARMV6
-static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
-{
-    asm("rev %0, %0":"+r"(x));
     return x;
 }
 #else
@@ -403,7 +375,7 @@ static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
     return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
 }
 #endif
-#if HAVE_X86_INLINE_ASM && ARCH_X86_64
+#if HAVE_X86_INLINE_ASM
 static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
 {
     asm("bswap %0":"+r"(x));
@@ -461,7 +433,7 @@ static ALWAYS_INLINE int x264_ctz( uint32_t x )
 }
 #endif
 
-#if HAVE_X86_INLINE_ASM && HAVE_MMX
+#if HAVE_X86_INLINE_ASM
 /* Don't use __builtin_prefetch; even as recent as 4.3.4, GCC seems incapable of
  * using complex address modes properly unless we use inline asm. */
 static ALWAYS_INLINE void x264_prefetch( void *p )
@@ -470,8 +442,7 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
 }
 /* We require that prefetch not fault on invalid reads, so we only enable it on
  * known architectures. */
-#elif defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 1) &&\
-      (ARCH_X86 || ARCH_X86_64 || ARCH_ARM || ARCH_PPC)
+#elif defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 1)
 #define x264_prefetch(x) __builtin_prefetch(x)
 #else
 #define x264_prefetch(x)

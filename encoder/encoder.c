@@ -436,7 +436,6 @@ static int validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
-#if HAVE_MMX
     if( b_open )
     {
         int cpuflags = x264_cpu_detect();
@@ -460,7 +459,6 @@ static int validate_parameters( x264_t *h, int b_open )
             return -1;
         }
     }
-#endif
 
 #if HAVE_INTERLACED
     h->param.b_interlaced = !!PARAM_INTERLACED;

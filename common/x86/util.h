@@ -39,7 +39,7 @@ typedef uint32_t v4si __attribute__((vector_size (16)));
 #endif
 #endif // __SSE__
 
-#if HAVE_X86_INLINE_ASM && HAVE_MMX
+#if HAVE_X86_INLINE_ASM
 
 #define x264_median_mv x264_median_mv_mmx2
 static ALWAYS_INLINE void x264_median_mv_mmx2( int16_t *dst, int16_t *a, int16_t *b, int16_t *c )

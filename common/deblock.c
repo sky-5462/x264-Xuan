@@ -663,21 +663,7 @@ void x264_macroblock_deblock( x264_t *h )
     #undef FILTER
 }
 
-#if HAVE_MMX
 #include "x86/deblock.h"
-#endif
-#if HAVE_ALTIVEC
-#include "ppc/deblock.h"
-#endif
-#if HAVE_ARMV6
-#include "arm/deblock.h"
-#endif
-#if HAVE_AARCH64
-#include "aarch64/deblock.h"
-#endif
-#if HAVE_MSA
-#include "mips/deblock.h"
-#endif
 
 void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
 {
@@ -697,7 +683,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
     pf->deblock_chroma_420_intra_mbaff = deblock_h_chroma_intra_mbaff_c;
     pf->deblock_strength = deblock_strength_c;
 
-#if HAVE_MMX
     if( cpu&X264_CPU_MMX2 )
     {
 #if ARCH_X86
@@ -770,51 +755,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
             pf->deblock_strength = x264_deblock_strength_avx512;
         }
     }
-#endif
-
-#if !HIGH_BIT_DEPTH
-#if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-    {
-        pf->deblock_luma[1] = x264_deblock_v_luma_altivec;
-        pf->deblock_luma[0] = x264_deblock_h_luma_altivec;
-    }
-#endif // HAVE_ALTIVEC
-
-#if HAVE_ARMV6 || HAVE_AARCH64
-    if( cpu&X264_CPU_NEON )
-    {
-        pf->deblock_luma[1] = x264_deblock_v_luma_neon;
-        pf->deblock_luma[0] = x264_deblock_h_luma_neon;
-        pf->deblock_chroma[1] = x264_deblock_v_chroma_neon;
-        pf->deblock_h_chroma_420 = x264_deblock_h_chroma_neon;
-        pf->deblock_h_chroma_422 = x264_deblock_h_chroma_422_neon;
-        pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_neon;
-        pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_neon;
-        pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_neon;
-        pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_neon;
-        pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_neon;
-        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_neon;
-        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_neon;
-        pf->deblock_strength     = x264_deblock_strength_neon;
-    }
-#endif
-
-#if HAVE_MSA
-    if( cpu&X264_CPU_MSA )
-    {
-        pf->deblock_luma[1] = x264_deblock_v_luma_msa;
-        pf->deblock_luma[0] = x264_deblock_h_luma_msa;
-        pf->deblock_chroma[1] = x264_deblock_v_chroma_msa;
-        pf->deblock_h_chroma_420 = x264_deblock_h_chroma_msa;
-        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_msa;
-        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_msa;
-        pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_msa;
-        pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_msa;
-        pf->deblock_strength = x264_deblock_strength_msa;
-    }
-#endif
-#endif // !HIGH_BIT_DEPTH
 
     /* These functions are equivalent, so don't duplicate them. */
     pf->deblock_chroma_422_mbaff = pf->deblock_h_chroma_420;

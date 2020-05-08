@@ -45,8 +45,6 @@
 
 const x264_cpu_name_t x264_cpu_names[] =
 {
-#if ARCH_X86 || ARCH_X86_64
-//  {"MMX",         X264_CPU_MMX},  // we don't support asm on mmx1 cpus anymore
 #define MMX2 X264_CPU_MMX|X264_CPU_MMX2
     {"MMX2",        MMX2},
     {"MMXEXT",      MMX2},
@@ -82,41 +80,9 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"SlowPalignr",     X264_CPU_SLOW_PALIGNR},
     {"SlowShuffle",     X264_CPU_SLOW_SHUFFLE},
     {"UnalignedStack",  X264_CPU_STACK_MOD4},
-#elif ARCH_PPC
-    {"Altivec",         X264_CPU_ALTIVEC},
-#elif ARCH_ARM
-    {"ARMv6",           X264_CPU_ARMV6},
-    {"NEON",            X264_CPU_NEON},
-    {"FastNeonMRC",     X264_CPU_FAST_NEON_MRC},
-#elif ARCH_AARCH64
-    {"ARMv8",           X264_CPU_ARMV8},
-    {"NEON",            X264_CPU_NEON},
-#elif ARCH_MIPS
-    {"MSA",             X264_CPU_MSA},
-#endif
     {"", 0},
 };
 
-#if (HAVE_ALTIVEC && SYS_LINUX) || (HAVE_ARMV6 && !HAVE_NEON)
-#include <signal.h>
-#include <setjmp.h>
-static sigjmp_buf jmpbuf;
-static volatile sig_atomic_t canjump = 0;
-
-static void sigill_handler( int sig )
-{
-    if( !canjump )
-    {
-        signal( sig, SIG_DFL );
-        raise( sig );
-    }
-
-    canjump = 0;
-    siglongjmp( jmpbuf, 1 );
-}
-#endif
-
-#if HAVE_MMX
 int x264_cpu_cpuid_test( void );
 void x264_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx );
 uint64_t x264_cpu_xgetbv( int xcr );
@@ -127,11 +93,6 @@ uint32_t x264_cpu_detect( void )
     uint32_t eax, ebx, ecx, edx;
     uint32_t vendor[4] = {0};
     uint32_t max_extended_cap, max_basic_cap;
-
-#if !ARCH_X86_64
-    if( !x264_cpu_cpuid_test() )
-        return 0;
-#endif
 
     x264_cpu_cpuid( 0, &max_basic_cap, vendor+0, vendor+2, vendor+1 );
     if( max_basic_cap == 0 )
@@ -297,133 +258,6 @@ uint32_t x264_cpu_detect( void )
 
     return cpu;
 }
-
-#elif HAVE_ALTIVEC
-
-#if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD
-#include <sys/sysctl.h>
-uint32_t x264_cpu_detect( void )
-{
-    /* Thank you VLC */
-    uint32_t cpu = 0;
-#if SYS_OPENBSD
-    int      selectors[2] = { CTL_MACHDEP, CPU_ALTIVEC };
-#elif SYS_MACOSX
-    int      selectors[2] = { CTL_HW, HW_VECTORUNIT };
-#endif
-    int      has_altivec = 0;
-    size_t   length = sizeof( has_altivec );
-#if SYS_MACOSX || SYS_OPENBSD
-    int      error = sysctl( selectors, 2, &has_altivec, &length, NULL, 0 );
-#else
-    int      error = sysctlbyname( "hw.altivec", &has_altivec, &length, NULL, 0 );
-#endif
-
-    if( error == 0 && has_altivec != 0 )
-        cpu |= X264_CPU_ALTIVEC;
-
-    return cpu;
-}
-
-#elif SYS_LINUX
-
-uint32_t x264_cpu_detect( void )
-{
-#ifdef __NO_FPRS__
-    return 0;
-#else
-    static void (*oldsig)( int );
-
-    oldsig = signal( SIGILL, sigill_handler );
-    if( sigsetjmp( jmpbuf, 1 ) )
-    {
-        signal( SIGILL, oldsig );
-        return 0;
-    }
-
-    canjump = 1;
-    asm volatile( "mtspr 256, %0\n\t"
-                  "vand 0, 0, 0\n\t"
-                  :
-                  : "r"(-1) );
-    canjump = 0;
-
-    signal( SIGILL, oldsig );
-
-    return X264_CPU_ALTIVEC;
-#endif
-}
-#endif
-
-#elif HAVE_ARMV6
-
-void x264_cpu_neon_test( void );
-int x264_cpu_fast_neon_mrc_test( void );
-
-uint32_t x264_cpu_detect( void )
-{
-    int flags = 0;
-    flags |= X264_CPU_ARMV6;
-
-    // don't do this hack if compiled with -mfpu=neon
-#if !HAVE_NEON
-    static void (* oldsig)( int );
-    oldsig = signal( SIGILL, sigill_handler );
-    if( sigsetjmp( jmpbuf, 1 ) )
-    {
-        signal( SIGILL, oldsig );
-        return flags;
-    }
-
-    canjump = 1;
-    x264_cpu_neon_test();
-    canjump = 0;
-    signal( SIGILL, oldsig );
-#endif
-
-    flags |= X264_CPU_NEON;
-
-    // fast neon -> arm (Cortex-A9) detection relies on user access to the
-    // cycle counter; this assumes ARMv7 performance counters.
-    // NEON requires at least ARMv7, ARMv8 may require changes here, but
-    // hopefully this hacky detection method will have been replaced by then.
-    // Note that there is potential for a race condition if another program or
-    // x264 instance disables or reinits the counters while x264 is using them,
-    // which may result in incorrect detection and the counters stuck enabled.
-    // right now Apple does not seem to support performance counters for this test
-#ifndef __MACH__
-    flags |= x264_cpu_fast_neon_mrc_test() ? X264_CPU_FAST_NEON_MRC : 0;
-#endif
-    // TODO: write dual issue test? currently it's A8 (dual issue) vs. A9 (fast mrc)
-    return flags;
-}
-
-#elif HAVE_AARCH64
-
-uint32_t x264_cpu_detect( void )
-{
-#if HAVE_NEON
-    return X264_CPU_ARMV8 | X264_CPU_NEON;
-#else
-    return X264_CPU_ARMV8;
-#endif
-}
-
-#elif HAVE_MSA
-
-uint32_t x264_cpu_detect( void )
-{
-    return X264_CPU_MSA;
-}
-
-#else
-
-uint32_t x264_cpu_detect( void )
-{
-    return 0;
-}
-
-#endif
 
 int x264_cpu_num_processors( void )
 {

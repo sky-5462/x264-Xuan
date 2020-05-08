@@ -88,12 +88,7 @@ SRCS_X   += common/x86/mc-c.c \
             common/x86/predict-c.c
 
 OBJASM += common/x86/cpu-a.o
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.asm=%-8.o) common/x86/sad-a-8.o
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.asm=%-10.o) common/x86/sad16-a-10.o
-endif
 
 OBJCHK += tools/checkasm-a.o
 endif
