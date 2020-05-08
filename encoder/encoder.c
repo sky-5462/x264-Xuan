@@ -480,28 +480,6 @@ static int validate_parameters( x264_t *h, int b_open )
     }
 
     int i_csp = h->param.i_csp & X264_CSP_MASK;
-#if X264_CHROMA_FORMAT
-    if( CHROMA_FORMAT != CHROMA_400 && i_csp == X264_CSP_I400 )
-    {
-        x264_log( h, X264_LOG_ERROR, "not compiled with 4:0:0 support\n" );
-        return -1;
-    }
-    else if( CHROMA_FORMAT != CHROMA_420 && i_csp >= X264_CSP_I420 && i_csp < X264_CSP_I422 )
-    {
-        x264_log( h, X264_LOG_ERROR, "not compiled with 4:2:0 support\n" );
-        return -1;
-    }
-    else if( CHROMA_FORMAT != CHROMA_422 && i_csp >= X264_CSP_I422 && i_csp < X264_CSP_I444 )
-    {
-        x264_log( h, X264_LOG_ERROR, "not compiled with 4:2:2 support\n" );
-        return -1;
-    }
-    else if( CHROMA_FORMAT != CHROMA_444 && i_csp >= X264_CSP_I444 && i_csp <= X264_CSP_RGB )
-    {
-        x264_log( h, X264_LOG_ERROR, "not compiled with 4:4:4 support\n" );
-        return -1;
-    }
-#endif
     if( i_csp <= X264_CSP_NONE || i_csp >= X264_CSP_MAX )
     {
         x264_log( h, X264_LOG_ERROR, "invalid CSP (only I400/I420/YV12/NV12/NV21/I422/YV16/NV16/YUYV/UYVY/"

@@ -292,7 +292,7 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->i_sync_lookahead = X264_SYNC_LOOKAHEAD_AUTO;
 
     /* Video properties */
-    param->i_csp           = X264_CHROMA_FORMAT ? X264_CHROMA_FORMAT : X264_CSP_I420;
+    param->i_csp           = X264_CSP_I420;
     param->i_width         = 0;
     param->i_height        = 0;
     param->vui.i_sar_width = 0;

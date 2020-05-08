@@ -482,12 +482,6 @@ for opt do
                 exit 1
             fi
             ;;
-        --chroma-format=*)
-            chroma_format="$optarg"
-            if [ $chroma_format != "400" -a $chroma_format != "420" -a $chroma_format != "422" -a $chroma_format != "444" -a $chroma_format != "all" ]; then
-                echo "Supplied chroma format must be 400, 420, 422, 444 or all."
-                exit 1
-            fi
             ;;
         *)
             echo "Unknown option $opt, ignored"

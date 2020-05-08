@@ -680,13 +680,6 @@ X264_API int x264_param_apply_profile( x264_param_t *, const char *profile );
  * Picture structures and functions
  ****************************************************************************/
 
-/* x264_chroma_format:
- *      Specifies the chroma formats that x264 supports encoding. When this
- *      value is non-zero, then it represents a X264_CSP_* that is the only
- *      chroma format that x264 supports encoding. If the value is 0 then
- *      there are no restrictions. */
-X264_API extern const int x264_chroma_format;
-
 enum pic_struct_e
 {
     PIC_STRUCT_AUTO              = 0, // automatically decide (default)
