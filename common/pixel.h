@@ -83,12 +83,9 @@ typedef struct
     x264_pixel_cmp_t ssim[7];
     x264_pixel_cmp_t sa8d[4];
     x264_pixel_cmp_t mbcmp[8]; /* either satd or sad for subpel refine and mode decision */
-    x264_pixel_cmp_t mbcmp_unaligned[8]; /* unaligned mbcmp for subpel */
     x264_pixel_cmp_t fpelcmp[8]; /* either satd or sad for fullpel motion search */
     x264_pixel_cmp_x3_t fpelcmp_x3[7];
     x264_pixel_cmp_x4_t fpelcmp_x4[7];
-    x264_pixel_cmp_t sad_aligned[8]; /* Aligned SAD for mbcmp */
-    int (*vsad)( pixel *, intptr_t, int );
     int (*asd8)( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
     uint64_t (*sa8d_satd[1])( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
@@ -154,7 +151,5 @@ uint64_t x264_pixel_ssd_wxh( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_
 #define x264_pixel_ssim_wxh x264_template(pixel_ssim_wxh)
 float x264_pixel_ssim_wxh  ( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_t i_pix2,
                              int i_width, int i_height, void *buf, int *cnt );
-#define x264_field_vsad x264_template(field_vsad)
-int x264_field_vsad( x264_t *h, int mb_x, int mb_y );
 
 #endif

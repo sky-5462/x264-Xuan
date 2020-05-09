@@ -130,28 +130,6 @@ float x264_pixel_ssim_wxh( x264_pixel_function_t *pf,
     return ssim;
 }
 
-int x264_field_vsad( x264_t *h, int mb_x, int mb_y )
-{
-    int score_field, score_frame;
-    int stride = h->fenc->i_stride[0];
-    int mb_stride = h->mb.i_mb_stride;
-    pixel *fenc = h->fenc->plane[0] + 16 * (mb_x + mb_y * stride);
-    int mb_xy = mb_x + mb_y*mb_stride;
-
-    /* We don't want to analyze pixels outside the frame, as it gives inaccurate results. */
-    int mbpair_height = X264_MIN( h->param.i_height - mb_y * 16, 32 );
-    score_frame  = h->pixf.vsad( fenc,          stride, mbpair_height );
-    score_field  = h->pixf.vsad( fenc,        stride*2, mbpair_height >> 1 );
-    score_field += h->pixf.vsad( fenc+stride, stride*2, mbpair_height >> 1 );
-
-    if( mb_x > 0 )
-        score_field += 512 - h->mb.field[mb_xy        -1]*1024;
-    if( mb_y > 0 )
-        score_field += 512 - h->mb.field[mb_xy-mb_stride]*1024;
-
-    return (score_field < score_frame);
-}
-
 /****************************************************************************
  * x264_pixel_init:
  ****************************************************************************/
@@ -167,14 +145,6 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     pixf->sad[PIXEL_8x16] = x264_pixel_sad_8x16_avx2;
     pixf->sad[PIXEL_16x8] = x264_pixel_sad_16x8_avx2;
     pixf->sad[PIXEL_16x16] = x264_pixel_sad_16x16_avx2;
-    pixf->sad_aligned[PIXEL_4x4] = x264_pixel_sad_4x4_avx2;
-    pixf->sad_aligned[PIXEL_4x8] = x264_pixel_sad_4x8_avx2;
-    pixf->sad_aligned[PIXEL_4x16] = x264_pixel_sad_4x16_avx2;
-    pixf->sad_aligned[PIXEL_8x4] = x264_pixel_sad_8x4_avx2;
-    pixf->sad_aligned[PIXEL_8x8] = x264_pixel_sad_8x8_avx2;
-    pixf->sad_aligned[PIXEL_8x16] = x264_pixel_sad_8x16_avx2;
-    pixf->sad_aligned[PIXEL_16x8] = x264_pixel_sad_16x8_avx2;
-    pixf->sad_aligned[PIXEL_16x16] = x264_pixel_sad_16x16_avx2;
 
     pixf->ssd[PIXEL_4x4] = x264_pixel_ssd_4x4_avx2;
     pixf->ssd[PIXEL_4x8] = x264_pixel_ssd_4x8_avx2;
@@ -241,7 +211,6 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     pixf->hadamard_ac[PIXEL_16x8] = x264_pixel_hadamard_ac_16x8_avx2;
     pixf->hadamard_ac[PIXEL_16x16] = x264_pixel_hadamard_ac_16x16_avx2;
 
-    pixf->vsad = x264_pixel_vsad_avx2;
     pixf->asd8 = x264_pixel_asd8_avx2;
 
     pixf->intra_sad_x3_4x4 = x264_intra_sad_x3_4x4_avx2;

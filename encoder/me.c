@@ -624,12 +624,6 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             const int max_y = X264_MIN( bmy + i_me_range, mv_y_max );
             /* SEA is fastest in multiples of 4 */
             const int width = (max_x - min_x + 3) & ~3;
-#if 0
-            /* plain old exhaustive search */
-            for( int my = min_y; my <= max_y; my++ )
-                for( int mx = min_x; mx < min_x + width; mx++ )
-                    COST_MV( mx, my );
-#else
             /* successive elimination by comparing DC before a full SAD,
              * because sum(abs(diff)) >= abs(diff(sum)). */
             uint16_t *sums_base = m->integral;
@@ -763,7 +757,6 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                         COST_MV( min_x+xs[i], my );
                 }
             }
-#endif
         }
         break;
     }
@@ -825,7 +818,7 @@ if( b_refine_qpel || (dir^1) != odir ) \
 { \
     intptr_t stride = 16; \
     pixel *src = h->mc.get_ref( pix, &stride, &m->p_fref[0], m->i_stride[0], mx, my, bw, bh, &m->weight[0] ); \
-    int cost = h->pixf.mbcmp_unaligned[i_pixel]( m->p_fenc[0], FENC_STRIDE, src, stride ) \
+    int cost = h->pixf.mbcmp[i_pixel]( m->p_fenc[0], FENC_STRIDE, src, stride ) \
              + p_cost_mvx[ mx ] + p_cost_mvy[ my ]; \
     if( b_chroma_me && cost < bcost ) \
     { \
@@ -833,12 +826,12 @@ if( b_refine_qpel || (dir^1) != odir ) \
         { \
             stride = 16; \
             src = h->mc.get_ref( pix, &stride, &m->p_fref[4], m->i_stride[1], mx, my, bw, bh, &m->weight[1] ); \
-            cost += h->pixf.mbcmp_unaligned[i_pixel]( m->p_fenc[1], FENC_STRIDE, src, stride ); \
+            cost += h->pixf.mbcmp[i_pixel]( m->p_fenc[1], FENC_STRIDE, src, stride ); \
             if( cost < bcost ) \
             { \
                 stride = 16; \
                 src = h->mc.get_ref( pix, &stride, &m->p_fref[8], m->i_stride[2], mx, my, bw, bh, &m->weight[2] ); \
-                cost += h->pixf.mbcmp_unaligned[i_pixel]( m->p_fenc[2], FENC_STRIDE, src, stride ); \
+                cost += h->pixf.mbcmp[i_pixel]( m->p_fenc[2], FENC_STRIDE, src, stride ); \
             } \
         } \
         else \
@@ -919,7 +912,7 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
         bcost >>= 6;
     }
 
-    if( !b_refine_qpel && (h->pixf.mbcmp_unaligned[0] != h->pixf.fpelcmp[0] || b_chroma_me) )
+    if( !b_refine_qpel && (h->pixf.mbcmp[0] != h->pixf.fpelcmp[0] || b_chroma_me) )
     {
         bcost = COST_MAX;
         COST_MV_SATD( bmx, bmy, -1 );

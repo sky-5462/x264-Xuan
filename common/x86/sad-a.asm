@@ -1850,36 +1850,6 @@ cglobal pixel_sad_x4_16x16, 0, 0
 
 
 ;=============================================================================
-; VSAD
-;=============================================================================
-INIT_XMM avx2
-cglobal pixel_vsad, 0, 0
-    vmovdqu        m1, [r0]
-    vmovdqu        m2, [r0 + r1]
-    lea            r0, [r0 + r1 * 2]
-    vpsadbw        m0, m1, m2
-    sub            r2d, 2
-    jz             .end
-
-ALIGN 16
-.loop:
-    vmovdqu        m1, [r0]
-    vpsadbw        m4, m2, m1
-    vmovdqu        m2, [r0 + r1]
-    vpsadbw        m5, m1, m2
-    lea            r0, [r0 + r1 * 2]
-    vpaddw         m0, m0, m4
-    vpaddw         m0, m0, m5
-    sub            r2d, 2
-    jg             .loop
-.end:
-    vpunpckhqdq    m1, m0, m0
-    vpaddd         m0, m0, m1
-    vmovd          eax, m0
-    ret
-
-
-;=============================================================================
 ; INTRA_SAD
 ;=============================================================================
 INIT_YMM avx2
