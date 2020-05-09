@@ -75,8 +75,8 @@ static void cabac_field_decoding_flag( x264_t *h, x264_cabac_t *cb )
             && h->mb.slice_table[h->mb.i_mb_top_mbpair_xy] == h->sh.i_first_mb
             && h->mb.field[h->mb.i_mb_top_mbpair_xy]);
 
-    x264_cabac_encode_decision_noup( cb, 70 + ctx, MB_INTERLACED );
-    h->mb.field_decoding_flag = MB_INTERLACED;
+    x264_cabac_encode_decision_noup( cb, 70 + ctx, 0 );
+    h->mb.field_decoding_flag = 0;
 }
 #endif
 
@@ -664,8 +664,8 @@ static const uint8_t coeff_abs_level_transition[2][8] = {
 #if !RDO_SKIP_BS
 static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l, int chroma422dc )
 {
-    int ctx_sig = x264_significant_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
-    int ctx_last = x264_last_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
+    int ctx_sig = x264_significant_coeff_flag_offset[0][ctx_block_cat];
+    int ctx_last = x264_last_coeff_flag_offset[0][ctx_block_cat];
     int ctx_level = x264_coeff_abs_level_m1_offset[ctx_block_cat];
     int coeff_idx = -1, node_ctx = 0;
     int last = h->quantf.coeff_last[ctx_block_cat]( l );
@@ -709,7 +709,7 @@ static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t
         int count_m1 = x264_count_cat_m1[ctx_block_cat];
         if( count_m1 == 63 )
         {
-            const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[MB_INTERLACED];
+            const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[0];
             WRITE_SIGMAP( sig_offset[i], x264_last_coeff_flag_offset_8x8[i] )
         }
         else
@@ -755,7 +755,7 @@ void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat
 static ALWAYS_INLINE void cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
 #if ARCH_X86_64 && !defined( __MACH__ )
-    h->bsf.cabac_block_residual_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+    h->bsf.cabac_block_residual_internal( l, 0, ctx_block_cat, cb );
 #else
     x264_cabac_block_residual_c( h, cb, ctx_block_cat, l );
 #endif
@@ -774,9 +774,9 @@ static void cabac_block_residual_422_dc( x264_t *h, x264_cabac_t *cb, int ctx_bl
  * is nearly no quality penalty for this (~0.001db) and the speed boost (~30%) is worth it. */
 static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc )
 {
-    const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[MB_INTERLACED];
-    int ctx_sig = x264_significant_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
-    int ctx_last = x264_last_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
+    const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[0];
+    int ctx_sig = x264_significant_coeff_flag_offset[0][ctx_block_cat];
+    int ctx_last = x264_last_coeff_flag_offset[0][ctx_block_cat];
     int ctx_level = x264_coeff_abs_level_m1_offset[ctx_block_cat];
     int last = h->quantf.coeff_last[ctx_block_cat]( l );
     int coeff_abs = abs(l[last]);
@@ -869,7 +869,7 @@ void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_
 static ALWAYS_INLINE void cabac_block_residual_8x8( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
 #if ARCH_X86_64 && !defined( __MACH__ )
-    h->bsf.cabac_block_residual_8x8_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+    h->bsf.cabac_block_residual_8x8_rd_internal( l, 0, ctx_block_cat, cb );
 #else
     x264_cabac_block_residual_8x8_rd_c( h, cb, ctx_block_cat, l );
 #endif
@@ -877,7 +877,7 @@ static ALWAYS_INLINE void cabac_block_residual_8x8( x264_t *h, x264_cabac_t *cb,
 static ALWAYS_INLINE void cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
 #if ARCH_X86_64 && !defined( __MACH__ )
-    h->bsf.cabac_block_residual_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+    h->bsf.cabac_block_residual_rd_internal( l, 0, ctx_block_cat, cb );
 #else
     x264_cabac_block_residual_rd_c( h, cb, ctx_block_cat, l );
 #endif
@@ -921,12 +921,6 @@ static ALWAYS_INLINE void macroblock_write_cabac_internal( x264_t *h, x264_cabac
 #if !RDO_SKIP_BS
     const int i_mb_pos_start = x264_cabac_pos( cb );
     int       i_mb_pos_tex;
-
-    if( SLICE_MBAFF &&
-        (!(h->mb.i_mb_y & 1) || IS_SKIP(h->mb.type[h->mb.i_mb_xy - h->mb.i_mb_stride])) )
-    {
-        cabac_field_decoding_flag( h, cb );
-    }
 #endif
 
     if( h->sh.i_type == SLICE_TYPE_P )

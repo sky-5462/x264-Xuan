@@ -1031,15 +1031,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->b_cabac = atobool(value);
     OPT("cabac-idc")
         p->i_cabac_init_idc = atoi(value);
-    OPT("interlaced")
-        p->b_interlaced = atobool(value);
-    OPT("tff")
-        p->b_interlaced = p->b_tff = atobool(value);
-    OPT("bff")
-    {
-        p->b_interlaced = atobool(value);
-        p->b_tff = !p->b_interlaced;
-    }
     OPT("constrained-intra")
         p->b_constrained_intra = atobool(value);
     OPT("cqm")
@@ -1270,8 +1261,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->rc.b_filler = atobool(value);
     OPT("pic-struct")
         p->b_pic_struct = atobool(value);
-    OPT("fake-interlaced")
-        p->b_fake_interlaced = atobool(value);
     OPT("frame-packing")
         p->i_frame_packing = atoi(value);
     OPT("stitchable")
@@ -1349,7 +1338,6 @@ char *x264_param2string( x264_param_t *p, int b_res )
         s += sprintf( s, " slice_min_mbs=%d", p->i_slice_min_mbs );
     s += sprintf( s, " nr=%d", p->analyse.i_noise_reduction );
     s += sprintf( s, " decimate=%d", p->analyse.b_dct_decimate );
-    s += sprintf( s, " interlaced=%s", p->b_interlaced ? p->b_tff ? "tff" : "bff" : p->b_fake_interlaced ? "fake" : "0" );
     s += sprintf( s, " bluray_compat=%d", p->b_bluray_compat );
     if( p->b_stitchable )
         s += sprintf( s, " stitchable=%d", p->b_stitchable );

@@ -43,27 +43,6 @@ void x264_mb_predict_mv( x264_t *h, int i_list, int idx, int i_width, int16_t mv
     {
         i_refc = h->mb.cache.ref[i_list][i8 - 8 - 1];
         mv_c   = h->mb.cache.mv[i_list][i8 - 8 - 1];
-
-        if( SLICE_MBAFF
-            && h->mb.cache.ref[i_list][x264_scan8[0]-1] != -2
-            && MB_INTERLACED != h->mb.field[h->mb.i_mb_left_xy[0]] )
-        {
-            if( idx == 2 )
-            {
-                mv_c = h->mb.cache.topright_mv[i_list][0];
-                i_refc = h->mb.cache.topright_ref[i_list][0];
-            }
-            else if( idx == 8 )
-            {
-                mv_c = h->mb.cache.topright_mv[i_list][1];
-                i_refc = h->mb.cache.topright_ref[i_list][1];
-            }
-            else if( idx == 10 )
-            {
-                mv_c = h->mb.cache.topright_mv[i_list][2];
-                i_refc = h->mb.cache.topright_ref[i_list][2];
-            }
-        }
     }
     if( h->mb.i_partition == D_16x8 )
     {
@@ -187,46 +166,11 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
     int mb_xy = h->mb.i_mb_xy;
     int type_col[2] = { h->fref[1][0]->mb_type[mb_xy], h->fref[1][0]->mb_type[mb_xy] };
     int partition_col[2] = { h->fref[1][0]->mb_partition[mb_xy], h->fref[1][0]->mb_partition[mb_xy] };
-    int preshift = MB_INTERLACED;
-    int postshift = MB_INTERLACED;
+    int preshift = 0;
+    int postshift = 0;
     int offset = 1;
     int yshift = 1;
     h->mb.i_partition = partition_col[0];
-    if( PARAM_INTERLACED && h->fref[1][0]->field[mb_xy] != MB_INTERLACED )
-    {
-        if( MB_INTERLACED )
-        {
-            mb_y = h->mb.i_mb_y&~1;
-            mb_xy = mb_x + h->mb.i_mb_stride * mb_y;
-            type_col[0] = h->fref[1][0]->mb_type[mb_xy];
-            type_col[1] = h->fref[1][0]->mb_type[mb_xy + h->mb.i_mb_stride];
-            partition_col[0] = h->fref[1][0]->mb_partition[mb_xy];
-            partition_col[1] = h->fref[1][0]->mb_partition[mb_xy + h->mb.i_mb_stride];
-            preshift = 0;
-            yshift = 0;
-
-            if( (IS_INTRA(type_col[0]) || partition_col[0] == D_16x16) &&
-                (IS_INTRA(type_col[1]) || partition_col[1] == D_16x16) &&
-                partition_col[0] != D_8x8 )
-                h->mb.i_partition = D_16x8;
-            else
-                h->mb.i_partition = D_8x8;
-        }
-        else
-        {
-            int cur_poc = h->fdec->i_poc + h->fdec->i_delta_poc[MB_INTERLACED&h->mb.i_mb_y&1];
-            int col_parity = abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[0] - cur_poc)
-                          >= abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[1] - cur_poc);
-            mb_y = (h->mb.i_mb_y&~1) + col_parity;
-            mb_xy = mb_x + h->mb.i_mb_stride * mb_y;
-            type_col[0] = type_col[1] = h->fref[1][0]->mb_type[mb_xy];
-            partition_col[0] = partition_col[1] = h->fref[1][0]->mb_partition[mb_xy];
-            preshift = 1;
-            yshift = 2;
-            h->mb.i_partition = partition_col[0];
-        }
-        offset = 0;
-    }
     int i_mb_4x4 = 16 * h->mb.i_mb_stride * mb_y + 4 * mb_x;
     int i_mb_8x8 =  4 * h->mb.i_mb_stride * mb_y + 2 * mb_x;
 
@@ -243,9 +187,7 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
     {
         int x8 = i8&1;
         int y8 = i8>>1;
-        int ypart = (SLICE_MBAFF && h->fref[1][0]->field[mb_xy] != MB_INTERLACED) ?
-                    MB_INTERLACED ? y8*6 : 2*(h->mb.i_mb_y&1) + y8 :
-                    3*y8;
+        int ypart = 3*y8;
 
         if( IS_INTRA( type_col[y8] ) )
         {
@@ -257,7 +199,7 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
 
         int i_part_8x8 = i_mb_8x8 + x8 + (ypart>>1) * h->mb.i_b8_stride;
         int i_ref1_ref = h->fref[1][0]->ref[0][i_part_8x8];
-        int i_ref = (map_col_to_list0(i_ref1_ref>>preshift) << postshift) + (offset&i_ref1_ref&MB_INTERLACED);
+        int i_ref = (map_col_to_list0(i_ref1_ref>>preshift) << postshift);
 
         if( i_ref >= 0 )
         {
@@ -340,35 +282,16 @@ static ALWAYS_INLINE int mb_predict_mv_direct16x16_spatial( x264_t *h, int b_int
     int type_col[2] = { h->fref[1][0]->mb_type[mb_xy], h->fref[1][0]->mb_type[mb_xy] };
     int partition_col[2] = { h->fref[1][0]->mb_partition[mb_xy], h->fref[1][0]->mb_partition[mb_xy] };
     h->mb.i_partition = partition_col[0];
-    if( b_interlaced && h->fref[1][0]->field[mb_xy] != MB_INTERLACED )
+    if( b_interlaced && h->fref[1][0]->field[mb_xy] != 0 )
     {
-        if( MB_INTERLACED )
-        {
-            mb_y = h->mb.i_mb_y&~1;
-            mb_xy = mb_x + h->mb.i_mb_stride * mb_y;
-            type_col[0] = h->fref[1][0]->mb_type[mb_xy];
-            type_col[1] = h->fref[1][0]->mb_type[mb_xy + h->mb.i_mb_stride];
-            partition_col[0] = h->fref[1][0]->mb_partition[mb_xy];
-            partition_col[1] = h->fref[1][0]->mb_partition[mb_xy + h->mb.i_mb_stride];
-
-            if( (IS_INTRA(type_col[0]) || partition_col[0] == D_16x16) &&
-                (IS_INTRA(type_col[1]) || partition_col[1] == D_16x16) &&
-                partition_col[0] != D_8x8 )
-                h->mb.i_partition = D_16x8;
-            else
-                h->mb.i_partition = D_8x8;
-        }
-        else
-        {
-            int cur_poc = h->fdec->i_poc + h->fdec->i_delta_poc[MB_INTERLACED&h->mb.i_mb_y&1];
-            int col_parity = abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[0] - cur_poc)
-                          >= abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[1] - cur_poc);
-            mb_y = (h->mb.i_mb_y&~1) + col_parity;
-            mb_xy = mb_x + h->mb.i_mb_stride * mb_y;
-            type_col[0] = type_col[1] = h->fref[1][0]->mb_type[mb_xy];
-            partition_col[0] = partition_col[1] = h->fref[1][0]->mb_partition[mb_xy];
-            h->mb.i_partition = partition_col[0];
-        }
+        int cur_poc = h->fdec->i_poc + h->fdec->i_delta_poc[0];
+        int col_parity = abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[0] - cur_poc)
+                        >= abs(h->fref[1][0]->i_poc + h->fref[1][0]->i_delta_poc[1] - cur_poc);
+        mb_y = (h->mb.i_mb_y&~1) + col_parity;
+        mb_xy = mb_x + h->mb.i_mb_stride * mb_y;
+        type_col[0] = type_col[1] = h->fref[1][0]->mb_type[mb_xy];
+        partition_col[0] = partition_col[1] = h->fref[1][0]->mb_partition[mb_xy];
+        h->mb.i_partition = partition_col[0];
     }
     int i_mb_4x4 = b_interlaced ? 4 * (h->mb.i_b4_stride*mb_y + mb_x) : h->mb.i_b4_xy;
     int i_mb_8x8 = b_interlaced ? 2 * (h->mb.i_b8_stride*mb_y + mb_x) : h->mb.i_b8_xy;
@@ -413,9 +336,8 @@ static ALWAYS_INLINE int mb_predict_mv_direct16x16_spatial( x264_t *h, int b_int
     {
         const int x8 = i8&1;
         const int y8 = i8>>1;
-        int ypart = (b_interlaced && h->fref[1][0]->field[mb_xy] != MB_INTERLACED) ?
-                    MB_INTERLACED ? y8*6 : 2*(h->mb.i_mb_y&1) + y8 :
-                    3*y8;
+        int ypart = (b_interlaced && h->fref[1][0]->field[mb_xy] != 0) ?
+                    2*(h->mb.i_mb_y&1) + y8 : 3*y8;
         int o8 = x8 + (ypart>>1) * h->mb.i_b8_stride;
         int o4 = 3*x8 + ypart * h->mb.i_b4_stride;
 
@@ -458,10 +380,7 @@ int x264_mb_predict_mv_direct16x16( x264_t *h, int *b_changed )
         return 0;
     else if( h->sh.b_direct_spatial_mv_pred )
     {
-        if( SLICE_MBAFF )
-            b_available = mb_predict_mv_direct16x16_spatial_interlaced( h );
-        else
-            b_available = mb_predict_mv_direct16x16_spatial_progressive( h );
+        b_available = mb_predict_mv_direct16x16_spatial_progressive( h );
     }
     else
         b_available = mb_predict_mv_direct16x16_temporal( h );
@@ -530,7 +449,7 @@ void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t mvc[
 #define SET_IMVP(xy) \
     if( xy >= 0 ) \
     { \
-        int shift = 1 + MB_INTERLACED - h->mb.field[xy]; \
+        int shift = 1 - h->mb.field[xy]; \
         int16_t *mvp = h->mb.mvr[i_list][i_ref<<1>>shift][xy]; \
         mvc[i][0] = mvp[0]; \
         mvc[i][1] = mvp[1]<<1>>shift; \
@@ -560,20 +479,10 @@ void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t mvc[
     }
 
     /* spatial predictors */
-    if( SLICE_MBAFF )
-    {
-        SET_IMVP( h->mb.i_mb_left_xy[0] );
-        SET_IMVP( h->mb.i_mb_top_xy );
-        SET_IMVP( h->mb.i_mb_topleft_xy );
-        SET_IMVP( h->mb.i_mb_topright_xy );
-    }
-    else
-    {
-        SET_MVP( mvr[h->mb.i_mb_left_xy[0]] );
-        SET_MVP( mvr[h->mb.i_mb_top_xy] );
-        SET_MVP( mvr[h->mb.i_mb_topleft_xy] );
-        SET_MVP( mvr[h->mb.i_mb_topright_xy] );
-    }
+    SET_MVP( mvr[h->mb.i_mb_left_xy[0]] );
+    SET_MVP( mvr[h->mb.i_mb_top_xy] );
+    SET_MVP( mvr[h->mb.i_mb_topleft_xy] );
+    SET_MVP( mvr[h->mb.i_mb_topright_xy] );
 #undef SET_IMVP
 #undef SET_MVP
 
@@ -583,13 +492,13 @@ void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t mvc[
         x264_frame_t *l0 = h->fref[0][0];
         int field = h->mb.i_mb_y&1;
         int curpoc = h->fdec->i_poc + h->fdec->i_delta_poc[field];
-        int refpoc = h->fref[i_list][i_ref>>SLICE_MBAFF]->i_poc;
+        int refpoc = h->fref[i_list][i_ref]->i_poc;
         refpoc += l0->i_delta_poc[field^(i_ref&1)];
 
 #define SET_TMVP( dx, dy ) \
         { \
             int mb_index = h->mb.i_mb_xy + dx + dy*h->mb.i_mb_stride; \
-            int scale = (curpoc - refpoc) * l0->inv_ref_poc[MB_INTERLACED&field]; \
+            int scale = (curpoc - refpoc) * l0->inv_ref_poc[0]; \
             mvc[i][0] = (l0->mv16x16[mb_index][0]*scale + 128) >> 8; \
             mvc[i][1] = (l0->mv16x16[mb_index][1]*scale + 128) >> 8; \
             i++; \

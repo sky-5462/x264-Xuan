@@ -482,7 +482,6 @@ for opt do
                 exit 1
             fi
             ;;
-            ;;
         *)
             echo "Unknown option $opt, ignored"
             ;;

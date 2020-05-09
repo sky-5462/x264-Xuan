@@ -849,7 +849,6 @@ typedef enum
     OPT_MUXER,
     OPT_DEMUXER,
     OPT_INDEX,
-    OPT_INTERLACED,
     OPT_TCFILE_IN,
     OPT_TCFILE_OUT,
     OPT_TIMEBASE,
@@ -896,10 +895,6 @@ static struct option long_options[] =
     { "no-deblock",        no_argument, NULL, 0 },
     { "filter",      required_argument, NULL, 0 },
     { "deblock",     required_argument, NULL, 'f' },
-    { "interlaced",        no_argument, NULL, OPT_INTERLACED },
-    { "tff",               no_argument, NULL, OPT_INTERLACED },
-    { "bff",               no_argument, NULL, OPT_INTERLACED },
-    { "no-interlaced",     no_argument, NULL, OPT_INTERLACED },
     { "constrained-intra", no_argument, NULL, 0 },
     { "cabac",             no_argument, NULL, 0 },
     { "no-cabac",          no_argument, NULL, 0 },
@@ -1016,7 +1011,6 @@ static struct option long_options[] =
     { "crop-rect",   required_argument, NULL, 0 },
     { "nal-hrd",     required_argument, NULL, 0 },
     { "pulldown",    required_argument, NULL, OPT_PULLDOWN },
-    { "fake-interlaced",   no_argument, NULL, 0 },
     { "frame-packing",     required_argument, NULL, 0 },
     { "alternative-transfer", required_argument, NULL, 0 },
     { "vf",          required_argument, NULL, OPT_VIDEO_FILTER },
@@ -1331,9 +1325,6 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
                 b_user_fps = 1;
                 param->b_vfr_input = 0;
                 goto generic_option;
-            case OPT_INTERLACED:
-                b_user_interlaced = 1;
-                goto generic_option;
             case OPT_TCFILE_IN:
                 tcfile_name = optarg;
                 break;
@@ -1559,15 +1550,7 @@ generic_option:
 
     if( !b_user_interlaced && info.interlaced )
     {
-#if HAVE_INTERLACED
-        x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, enabling %cff interlaced mode.\n"
-                      "                If you want otherwise, use --no-interlaced or --%cff\n",
-                      info.tff ? 't' : 'b', info.tff ? 'b' : 't' );
-        param->b_interlaced = 1;
-        param->b_tff = !!info.tff;
-#else
         x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, but not compiled with interlaced support\n" );
-#endif
     }
     /* if the user never specified the output range and the input is now rgb, default it to pc */
     int csp = param->i_csp & X264_CSP_MASK;
