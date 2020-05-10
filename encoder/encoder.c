@@ -1496,11 +1496,10 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_predict_8x16c_init( h->param.cpu, h->predict_8x16c );
     x264_predict_8x8_init( h->param.cpu, h->predict_8x8, &h->predict_8x8_filter );
     x264_predict_4x4_init( h->param.cpu, h->predict_4x4 );
-    x264_pixel_init( h->param.cpu, &h->pixf );
-    x264_dct_init( h->param.cpu, &h->dctf );
-    x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );
-    memcpy( &h->zigzagf, &h->zigzagf_progressive, sizeof(h->zigzagf) );
-    x264_mc_init( h->param.cpu, &h->mc);
+    x264_pixel_init( &h->pixf );
+    x264_dct_init( &h->dctf );
+    x264_zigzag_init( &h->zigzagf );
+    x264_mc_init( &h->mc );
     x264_quant_init( h, h->param.cpu, &h->quantf );
     x264_deblock_init( h->param.cpu, &h->loopf, 0 );
     x264_bitstream_init( h->param.cpu, &h->bsf );

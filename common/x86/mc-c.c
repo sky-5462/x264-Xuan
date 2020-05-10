@@ -256,7 +256,7 @@ GET_REF(avx2, get_ref_avx2)
 void x264_hpel_filter_avx2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height);
 
 
-void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init_mmx( x264_mc_functions_t *pf )
 {
     pf->avg[PIXEL_2x2] = x264_pixel_avg_2x2_avx2;
     pf->avg[PIXEL_2x4] = x264_pixel_avg_2x4_avx2;

@@ -133,7 +133,7 @@ float x264_pixel_ssim_wxh( x264_pixel_function_t *pf,
 /****************************************************************************
  * x264_pixel_init:
  ****************************************************************************/
-void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
+void x264_pixel_init( x264_pixel_function_t *pixf )
 {
     memset( pixf, 0, sizeof(*pixf) );
 

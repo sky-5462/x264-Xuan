@@ -324,9 +324,6 @@ void x264_macroblock_cache_save( x264_t *h );
 #define x264_macroblock_bipred_init x264_template(macroblock_bipred_init)
 void x264_macroblock_bipred_init( x264_t *h );
 
-#define x264_prefetch_fenc x264_template(prefetch_fenc)
-void x264_prefetch_fenc( x264_t *h, x264_frame_t *fenc, int i_mb_x, int i_mb_y );
-
 #define x264_copy_column8 x264_template(copy_column8)
 void x264_copy_column8( pixel *dst, pixel *src );
 

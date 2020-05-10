@@ -415,14 +415,6 @@ static void add8x8_idct8( pixel *dst, dctcoef dct[64] )
 #undef DST
 }
 
-static void add16x16_idct8( pixel *dst, dctcoef dct[4][64] )
-{
-    add8x8_idct8( &dst[0],               dct[0] );
-    add8x8_idct8( &dst[8],               dct[1] );
-    add8x8_idct8( &dst[8*FDEC_STRIDE+0], dct[2] );
-    add8x8_idct8( &dst[8*FDEC_STRIDE+8], dct[3] );
-}
-
 static inline void add4x4_idct_dc( pixel *p_dst, dctcoef dc )
 {
     dc = (dc + 32) >> 6;
@@ -458,7 +450,7 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
 /****************************************************************************
  * x264_dct_init:
  ****************************************************************************/
-void x264_dct_init( int cpu, x264_dct_function_t *dctf )
+void x264_dct_init( x264_dct_function_t *dctf )
 {
     dctf->sub4x4_dct = x264_sub4x4_dct_avx2;
     dctf->sub8x8_dct = x264_sub8x8_dct_avx2;
@@ -474,7 +466,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     dctf->add8x8_idct_dc = x264_add8x8_idct_dc_avx2;
     dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx2;
     dctf->add8x8_idct8 = x264_add8x8_idct8_avx2;
-    dctf->add16x16_idct8 = x264_add16x16_idct8_avx2;
 
     dctf->dct4x4dc = x264_dct4x4dc_avx2;
     dctf->idct4x4dc = x264_idct4x4dc_avx2;
@@ -652,7 +643,7 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
     }
 }
 
-void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
+void x264_zigzag_init( x264_zigzag_function_t *pf_progressive )
 {
     pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx2;

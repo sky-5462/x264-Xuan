@@ -86,29 +86,13 @@ typedef struct
     void (*load_deinterleave_chroma_fdec)( pixel *dst, pixel *src, intptr_t i_src, int height );
 
     void (*plane_copy)( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h );
-    void (*plane_copy_swap)( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h );
     void (*plane_copy_interleave)( pixel *dst,  intptr_t i_dst, pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h );
     /* may write up to 15 pixels off the end of each plane */
     void (*plane_copy_deinterleave)( pixel *dstu, intptr_t i_dstu, pixel *dstv, intptr_t i_dstv,
                                      pixel *src,  intptr_t i_src, int w, int h );
-    void (*plane_copy_deinterleave_yuyv)( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
-                                          pixel *src,  intptr_t i_src, int w, int h );
-    void (*plane_copy_deinterleave_rgb)( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
-                                         pixel *dstc, intptr_t i_dstc, pixel *src,  intptr_t i_src, int pw, int w, int h );
-    void (*plane_copy_deinterleave_v210)( pixel *dsty, intptr_t i_dsty,
-                                          pixel *dstc, intptr_t i_dstc,
-                                          uint32_t *src, intptr_t i_src, int w, int h );
     void (*hpel_filter)( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
                          intptr_t i_stride, int i_width, int i_height);
-
-    /* prefetch the next few macroblocks of fenc or fdec */
-    void (*prefetch_fenc)    ( pixel *pix_y, intptr_t stride_y, pixel *pix_uv, intptr_t stride_uv, int mb_x );
-    void (*prefetch_fenc_400)( pixel *pix_y, intptr_t stride_y, pixel *pix_uv, intptr_t stride_uv, int mb_x );
-    void (*prefetch_fenc_420)( pixel *pix_y, intptr_t stride_y, pixel *pix_uv, intptr_t stride_uv, int mb_x );
-    void (*prefetch_fenc_422)( pixel *pix_y, intptr_t stride_y, pixel *pix_uv, intptr_t stride_uv, int mb_x );
-    /* prefetch the next few macroblocks of a hpel reference frame */
-    void (*prefetch_ref)( pixel *pix, intptr_t stride, int parity );
 
     void *(*memcpy_aligned)( void *dst, const void *src, size_t n );
     void (*memzero_aligned)( void *dst, size_t n );
@@ -136,6 +120,6 @@ typedef struct
 } x264_mc_functions_t;
 
 #define x264_mc_init x264_template(mc_init)
-void x264_mc_init( int cpu, x264_mc_functions_t *pf);
+void x264_mc_init( x264_mc_functions_t *pf);
 
 #endif

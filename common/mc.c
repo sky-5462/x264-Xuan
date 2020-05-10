@@ -431,9 +431,9 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
 
-void x264_mc_init( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init( x264_mc_functions_t *pf )
 {
-    x264_mc_init_mmx( cpu, pf );
+    x264_mc_init_mmx( pf );
 }
 
 void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
