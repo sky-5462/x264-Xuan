@@ -49,6 +49,8 @@ pw_1024:                 times 2 dw 1024
 filt_mul20:              times 4 db 20
 filt_mul15:              times 2 db 1, -5
 filt_mul51:              times 2 db -5, 1
+pw_0xc000:               times 2 dw 0xc000
+pw_31:                   times 2 dw 31
 
 
 SECTION .text
@@ -56,6 +58,11 @@ SECTION .text
 cextern pw_1
 cextern pw_512
 cextern deinterleave_shufd
+cextern pw_3fff
+cextern pd_0123
+cextern pd_8
+cextern pw_32
+cextern pw_00ff
 
 ;=============================================================================
 ; PIXEL_AVG_WEIGHT/PIXEL_AVG
@@ -2138,4 +2145,143 @@ cglobal pixel_avg2_w20_get_ref, 0, 0
     lea            r0, [r0 + r1 * 2]
     sub            r5d, 2
     jg             .loop
+    RET
+
+
+;=============================================================================
+; mbtree_propagate
+;=============================================================================
+INIT_YMM avx2
+cglobal mbtree_propagate_cost, 0, 0
+%if WIN64
+    mov            r4, [rsp + 40]
+    mov            r6, [rsp + 48]
+    vbroadcastss   m5, [r6]            ; fps
+    mov            r6d, [rsp + 56]
+%else
+    mov            r6d, [rsp + 8]
+    vbroadcastss   m5, [r5]            ; fps
+%endif
+    vpbroadcastd   xm4, [pw_3fff]      ; low 14-bit mask(LOWRES_COST_MASK)
+    lea            r1, [r1 + r6 * 2]   ; double the length for 16-bit elements addressing
+    lea            r2, [r2 + r6 * 2]
+    add            r6d, r6d
+    add            r3, r6
+    add            r4, r6
+    neg            r6
+.loop:
+    ; convert 16-bit to 32bit for int-to-float conversion
+    vpmovzxwd      m0, [r2 + r6]       ; intra_cost
+    vpand          xm1, xm4, [r3 + r6]
+    vpmovzxwd      m2, [r4 + r6]       ; inv_qscales
+    vpmovzxwd      m3, [r1 + r6]       ; propagate_in
+    vpmovzxwd      m1, xm1
+    vpsubusw       m1, m0, m1          ; intra_cost - inter_cost, combine MIN and SUB
+    vpmaddwd       m2, m2, m0          ; propagate_intra
+    ; convert to float
+    vcvtdq2ps      m0, m0              ; propagate_denom
+    vcvtdq2ps      m1, m1              ; propagate_num
+    vcvtdq2ps      m2, m2
+    vcvtdq2ps      m3, m3
+    vfmadd231ps    m3, m2, m5          ; propagate_amount
+    vmulps         m3, m3, m1          ; propagate_amount * propagate_num
+    ; calculate the reciprocal of propagate_denom to avoid division
+    ; the result of rcp have a precision of 12 bits, which is not enough
+    ; we use the Newton-Raphson method to increase precision
+    ; let input = a, then we have:
+    ; b = rcp(a)
+    ; output = b * (2 - a * b) = 2 * b - a * b * b
+    vrcpps         m1, m0              ; b = rcp(propagate_denom)
+    vmulps         m0, m0, m1          ; a * b
+    vaddps         m2, m1, m1          ; 2 * b
+    vfnmadd132ps   m0, m2, m1          ; -((a * b) * b) + (2 * b)
+    vmulps         m0, m0, m3          ; propagate_amount * propagate_num / propagate_denom
+    vcvtps2dq      m0, m0              ; round to int, equivalent to (int)(result + 0.5f)
+    vextracti128   xm1, m0, 1
+    vpackssdw      xm0, xm0, xm1       ; clip to int_16
+    vmovdqu        [r0], xm0
+    add            r0, 16
+    add            r6, 16
+    jl             .loop
+    RET
+
+INIT_YMM avx2
+cglobal mbtree_propagate_list_internal, 0, 0
+    ; r0: buffer_out  ->  {mbx, mby}(32B), {idx0, idx1}(32B), {idx2, idx3}(32B)
+    ; r1: mvs
+    ; r2: propagate_amount
+    ; r3: lowres_costs
+    ; r4d: len
+    ; r5d(m0): bipred_weight << 9 (use vmulhrsw, bi_weight in [1, 63] so it won't overflow)
+    ; r6d(m1): mb_y << 16
+%if WIN64
+    mov            r4d, [rsp + 40]
+    vpbroadcastw   m0, [rsp + 48]
+    vpbroadcastd   m1, [rsp + 56]      ; {0, y}, 32-bit per group
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 56
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+    vmovdqu        [rsp + 32], xm10
+%else
+    vmovd          xm0, r5d
+    vpbroadcastw   m0, xm0
+    vpbroadcastd   m1, [rsp + 8]       ; {0, y}, 32-bit per group
+%endif
+    vpor           m1, m1, [pd_0123]   ; 0 y 1 y 2 y 3 y ... , load both pd_0123 and pd_4567
+    vpbroadcastd   m2, [pd_8]          ; {8, 0}, 32-bit per group, to increase m1
+    vpbroadcastd   xm3, [pw_0xc000]    ; mask to apply conditional move to listamount
+    vpbroadcastd   m4, [pw_31]         ; mask for x/y
+    vpbroadcastd   m5, [pw_32]         ; calculate idx_weight
+    vpbroadcastd   m10, [pw_00ff]
+    lea            r1, [r1 + r4 * 4]
+    lea            r2, [r2 + r4 * 2]
+    lea            r3, [r3 + r4 * 2]
+    neg            r4
+
+.loop:
+    vpand          xm6, xm3, [r3 + r4 * 2]  ; lists_used
+    vpcmpeqw       xm6, xm6, xm3       ; listamount blend mask
+    vmovdqu        xm7, [r2 + r4 * 2]  ; listamount
+    vpmulhrsw      xm8, xm7, xm0       ; (listamount * bipred_weight + 32) >> 6
+    vpblendvb      xm6, xm7, xm8, xm6  ; listamount = (lists_used == 3) ? bipred_amount : listamount
+    ;vpunpcklqdq    xm6, xm6, xm6       ; listamount(0 - 7)
+    vpermq         m6, m6, q1100
+
+    vmovdqu        m7, [r1 + r4 * 4]   ; {x, y} mvs, 32-bit per group
+    vpsraw         m8, m7, 5
+    vpaddw         m8, m8, m1          ; {mbx, mby}, 32-bit per group
+    vpaddw         m1, m1, m2          ; 8 y 9 y 10 y 11 y ...
+    vmovdqu        [r0], m8
+
+    vpand          m7, m7, m4          ; x/y &= 31
+    vpsubw         m8, m5, m7          ; {32 - x, 32 - y}, 32-bit per group
+    vpackuswb      m7, m8, m7          ; {32 - x, 32 - y} {x, y}, 16-bit per group, 8-bit per number
+    vpand          m8, m7, m10         ; {32 - x} {x}, 16-bit per group, mask out y part
+    vpshufd        m9, m8, q1032       ; {x} {32 - x}, 16-bit per group
+    vpsrlw         m7, m7, 3
+    vpandn         m7, m4, m7          ; ({32 - y} {y}) << 5, 16-bit per group, zero out low 5 bits
+    vpmullw        m8, m7, m8          ; ({idx0} {idx3}) << 5
+    vpmullw        m9, m7, m9          ; ({idx1} {idx2}) << 5
+    ; we can't shift listamount since it will overflow,
+    ; so we shift idx_weight to perform multiply and round
+    vpmulhrsw      m7, m8, m6          ; (({idx0} {idx3}) * listamount + 512) >> 10
+    vpmulhrsw      m9, m9, m6          ; (({idx1} {idx2}) * listamount + 512) >> 10
+    vpsignw        m7, m7, m8          ; idx0 may reach 32768, which is -32768 in 16-bit. Need to correct it
+    vpunpcklwd     m8, m7, m9          ; {idx0, idx1} (32-bit per group)
+    vpunpckhwd     m9, m9, m7          ; {idx2, idx3} (32-bit per group)
+    vmovdqu        [r0 + 32], m8
+    vmovdqu        [r0 + 64], m9
+    add            r0, 96
+    add            r4, 8
+    jl             .loop
+%if WIN64
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    vmovdqu        xm10, [rsp + 32]
+    add            rsp, 56
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%endif
     RET

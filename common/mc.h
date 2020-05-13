@@ -26,6 +26,14 @@
 #ifndef X264_MC_H
 #define X264_MC_H
 
+#define MC_CLIP_ADD(s,x) (s) = X264_MIN((s)+(x),(1<<15)-1)
+#define MC_CLIP_ADD2(s,x)\
+do\
+{\
+    MC_CLIP_ADD((s)[0], (x)[0]);\
+    MC_CLIP_ADD((s)[1], (x)[1]);\
+} while( 0 )
+
 struct x264_weight_t;
 typedef void (* weight_fn_t)( pixel *, intptr_t, pixel *,intptr_t, const struct x264_weight_t *, int );
 typedef struct x264_weight_t

@@ -255,6 +255,117 @@ GET_REF(avx2, get_ref_avx2)
 #define x264_hpel_filter_avx2 x264_template(hpel_filter_avx2)
 void x264_hpel_filter_avx2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src, intptr_t stride, int width, int height);
 
+#undef MC_CLIP_ADD
+#undef MC_CLIP_ADD2
+#if defined _MSC_VER || defined __INTEL_COMPILER  // need to check in icc
+#include <immintrin.h>
+#define MC_CLIP_ADD(s,x)\
+do\
+{\
+    __m128i num1 = _mm_cvtsi32_si128(s);\
+    __m128i num2 = _mm_cvtsi32_si128(x);\
+	__m128i result = _mm_adds_epi16(num1, num2);\
+	s = _mm_cvtsi128_si32(result);\
+} while( 0 )
+
+#define MC_CLIP_ADD2(s,x)\
+do\
+{\
+    __m128i num1 = _mm_loadu_si32(s);\
+    __m128i num2 = _mm_loadu_si32(x);\
+	__m128i result = _mm_adds_epi16(num1, num2);\
+	_mm_storeu_si32(s, result);\
+} while( 0 )
+
+#else  // gcc can't use that intrinsics...
+#define MC_CLIP_ADD(s,x)\
+do\
+{\
+    int temp;\
+    asm("vmovd       %0, %%xmm0     \n"\
+        "vmovd       %2, %%xmm1     \n"\
+        "vpaddsw %%xmm1, %%xmm0, %%xmm0     \n"\
+        "vmovd   %%xmm0, %1         \n"\
+        :"+m"(s), "=&r"(temp)\
+        :"m"(x)\
+    );\
+    s = temp;\
+} while( 0 )
+
+#define MC_CLIP_ADD2(s,x)\
+do\
+{\
+    asm("vmovd       %0, %%xmm0     \n"\
+        "vmovd       %1, %%xmm1     \n"\
+        "vpaddsw %%xmm1, %%xmm0, %%xmm0     \n"\
+        "vmovd   %%xmm0, %0         \n"\
+        :"+m"(M32(s))\
+        :"m"(M32(x))\
+    );\
+} while( 0 )
+#endif
+
+#define x264_mbtree_propagate_cost_avx2 x264_template(mbtree_propagate_cost_avx2)
+void x264_mbtree_propagate_cost_avx2  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+
+#define x264_mbtree_propagate_list_internal_avx2 x264_template(mbtree_propagate_list_internal_avx2)
+void x264_8_mbtree_propagate_list_internal_avx2(int16_t* output, int16_t(*mvs)[2], int16_t * propagate_amount, \
+                                                uint16_t *lowres_costs, int len,\
+                                                int bipred_weight, int mb_y);\
+
+static void mbtree_propagate_list_avx2(x264_t * h, uint16_t * ref_costs, int16_t(*mvs)[2],
+										int16_t* propagate_amount, uint16_t* lowres_costs,
+										int bipred_weight, int mb_y, int len, int list) {
+	int16_t* current = (int16_t*)h->scratch_buffer2;
+
+	x264_8_mbtree_propagate_list_internal_avx2(current, mvs, propagate_amount, lowres_costs,
+													len, bipred_weight << 9, mb_y << 16);
+
+	unsigned stride = h->mb.i_mb_stride;
+	unsigned width = h->mb.i_mb_width;
+	unsigned height = h->mb.i_mb_height;
+
+	for (unsigned i = 0; i < len; current += 32) {
+		int end = X264_MIN(i + 8, len);
+		for (; i < end; i++, current += 2) {
+			if (!(lowres_costs[i] & (1 << (list + LOWRES_COST_SHIFT))))
+				continue;
+
+			unsigned mbx = current[0];
+			unsigned mby = current[1];
+			unsigned idx0 = mbx + mby * stride;
+			unsigned idx2 = idx0 + stride;
+
+			/* Shortcut for the simple/common case of zero MV */
+			if (!M32(mvs[i])) {
+				MC_CLIP_ADD(ref_costs[idx0], current[16]);
+				continue;
+			}
+
+			if (mbx < width - 1 && mby < height - 1) {
+				MC_CLIP_ADD2(ref_costs + idx0, current + 16);
+				MC_CLIP_ADD2(ref_costs + idx2, current + 32);
+			}
+			else {
+				/* Note: this takes advantage of unsigned representation to
+				 * catch negative mbx/mby. */
+				if (mby < height) {
+					if (mbx < width)
+						MC_CLIP_ADD(ref_costs[idx0 + 0], current[16]);
+					if (mbx + 1 < width)
+						MC_CLIP_ADD(ref_costs[idx0 + 1], current[17]);
+				}
+				if (mby + 1 < height) {
+					if (mbx < width)
+						MC_CLIP_ADD(ref_costs[idx2 + 0], current[32]);
+					if (mbx + 1 < width)
+						MC_CLIP_ADD(ref_costs[idx2 + 1], current[33]);
+				}
+			}
+		}
+	}
+}
 
 void x264_mc_init_mmx( x264_mc_functions_t *pf )
 {
@@ -291,6 +402,9 @@ void x264_mc_init_mmx( x264_mc_functions_t *pf )
     pf->integral_init8h = x264_integral_init8h_avx2;
     pf->integral_init4v = x264_integral_init4v_avx2;
     pf->integral_init8v = x264_integral_init8v_avx2;
+
+    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
+    pf->mbtree_propagate_list = mbtree_propagate_list_avx2;
 
     pf->mbtree_fix8_pack = x264_mbtree_fix8_pack_avx2;
     pf->mbtree_fix8_unpack = x264_mbtree_fix8_unpack_avx2;
