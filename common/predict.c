@@ -932,22 +932,14 @@ void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_
 
 }
 
-void x264_predict_4x4_init( int cpu, x264_predict_t pf[12] )
+void x264_predict_4x4_init( x264_predict_t pf[12] )
 {
     pf[I_PRED_4x4_V]      = x264_predict_4x4_v_c;
-    pf[I_PRED_4x4_H]      = x264_predict_4x4_h_c;
-    pf[I_PRED_4x4_DC]     = x264_predict_4x4_dc_c;
-    pf[I_PRED_4x4_DDL]    = predict_4x4_ddl_c;
-    pf[I_PRED_4x4_DDR]    = predict_4x4_ddr_c;
-    pf[I_PRED_4x4_VR]     = predict_4x4_vr_c;
-    pf[I_PRED_4x4_HD]     = predict_4x4_hd_c;
-    pf[I_PRED_4x4_VL]     = predict_4x4_vl_c;
-    pf[I_PRED_4x4_HU]     = predict_4x4_hu_c;
     pf[I_PRED_4x4_DC_LEFT]= predict_4x4_dc_left_c;
     pf[I_PRED_4x4_DC_TOP] = predict_4x4_dc_top_c;
     pf[I_PRED_4x4_DC_128] = predict_4x4_dc_128_c;
 
-    x264_predict_4x4_init_mmx( cpu, pf );
+    x264_predict_4x4_init_mmx( pf );
 
 }
 
