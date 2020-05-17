@@ -44,12 +44,12 @@ shuf_vr:     db 2,4,6,8,9,10,11,12,13,14,15,0,1,3,5,7
 pw_reverse:  db 14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1
 
 
-predict_8x8c_dc_shuf:       times 4 db  0
+predict_chroma_dc_shuf:     times 4 db  0
                             times 4 db  4
                             times 4 db  8
                             times 4 db 12
 pb_32101234:                db -3, -2, -1, 0, 1, 2, 3, 4
-predict_8x8c_dc_top_shuf:   times 4 db 0
+predict_chroma_dc_top_shuf: times 4 db 0
                             times 4 db 8
 
 SECTION .text
@@ -526,84 +526,6 @@ PREDICT_8x8_VR b
 %endif
 %endmacro
 
-;-----------------------------------------------------------------------------
-; void predict_8x8c_p_core( uint8_t *src, int i00, int b, int c )
-;-----------------------------------------------------------------------------
-%if ARCH_X86_64 == 0 && HIGH_BIT_DEPTH == 0
-%macro PREDICT_CHROMA_P_MMX 1
-cglobal predict_8x%1c_p_core, 1,2
-    LOAD_PLANE_ARGS
-    movq        m1, m2
-    pmullw      m2, [pw_0to15]
-    psllw       m1, 2
-    paddsw      m0, m2        ; m0 = {i+0*b, i+1*b, i+2*b, i+3*b}
-    paddsw      m1, m0        ; m1 = {i+4*b, i+5*b, i+6*b, i+7*b}
-    mov         r1d, %1
-ALIGN 4
-.loop:
-    movq        m5, m0
-    movq        m6, m1
-    psraw       m5, 5
-    psraw       m6, 5
-    packuswb    m5, m6
-    movq        [r0], m5
-
-    paddsw      m0, m4
-    paddsw      m1, m4
-    add         r0, FDEC_STRIDE
-    dec         r1d
-    jg .loop
-    RET
-%endmacro ; PREDICT_CHROMA_P_MMX
-
-INIT_MMX mmx2
-PREDICT_CHROMA_P_MMX 16
-%endif ; !ARCH_X86_64 && !HIGH_BIT_DEPTH
-
-%macro PREDICT_CHROMA_P 1
-cglobal predict_8x%1c_p_core, 1,2
-    LOAD_PLANE_ARGS
-%if mmsize == 32
-    vbroadcasti128 m1, [pw_0to15]   ; 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
-    pmullw      m2, m1
-    mova       xm1, xm4             ; zero upper half
-    paddsw      m4, m4
-    paddsw      m0, m1
-%else
-    pmullw      m2, [pw_0to15]
-%endif
-    paddsw      m0, m2              ; m0 = {i+0*b, i+1*b, i+2*b, i+3*b, i+4*b, i+5*b, i+6*b, i+7*b}
-    paddsw      m1, m0, m4
-    paddsw      m4, m4
-    mov        r1d, %1/(mmsize/8)
-.loop:
-    psraw       m2, m0, 5
-    psraw       m3, m1, 5
-    paddsw      m0, m4
-    paddsw      m1, m4
-    packuswb    m2, m3
-%if mmsize == 32
-    movq        [r0+FDEC_STRIDE*1], xm2
-    movhps      [r0+FDEC_STRIDE*3], xm2
-    vextracti128 xm2, m2, 1
-    movq        [r0+FDEC_STRIDE*0], xm2
-    movhps      [r0+FDEC_STRIDE*2], xm2
-%else
-    movq        [r0+FDEC_STRIDE*0], xm2
-    movhps      [r0+FDEC_STRIDE*1], xm2
-%endif
-    add         r0, FDEC_STRIDE*mmsize/8
-    dec        r1d
-    jg .loop
-    RET
-%endmacro ; PREDICT_CHROMA_P
-
-INIT_XMM sse2
-PREDICT_CHROMA_P 16
-INIT_XMM avx
-PREDICT_CHROMA_P 16
-INIT_YMM avx2
-PREDICT_CHROMA_P 16
 
 ;-----------------------------------------------------------------------------
 ; void predict_16x16_p_core( uint8_t *src, int i00, int b, int c )
@@ -1031,37 +953,6 @@ cglobal predict_8x8_hu_ssse3, 2,2
     RET
 %endif ; !HIGH_BIT_DEPTH
 
-%macro PREDICT_8x16C_V 0
-cglobal predict_8x16c_v, 1,1
-    mova        m0, [r0 - FDEC_STRIDEB]
-    STORE16     m0
-    RET
-%endmacro
-
-INIT_MMX mmx
-PREDICT_8x16C_V
-
-;-----------------------------------------------------------------------------
-; void predict_8x8c_h( uint8_t *src )
-;-----------------------------------------------------------------------------
-%macro PREDICT_C_H 0
-cglobal predict_8x16c_h, 1,2
-%if cpuflag(ssse3) && notcpuflag(avx2)
-    mova  m2, [pb_3]
-%endif
-    mov  r1d, 4
-.loop:
-    PRED_H_4ROWS 8, 1
-    dec  r1d
-    jg .loop
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_C_H
-INIT_MMX ssse3
-PREDICT_C_H
-
 ;-----------------------------------------------------------------------------
 ; void predict_8x8c_dc( pixel *src )
 ;-----------------------------------------------------------------------------
@@ -1081,79 +972,6 @@ PREDICT_C_H
     movq [r0+FDEC_STRIDEB*(%2-2)], %1
     movq [r0+FDEC_STRIDEB*(%2-1)], %1
 %endmacro
-
-%macro PREDICT_8x16C_DC 0
-cglobal predict_8x16c_dc, 1,3
-    pxor      m7, m7
-    movd      m0, [r0-FDEC_STRIDEB+0]
-    movd      m1, [r0-FDEC_STRIDEB+4]
-    psadbw    m0, m7            ; s0
-    psadbw    m1, m7            ; s1
-    punpcklwd m0, m1            ; s0, s1
-
-    add       r0, FDEC_STRIDEB*4
-    LOAD_LEFT 0                 ; s2
-    pinsrw    m0, r1d, 2
-    LOAD_LEFT 4                 ; s3
-    pinsrw    m0, r1d, 3        ; s0, s1, s2, s3
-    add       r0, FDEC_STRIDEB*8
-    LOAD_LEFT 0                 ; s4
-    pinsrw    m1, r1d, 2
-    LOAD_LEFT 4                 ; s5
-    pinsrw    m1, r1d, 3        ; s1, __, s4, s5
-    sub       r0, FDEC_STRIDEB*8
-
-    pshufw    m2, m0, q1310     ; s0, s1, s3, s1
-    pshufw    m0, m0, q3312     ; s2, s1, s3, s3
-    pshufw    m3, m1, q0302     ; s4, s1, s5, s1
-    pshufw    m1, m1, q3322     ; s4, s4, s5, s5
-    paddw     m0, m2
-    paddw     m1, m3
-    psrlw     m0, 2
-    psrlw     m1, 2
-    pavgw     m0, m7
-    pavgw     m1, m7
-    packuswb  m0, m0            ; dc0, dc1, dc2, dc3
-    packuswb  m1, m1            ; dc4, dc5, dc6, dc7
-    punpcklbw m0, m0
-    punpcklbw m1, m1
-    pshufw    m2, m0, q1100
-    pshufw    m3, m0, q3322
-    pshufw    m4, m1, q1100
-    pshufw    m5, m1, q3322
-    STORE_4LINES m2, 0
-    STORE_4LINES m3, 4
-    add       r0, FDEC_STRIDEB*8
-    STORE_4LINES m4, 0
-    STORE_4LINES m5, 4
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_8x16C_DC
-
-%macro PREDICT_C_DC_TOP 1
-INIT_MMX
-cglobal predict_8x%1c_dc_top_mmx2, 1,1
-    movq        mm0, [r0 - FDEC_STRIDE]
-    pxor        mm1, mm1
-    pxor        mm2, mm2
-    punpckhbw   mm1, mm0
-    punpcklbw   mm0, mm2
-    psadbw      mm1, mm2        ; s1
-    psadbw      mm0, mm2        ; s0
-    psrlw       mm1, 1
-    psrlw       mm0, 1
-    pavgw       mm1, mm2
-    pavgw       mm0, mm2
-    pshufw      mm1, mm1, 0
-    pshufw      mm0, mm0, 0     ; dc0 (w)
-    packuswb    mm0, mm1        ; dc0,dc1 (b)
-    STORE%1     mm0
-    RET
-%endmacro
-
-PREDICT_C_DC_TOP 16
 
 ;-----------------------------------------------------------------------------
 ; void predict_16x16_v( pixel *src )
@@ -1533,8 +1351,7 @@ INIT_XMM avx2
 cglobal predict_8x8c_dc, 0, 0
     vpmovzxbw      m0, [r0 - 32]       ; t0 -- t7
     vpxor          m5, m5, m5
-    vpsadbw        m0, m0, m5
-    vpshufd        m0, m0, q2011       ; 0 0 s0 s1
+    vpsadbw        m0, m0, m5          ; s0 x s1 x
     ; use GPR to reach maximum load-and-expand throughput
     movzx          r1d, byte [r0 - 1]  ; l0
     movzx          r6d, byte [r0 + 31] ; l1
@@ -1543,7 +1360,7 @@ cglobal predict_8x8c_dc, 0, 0
     add            r1d, r6d
     movzx          r6d, byte [r0 + 95] ; l3
     add            r1d, r6d            ; s2
-    shl            r1, 32              ; x s2
+    vpinsrd        m0, m0, r1d, 1      ; s0 s2 s1 x
     add            r0, 128
     movzx          r6d, byte [r0 - 1]  ; l4
     movzx          r2d, byte [r0 + 31] ; l5
@@ -1552,15 +1369,13 @@ cglobal predict_8x8c_dc, 0, 0
     add            r6d, r2d
     movzx          r2d, byte [r0 + 95] ; l7
     add            r6d, r2d            ; s3
-    or             r1, r6              ; s3 s2
-    vmovq          m1, r1
-    vpor           m0, m0, m1          ; s3 s2 s0 s1 
-    vpshufd        m1, m0, q3032       ; s0 s1 s3 s1
-    vpshufd        m2, m0, q0031       ; s2 s1 s3 s3
+    vpinsrd        m0, m0, r6d, 3      ; s0 s2 s1 s3
+    vpshufd        m1, m0, q2320       ; s0 s1 s3 s1
+    vpshufd        m2, m0, q3321       ; s2 s1 s3 s3
     vpaddw         m0, m1, m2
     vpsrlw         m0, m0, 2
     vpavgw         m0, m0, m5          ; dc0 dc1 dc2 dc3
-    vpshufb        m0, m0, [predict_8x8c_dc_shuf]
+    vpshufb        m0, m0, [predict_chroma_dc_shuf]
     vmovq          [r0 - 128], m0
     vmovq          [r0 - 96], m0
     vmovq          [r0 - 64], m0
@@ -1574,14 +1389,13 @@ cglobal predict_8x8c_dc, 0, 0
 INIT_YMM avx2
 cglobal predict_8x8c_p, 0, 0
     movzx          r1d, byte [r0 - 25]      ; t7
-    movzx          r6d, byte [r0 - 33]      ; lt
-    movzx          r2d, byte [r0 + 223]     ; l7
-    add            r1d, r2d
+    movzx          r2d, byte [r0 - 33]      ; lt
+    movzx          r6d, byte [r0 + 223]     ; l7
+    add            r1d, r6d
     shl            r1d, 4                   ; a
     add            r1d, 16                  ; a + 16
-    shl            r6d, 2
-    neg            r6d                      ; -4 * lt
-    vmovd          xm4, r6d
+    shl            r2d, 2                   ; 4 * lt
+    vmovd          xm4, r2d
     vmovq          xm0, [r0 - 32]           ; t0 t1 t2 t3 t4 t5 t6 t7
     vmovq          xm5, [pb_32101234]       ; kernel [-3 -2 -1 0 1 2 3 4]
     vpmaddubsw     xm0, xm0, xm5
@@ -1589,27 +1403,28 @@ cglobal predict_8x8c_p, 0, 0
     vpaddw         xm0, xm0, xm1
     vpshuflw       xm1, xm0, q0001
     vpaddw         xm0, xm0, xm1
-    vpaddw         xm0, xm0, xm4            ; H
+    vpsubw         xm0, xm0, xm4            ; H
     mov            r3d, 17408               ; 17 * 1024
     vmovd          xm5, r3d
     vpmulhrsw      xm0, xm0, xm5            ; b
-    movzx          r3d, byte [r0 - 1]       ; l0
-    movzx          r4d, byte [r0 + 31]      ; l1
-    movzx          r5d, byte [r0 + 63]      ; l2
+
     add            r0, 128
-    lea            r3d, [r3 + r3 * 2]
-    add            r4d, r4d
-    sub            r6d, r5d                 ; [-4 x x -1 0 x x x x]
-    add            r3d, r4d
-    sub            r6d, r3d                 ; [-4 -3 -2 -1 0 x x x x]
-    movzx          r3d, byte [r0 - 1]       ; l4
+    shl            r6d, 2                   ; 4 * l7
+    sub            r6d, r2d                 ; [-4] [4]
+    movzx          r3d, byte [r0 - 129]     ; l0
+    movzx          r4d, byte [r0 + 63]      ; l6
+    sub            r4d, r3d
+    lea            r4d, [r4 + r4 * 2]
+    add            r6d, r4d                 ; [-3] [3]
+    movzx          r3d, byte [r0 - 97]      ; l1
     movzx          r4d, byte [r0 + 31]      ; l5
-    movzx          r5d, byte [r0 + 63]      ; l6
-    lea            r6d, [r6 + r2 * 4]       ; [-4 -3 -2 -1 0 x x x 4]
-    lea            r3d, [r3 + r4 * 2]
-    lea            r5d, [r5 + r5 * 2]
-    add            r6d, r3d                 ; [-4 -3 -2 -1 0 1 2 3 4]
-    add            r6d, r5d                 ; V
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 2]       ; [-2] [2]
+    movzx          r3d, byte [r0 - 65]      ; l2
+    movzx          r4d, byte [r0 - 1]       ; l4
+    sub            r4d, r3d
+    add            r6d, r4d                 ; [-1] [1], V
+
     imul           r6d, r6d, 17
     add            r6d, 16
     sar            r6d, 5                   ; c
@@ -1654,7 +1469,7 @@ cglobal predict_8x8c_p, 0, 0
 INIT_XMM avx2
 cglobal predict_8x8c_dc_top, 0, 0
     vpmovzxbw      m0, [r0 - 32]
-    vmovq          m5, [predict_8x8c_dc_top_shuf]
+    vmovq          m5, [predict_chroma_dc_top_shuf]
     vpxor          m1, m1, m1
     vpsadbw        m0, m0, m1               ; dc0 dc1
     vpsrlw         m0, m0, 1
@@ -1669,4 +1484,269 @@ cglobal predict_8x8c_dc_top, 0, 0
     vmovq          [r0 + 32], m0
     vmovq          [r0 + 64], m0
     vmovq          [r0 + 96], m0
+    ret
+
+
+;=============================================================================
+; predict_8x16c
+;=============================================================================
+INIT_XMM avx2
+cglobal predict_8x16c_h, 0, 0
+    vpbroadcastb   m0, [r0 - 1]        ; l0
+    vpbroadcastb   m1, [r0 + 31]       ; l1
+    vpbroadcastb   m2, [r0 + 63]       ; l2
+    vpbroadcastb   m3, [r0 + 95]       ; l3
+    vmovq          [r0], m0
+    vmovq          [r0 + 32], m1
+    vmovq          [r0 + 64], m2
+    vmovq          [r0 + 96], m3
+    add            r0, 128
+    vpbroadcastb   m0, [r0 - 1]        ; l4
+    vpbroadcastb   m1, [r0 + 31]       ; l5
+    vpbroadcastb   m2, [r0 + 63]       ; l6
+    vpbroadcastb   m3, [r0 + 95]       ; l7
+    vmovq          [r0], m0
+    vmovq          [r0 + 32], m1
+    vmovq          [r0 + 64], m2
+    vmovq          [r0 + 96], m3
+    add            r0, 256
+    vpbroadcastb   m0, [r0 - 129]        ; l8
+    vpbroadcastb   m1, [r0 - 97]       ; l9
+    vpbroadcastb   m2, [r0 - 65]       ; l10
+    vpbroadcastb   m3, [r0 - 33]       ; l11
+    vmovq          [r0 - 128], m0
+    vmovq          [r0 - 96], m1
+    vmovq          [r0 - 64], m2
+    vmovq          [r0 - 32], m3
+    vpbroadcastb   m0, [r0 - 1]        ; l12
+    vpbroadcastb   m1, [r0 + 31]       ; l13
+    vpbroadcastb   m2, [r0 + 63]       ; l14
+    vpbroadcastb   m3, [r0 + 95]       ; l15
+    vmovq          [r0], m0
+    vmovq          [r0 + 32], m1
+    vmovq          [r0 + 64], m2
+    vmovq          [r0 + 96], m3
+    ret
+
+INIT_XMM avx2
+cglobal predict_8x16c_dc, 0, 0
+    vpmovzxbw      m0, [r0 - 32]       ; t0 -- t7
+    vpxor          m5, m5, m5
+    vpsadbw        m0, m0, m5          ; s0 x s1 x
+    ; use GPR to reach maximum load-and-expand throughput
+    movzx          r1d, byte [r0 - 1]  ; l0
+    movzx          r6d, byte [r0 + 31] ; l1
+    add            r1d, r6d
+    movzx          r6d, byte [r0 + 63] ; l2
+    add            r1d, r6d
+    movzx          r6d, byte [r0 + 95] ; l3
+    add            r1d, r6d            ; s2
+    vpinsrd        m0, m0, r1d, 1      ; s0 s2 s1 x
+    add            r0, 128
+    lea            r3, [r0 + 256]
+    movzx          r6d, byte [r0 - 1]  ; l4
+    movzx          r2d, byte [r0 + 31] ; l5
+    add            r6d, r2d
+    movzx          r2d, byte [r0 + 63] ; l6
+    add            r6d, r2d
+    movzx          r2d, byte [r0 + 95] ; l7
+    add            r6d, r2d            ; s3
+    vpinsrd        m0, m0, r6d, 3      ; s0 s2 s1 s3
+    movzx          r1d, byte [r3 - 129]; l8
+    movzx          r6d, byte [r3 - 97] ; l9
+    add            r1d, r6d
+    movzx          r6d, byte [r3 - 65] ; l10
+    add            r1d, r6d
+    movzx          r6d, byte [r3 - 33] ; l11
+    add            r1d, r6d            ; s4
+    vpinsrd        m1, m0, r1d, 1      ; s0 s4 s1 x
+    movzx          r6d, byte [r3 - 1]  ; l12
+    movzx          r2d, byte [r3 + 31] ; l13
+    add            r6d, r2d
+    movzx          r2d, byte [r3 + 63] ; l14
+    add            r6d, r2d
+    movzx          r2d, byte [r3 + 95] ; l15
+    add            r6d, r2d            ; s5
+    vpinsrd        m1, m1, r6d, 3      ; s0 s4 s1 s5
+
+    vpshufd        m2, m0, q2320       ; s0 s1 s3 s1
+    vpshufd        m3, m0, q3321       ; s2 s1 s3 s3
+    vpaddw         m2, m2, m3
+    vpshufd        m3, m1, q2321       ; s4 s1 s5 s1
+    vpshufd        m4, m1, q3311       ; s4 s4 s5 s5
+    vpaddw         m3, m3, m4
+    vpsrlw         m2, m2, 2
+    vpsrlw         m3, m3, 2
+    vpavgw         m2, m2, m5          ; dc0 dc1 dc2 dc3
+    vpavgw         m3, m3, m5          ; dc4 dc5 dc6 dc7
+    vmovdqu        m5, [predict_chroma_dc_shuf]
+    vpshufb        m2, m2, m5
+    vpshufb        m3, m3, m5
+    vmovq          [r0 - 128], m2
+    vmovq          [r0 - 96], m2
+    vmovq          [r0 - 64], m2
+    vmovq          [r0 - 32], m2
+    vmovhps        [r0], m2
+    vmovhps        [r0 + 32], m2
+    vmovhps        [r0 + 64], m2
+    vmovhps        [r0 + 96], m2
+    vmovq          [r3 - 128], m3
+    vmovq          [r3 - 96], m3
+    vmovq          [r3 - 64], m3
+    vmovq          [r3 - 32], m3
+    vmovhps        [r3], m3
+    vmovhps        [r3 + 32], m3
+    vmovhps        [r3 + 64], m3
+    vmovhps        [r3 + 96], m3
+    ret
+
+INIT_YMM avx2
+cglobal predict_8x16c_p, 0, 0
+    movzx          r1d, byte [r0 - 25]      ; t7
+    movzx          r2d, byte [r0 - 33]      ; lt
+    movzx          r6d, byte [r0 + 479]     ; l15
+    add            r1d, r6d
+    shl            r1d, 4                   ; a
+    add            r1d, 16                  ; a + 16
+    shl            r2d, 2                   ; 4 * lt
+    vmovd          xm4, r2d
+    vmovq          xm0, [r0 - 32]           ; t0 t1 t2 t3 t4 t5 t6 t7
+    vmovq          xm5, [pb_32101234]       ; kernel [-3 -2 -1 0 1 2 3 4]
+    vpmaddubsw     xm0, xm0, xm5
+    vpshufd        xm1, xm0, q0001
+    vpaddw         xm0, xm0, xm1
+    vpshuflw       xm1, xm0, q0001
+    vpaddw         xm0, xm0, xm1
+    vpsubw         xm0, xm0, xm4            ; H
+    mov            r3d, 17408               ; 17 * 1024
+    vmovd          xm5, r3d
+    vpmulhrsw      xm0, xm0, xm5            ; b
+
+    lea            r5, [r0 + 384]
+    add            r2d, r2d                 ; 8 * lt
+    shl            r6d, 3                   ; 8 * l15
+    sub            r6d, r2d                 ; [-8] [8]
+    movzx          r3d, byte [r0 - 1]       ; l0
+    movzx          r4d, byte [r5 + 63]      ; l14
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 8]
+    sub            r6d, r4d                 ; [-7] [7]
+    movzx          r3d, byte [r0 + 31]      ; l1
+    movzx          r4d, byte [r5 + 31]      ; l13
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 4]
+    lea            r6d, [r6 + r4 * 2]       ; [-6] [6]
+    movzx          r3d, byte [r0 + 63]      ; l2
+    movzx          r4d, byte [r5 - 1]       ; l12
+    sub            r4d, r3d
+    lea            r4d, [r4 + r4 * 4]
+    add            r6d, r4d                 ; [-5] [5]
+    movzx          r3d, byte [r0 + 95]      ; l3
+    movzx          r4d, byte [r5 - 33]      ; l11
+    add            r0, 128
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 4]       ; [-4] [4]
+    movzx          r3d, byte [r0 - 1]       ; l4
+    movzx          r4d, byte [r5 - 65]      ; l10
+    sub            r4d, r3d
+    lea            r4, [r4 + r4 * 2]
+    add            r6d, r4d                 ; [-3] [3]
+    movzx          r3d, byte [r0 + 31]      ; l5
+    movzx          r4d, byte [r5 - 97]      ; l9
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 2]       ; [-2] [2]
+    movzx          r3d, byte [r0 + 63]      ; l6
+    movzx          r4d, byte [r5 - 129]     ; l8
+    sub            r4d, r3d
+    add            r6d, r4d                 ; [-1] [1], V
+
+    imul           r6d, r6d, 5
+    add            r6d, 32
+    sar            r6d, 6                   ; c
+    vmovd          xm1, r6d
+    add            r1d, r6d
+    shl            r6d, 3
+    sub            r1d, r6d                 ; a - 7 * c + 16
+    vmovd          xm2, r1d
+    vpaddw         xm3, xm0, xm0
+    vpaddw         xm3, xm3, xm0            ; 3 * b
+    vpsubw         xm2, xm2, xm3            ; i00
+    vpbroadcastw   m2, xm2
+    vpbroadcastw   m0, xm0
+    vpbroadcastw   m1, xm1
+    vbroadcasti128 m5, [pw_0to15]
+    vpmullw        m0, m0, m5               ; 0 b 2b 3b 4b 5b 6b 7b
+    vpaddw         m2, m2, m0               ; row0
+    vmovdqu        xm3, xm1                 ; c | 0
+    vpaddw         m1, m1, m1               ; 2 * c
+    vpaddw         m2, m2, m3               ; row1 | row0
+    vpaddw         m0, m2, m1               ; row3 | row2
+    vpaddw         m1, m1, m1               ; 4 * c
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m0, 5
+    vpackuswb      m3, m4, m5               ; row1 row3 | row0 row2
+    vextracti128   xm4, m3, 1
+    vmovq          [r0 - 96], xm3
+    vmovhps        [r0 - 32], xm3
+    vmovq          [r0 - 128], xm4
+    vmovhps        [r0 - 64], xm4
+    vpaddw         m2, m2, m1               ; row5 | row4
+    vpaddw         m0, m0, m1               ; row7 | row6
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m0, 5
+    vpackuswb      m3, m4, m5               ; row5 row7 | row4 row6
+    vextracti128   xm4, m3, 1
+    vmovq          [r0 + 32], xm3
+    vmovhps        [r0 + 96], xm3
+    vmovq          [r0], xm4
+    vmovhps        [r0 + 64], xm4
+    vpaddw         m2, m2, m1               ; row9 | row8
+    vpaddw         m0, m0, m1               ; row11 | row10
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m0, 5
+    vpackuswb      m3, m4, m5               ; row9 row11 | row8 row10
+    vextracti128   xm4, m3, 1
+    vmovq          [r5 - 96], xm3
+    vmovhps        [r5 - 32], xm3
+    vmovq          [r5 - 128], xm4
+    vmovhps        [r5 - 64], xm4
+    vpaddw         m2, m2, m1               ; row13 | row12
+    vpaddw         m0, m0, m1               ; row15 | row14
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m0, 5
+    vpackuswb      m3, m4, m5               ; row13 row15 | row12 row14
+    vextracti128   xm4, m3, 1
+    vmovq          [r5 + 32], xm3
+    vmovhps        [r5 + 96], xm3
+    vmovq          [r5], xm4
+    vmovhps        [r5 + 64], xm4
+    RET
+
+INIT_XMM avx2
+cglobal predict_8x16c_dc_top, 0, 0
+    vpmovzxbw      m0, [r0 - 32]
+    vmovq          m5, [predict_chroma_dc_top_shuf]
+    vpxor          m1, m1, m1
+    vpsadbw        m0, m0, m1               ; dc0 dc1
+    vpsrlw         m0, m0, 1
+    vpavgw         m0, m0, m1
+    vpshufb        m0, m0, m5
+    vmovq          [r0], m0
+    vmovq          [r0 + 32], m0
+    vmovq          [r0 + 64], m0
+    vmovq          [r0 + 96], m0
+    lea            r1, [r0 + 384]
+    add            r0, 128
+    vmovq          [r0], m0
+    vmovq          [r0 + 32], m0
+    vmovq          [r0 + 64], m0
+    vmovq          [r0 + 96], m0
+    vmovq          [r1 - 128], m0
+    vmovq          [r1 - 96], m0
+    vmovq          [r1 - 64], m0
+    vmovq          [r1 - 32], m0
+    vmovq          [r1], m0
+    vmovq          [r1 + 32], m0
+    vmovq          [r1 + 64], m0
+    vmovq          [r1 + 96], m0
     ret

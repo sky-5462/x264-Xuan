@@ -295,7 +295,7 @@ void x264_predict_8x8c_p_c( pixel *src )
 /****************************************************************************
  * 8x16 prediction for intra chroma block (4:2:2)
  ****************************************************************************/
-
+/*
 static void predict_8x16c_dc_128_c( pixel *src )
 {
     for( int y = 0; y < 16; y++ )
@@ -343,66 +343,68 @@ static void predict_8x16c_dc_top_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void x264_predict_8x16c_dc_c( pixel *src )
-{
-    int s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
+*/
+// void x264_predict_8x16c_dc_c( pixel *src )
+// {
+//     int s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
 
-    /*
-          s0 s1
-       s2
-       s3
-       s4
-       s5
-    */
-    for( int i = 0; i < 4; i++ )
-    {
-        s0 += src[i+0 - FDEC_STRIDE];
-        s1 += src[i+4 - FDEC_STRIDE];
-        s2 += src[-1 + (i+0)  * FDEC_STRIDE];
-        s3 += src[-1 + (i+4)  * FDEC_STRIDE];
-        s4 += src[-1 + (i+8)  * FDEC_STRIDE];
-        s5 += src[-1 + (i+12) * FDEC_STRIDE];
-    }
-    /*
-       dc0 dc1
-       dc2 dc3
-       dc4 dc5
-       dc6 dc7
-    */
-    pixel4 dc0 = PIXEL_SPLAT_X4( ( s0 + s2 + 4 ) >> 3 );
-    pixel4 dc1 = PIXEL_SPLAT_X4( ( s1 + 2 ) >> 2 );
-    pixel4 dc2 = PIXEL_SPLAT_X4( ( s3 + 2 ) >> 2 );
-    pixel4 dc3 = PIXEL_SPLAT_X4( ( s1 + s3 + 4 ) >> 3 );
-    pixel4 dc4 = PIXEL_SPLAT_X4( ( s4 + 2 ) >> 2 );
-    pixel4 dc5 = PIXEL_SPLAT_X4( ( s1 + s4 + 4 ) >> 3 );
-    pixel4 dc6 = PIXEL_SPLAT_X4( ( s5 + 2 ) >> 2 );
-    pixel4 dc7 = PIXEL_SPLAT_X4( ( s1 + s5 + 4 ) >> 3 );
+//     /*
+//           s0 s1
+//        s2
+//        s3
+//        s4
+//        s5
+//     */
+//     for( int i = 0; i < 4; i++ )
+//     {
+//         s0 += src[i+0 - FDEC_STRIDE];
+//         s1 += src[i+4 - FDEC_STRIDE];
+//         s2 += src[-1 + (i+0)  * FDEC_STRIDE];
+//         s3 += src[-1 + (i+4)  * FDEC_STRIDE];
+//         s4 += src[-1 + (i+8)  * FDEC_STRIDE];
+//         s5 += src[-1 + (i+12) * FDEC_STRIDE];
+//     }
+//     /*
+//        dc0 dc1
+//        dc2 dc3
+//        dc4 dc5
+//        dc6 dc7
+//     */
+//     pixel4 dc0 = PIXEL_SPLAT_X4( ( s0 + s2 + 4 ) >> 3 );
+//     pixel4 dc1 = PIXEL_SPLAT_X4( ( s1 + 2 ) >> 2 );
+//     pixel4 dc2 = PIXEL_SPLAT_X4( ( s3 + 2 ) >> 2 );
+//     pixel4 dc3 = PIXEL_SPLAT_X4( ( s1 + s3 + 4 ) >> 3 );
+//     pixel4 dc4 = PIXEL_SPLAT_X4( ( s4 + 2 ) >> 2 );
+//     pixel4 dc5 = PIXEL_SPLAT_X4( ( s1 + s4 + 4 ) >> 3 );
+//     pixel4 dc6 = PIXEL_SPLAT_X4( ( s5 + 2 ) >> 2 );
+//     pixel4 dc7 = PIXEL_SPLAT_X4( ( s1 + s5 + 4 ) >> 3 );
 
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc0;
-        MPIXEL_X4( src+4 ) = dc1;
-        src += FDEC_STRIDE;
-    }
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc2;
-        MPIXEL_X4( src+4 ) = dc3;
-        src += FDEC_STRIDE;
-    }
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc4;
-        MPIXEL_X4( src+4 ) = dc5;
-        src += FDEC_STRIDE;
-    }
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc6;
-        MPIXEL_X4( src+4 ) = dc7;
-        src += FDEC_STRIDE;
-    }
-}
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc0;
+//         MPIXEL_X4( src+4 ) = dc1;
+//         src += FDEC_STRIDE;
+//     }
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc2;
+//         MPIXEL_X4( src+4 ) = dc3;
+//         src += FDEC_STRIDE;
+//     }
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc4;
+//         MPIXEL_X4( src+4 ) = dc5;
+//         src += FDEC_STRIDE;
+//     }
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc6;
+//         MPIXEL_X4( src+4 ) = dc7;
+//         src += FDEC_STRIDE;
+//     }
+// }
+/*
 void x264_predict_8x16c_h_c( pixel *src )
 {
     for( int i = 0; i < 16; i++ )
@@ -452,7 +454,7 @@ void x264_predict_8x16c_p_c( pixel *src )
         i00 += c;
     }
 }
-
+*/
 /****************************************************************************
  * 4x4 prediction for intra luma block
  ****************************************************************************/
@@ -893,18 +895,9 @@ void x264_predict_8x8c_init( x264_predict_t pf[7] )
     x264_predict_8x8c_init_mmx( pf );
 }
 
-void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x16c_init( x264_predict_t pf[7] )
 {
-    pf[I_PRED_CHROMA_V ]     = x264_predict_8x16c_v_c;
-    pf[I_PRED_CHROMA_H ]     = x264_predict_8x16c_h_c;
-    pf[I_PRED_CHROMA_DC]     = x264_predict_8x16c_dc_c;
-    pf[I_PRED_CHROMA_P ]     = x264_predict_8x16c_p_c;
-    pf[I_PRED_CHROMA_DC_LEFT]= predict_8x16c_dc_left_c;
-    pf[I_PRED_CHROMA_DC_TOP ]= predict_8x16c_dc_top_c;
-    pf[I_PRED_CHROMA_DC_128 ]= predict_8x16c_dc_128_c;
-
-    x264_predict_8x16c_init_mmx( cpu, pf );
-
+    x264_predict_8x16c_init_mmx( pf );
 }
 
 void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
