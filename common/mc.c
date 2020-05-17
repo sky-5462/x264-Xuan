@@ -28,7 +28,7 @@
 
 #include "x86/mc.h"
 
-
+/*
 static inline void pixel_avg( pixel *dst,  intptr_t i_dst_stride,
                               pixel *src1, intptr_t i_src1_stride,
                               pixel *src2, intptr_t i_src2_stride, int i_width, int i_height )
@@ -56,9 +56,10 @@ static inline void pixel_avg_wxh( pixel *dst,  intptr_t i_dst,
         dst += i_dst;
     }
 }
-
+*/
 /* Implicit weighted bipred only:
  * assumes log2_denom = 5, offset = 0, weight1 + weight2 = 64 */
+ /*
 static inline void pixel_avg_weight_wxh( pixel *dst,  intptr_t i_dst,
                                          pixel *src1, intptr_t i_src1,
                                          pixel *src2, intptr_t i_src2, int width, int height, int i_weight1 )
@@ -152,86 +153,87 @@ static void mc_copy( pixel *src, intptr_t i_src_stride, pixel *dst, intptr_t i_d
         dst += i_dst_stride;
     }
 }
+*/
+// #define TAPFILTER(pix, d) ((pix)[x-2*d] + (pix)[x+3*d] - 5*((pix)[x-d] + (pix)[x+2*d]) + 20*((pix)[x] + (pix)[x+d]))
+// static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
+//                          intptr_t stride, int width, int height, int16_t *buf )
+// {
+//     const int pad = (BIT_DEPTH > 9) ? (-10 * PIXEL_MAX) : 0;
+//     for( int y = 0; y < height; y++ )
+//     {
+//         for( int x = -2; x < width+3; x++ )
+//         {
+//             int v = TAPFILTER(src,stride);
+//             dstv[x] = x264_clip_pixel( (v + 16) >> 5 );
+//             /* transform v for storage in a 16-bit integer */
+//             buf[x+2] = v + pad;
+//         }
+//         for( int x = 0; x < width; x++ )
+//             dstc[x] = x264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );
+//         for( int x = 0; x < width; x++ )
+//             dsth[x] = x264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );
+//         dsth += stride;
+//         dstv += stride;
+//         dstc += stride;
+//         src += stride;
+//     }
+// }
 
-#define TAPFILTER(pix, d) ((pix)[x-2*d] + (pix)[x+3*d] - 5*((pix)[x-d] + (pix)[x+2*d]) + 20*((pix)[x] + (pix)[x+d]))
-static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
-                         intptr_t stride, int width, int height, int16_t *buf )
-{
-    const int pad = (BIT_DEPTH > 9) ? (-10 * PIXEL_MAX) : 0;
-    for( int y = 0; y < height; y++ )
-    {
-        for( int x = -2; x < width+3; x++ )
-        {
-            int v = TAPFILTER(src,stride);
-            dstv[x] = x264_clip_pixel( (v + 16) >> 5 );
-            /* transform v for storage in a 16-bit integer */
-            buf[x+2] = v + pad;
-        }
-        for( int x = 0; x < width; x++ )
-            dstc[x] = x264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );
-        for( int x = 0; x < width; x++ )
-            dsth[x] = x264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );
-        dsth += stride;
-        dstv += stride;
-        dstc += stride;
-        src += stride;
-    }
-}
+// static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
+//                      pixel *src[4], intptr_t i_src_stride,
+//                      int mvx, int mvy,
+//                      int i_width, int i_height, const x264_weight_t *weight )
+// {
+//     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
+//     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
+//     pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
-static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
-                     pixel *src[4], intptr_t i_src_stride,
-                     int mvx, int mvy,
-                     int i_width, int i_height, const x264_weight_t *weight )
-{
-    int qpel_idx = ((mvy&3)<<2) + (mvx&3);
-    int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+//     if( qpel_idx & 5 ) /* qpel interpolation needed */
+//     {
+//         pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+//         pixel_avg( dst, i_dst_stride, src1, i_src_stride,
+//                    src2, i_src_stride, i_width, i_height );
+//         if( weight->weightfn )
+//             mc_weight( dst, i_dst_stride, dst, i_dst_stride, weight, i_width, i_height );
+//     }
+//     else if( weight->weightfn )
+//         mc_weight( dst, i_dst_stride, src1, i_src_stride, weight, i_width, i_height );
+//     else
+//         mc_copy( src1, i_src_stride, dst, i_dst_stride, i_width, i_height );
+// }
 
-    if( qpel_idx & 5 ) /* qpel interpolation needed */
-    {
-        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
-        pixel_avg( dst, i_dst_stride, src1, i_src_stride,
-                   src2, i_src_stride, i_width, i_height );
-        if( weight->weightfn )
-            mc_weight( dst, i_dst_stride, dst, i_dst_stride, weight, i_width, i_height );
-    }
-    else if( weight->weightfn )
-        mc_weight( dst, i_dst_stride, src1, i_src_stride, weight, i_width, i_height );
-    else
-        mc_copy( src1, i_src_stride, dst, i_dst_stride, i_width, i_height );
-}
+// static pixel *get_ref( pixel *dst,   intptr_t *i_dst_stride,
+//                        pixel *src[4], intptr_t i_src_stride,
+//                        int mvx, int mvy,
+//                        int i_width, int i_height, const x264_weight_t *weight )
+// {
+//     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
+//     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
+//     pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
-static pixel *get_ref( pixel *dst,   intptr_t *i_dst_stride,
-                       pixel *src[4], intptr_t i_src_stride,
-                       int mvx, int mvy,
-                       int i_width, int i_height, const x264_weight_t *weight )
-{
-    int qpel_idx = ((mvy&3)<<2) + (mvx&3);
-    int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
-
-    if( qpel_idx & 5 ) /* qpel interpolation needed */
-    {
-        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
-        pixel_avg( dst, *i_dst_stride, src1, i_src_stride,
-                   src2, i_src_stride, i_width, i_height );
-        if( weight->weightfn )
-            mc_weight( dst, *i_dst_stride, dst, *i_dst_stride, weight, i_width, i_height );
-        return dst;
-    }
-    else if( weight->weightfn )
-    {
-        mc_weight( dst, *i_dst_stride, src1, i_src_stride, weight, i_width, i_height );
-        return dst;
-    }
-    else
-    {
-        *i_dst_stride = i_src_stride;
-        return src1;
-    }
-}
+//     if( qpel_idx & 5 ) /* qpel interpolation needed */
+//     {
+//         pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+//         pixel_avg( dst, *i_dst_stride, src1, i_src_stride,
+//                    src2, i_src_stride, i_width, i_height );
+//         if( weight->weightfn )
+//             mc_weight( dst, *i_dst_stride, dst, *i_dst_stride, weight, i_width, i_height );
+//         return dst;
+//     }
+//     else if( weight->weightfn )
+//     {
+//         mc_weight( dst, *i_dst_stride, src1, i_src_stride, weight, i_width, i_height );
+//         return dst;
+//     }
+//     else
+//     {
+//         *i_dst_stride = i_src_stride;
+//         return src1;
+//     }
+// }
 
 /* full chroma mc (ie until 1/8 pixel)*/
+/*
 static void mc_chroma( pixel *dstu, pixel *dstv, intptr_t i_dst_stride,
                        pixel *src, intptr_t i_src_stride,
                        int mvx, int mvy,
@@ -366,7 +368,7 @@ static void integral_init8v( uint16_t *sum8, intptr_t stride )
     for( int x = 0; x < stride-8; x++ )
         sum8[x] = sum8[x+8*stride] - sum8[x];
 }
-
+*/
 void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
 {
     pixel *src = frame->plane[0];
@@ -392,7 +394,7 @@ void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
         for( int x = 0; x <= h->param.i_bframe; x++ )
             frame->lowres_mvs[y][x][0][0] = 0x7FFF;
 }
-
+/*
 static void frame_init_lowres_core( pixel *src0, pixel *dst0, pixel *dsth, pixel *dstv, pixel *dstc,
                                     intptr_t src_stride, intptr_t dst_stride, int width, int height )
 {
@@ -417,8 +419,9 @@ static void frame_init_lowres_core( pixel *src0, pixel *dst0, pixel *dsth, pixel
         dstc += dst_stride;
     }
 }
-
+*/
 /* Conversion between float and Q8.8 fixed point (big-endian) for storage */
+/*
 static void mbtree_fix8_pack( uint16_t *dst, float *src, int count )
 {
     for( int i = 0; i < count; i++ )
@@ -430,9 +433,10 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
     for( int i = 0; i < count; i++ )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
-
+*/
 /* Estimate the total amount of influence on future quality that could be had if we
  * were to improve the reference samples used to inter predict any given macroblock. */
+ /*
 static void mbtree_propagate_cost( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                    uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len )
 {
@@ -448,79 +452,79 @@ static void mbtree_propagate_cost( int16_t *dst, uint16_t *propagate_in, uint16_
         dst[i] = X264_MIN((int)(propagate_amount * propagate_num / propagate_denom + 0.5f), 32767);
     }
 }
+*/
+// static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
+//                                    int16_t *propagate_amount, uint16_t *lowres_costs,
+//                                    int bipred_weight, int mb_y, int len, int list )
+// {
+//     unsigned stride = h->mb.i_mb_stride;
+//     unsigned width = h->mb.i_mb_width;
+//     unsigned height = h->mb.i_mb_height;
 
-static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
-                                   int16_t *propagate_amount, uint16_t *lowres_costs,
-                                   int bipred_weight, int mb_y, int len, int list )
-{
-    unsigned stride = h->mb.i_mb_stride;
-    unsigned width = h->mb.i_mb_width;
-    unsigned height = h->mb.i_mb_height;
+//     for( unsigned i = 0; i < len; i++ )
+//     {
+//         int lists_used = lowres_costs[i]>>LOWRES_COST_SHIFT;  // shift 14
 
-    for( unsigned i = 0; i < len; i++ )
-    {
-        int lists_used = lowres_costs[i]>>LOWRES_COST_SHIFT;  // shift 14
+//         if( !(lists_used & (1 << list)) )
+//             continue;
 
-        if( !(lists_used & (1 << list)) )
-            continue;
+//         int listamount = propagate_amount[i];
+//         /* Apply bipred weighting. */
+//         if( lists_used == 3 )
+//             listamount = (listamount * bipred_weight + 32) >> 6;
 
-        int listamount = propagate_amount[i];
-        /* Apply bipred weighting. */
-        if( lists_used == 3 )
-            listamount = (listamount * bipred_weight + 32) >> 6;
+//         /* Early termination for simple case of mv0. */
+//         if( !M32( mvs[i] ) )
+//         {
+//             MC_CLIP_ADD( ref_costs[mb_y*stride + i], listamount );
+//             continue;
+//         }
 
-        /* Early termination for simple case of mv0. */
-        if( !M32( mvs[i] ) )
-        {
-            MC_CLIP_ADD( ref_costs[mb_y*stride + i], listamount );
-            continue;
-        }
+//         int x = mvs[i][0];
+//         int y = mvs[i][1];
+//         unsigned mbx = (x>>5)+i;
+//         unsigned mby = (y>>5)+mb_y;
+//         unsigned idx0 = mbx + mby * stride;
+//         unsigned idx2 = idx0 + stride;
+//         x &= 31;
+//         y &= 31;
+//         int idx0weight = (32-y)*(32-x);
+//         int idx1weight = (32-y)*x;
+//         int idx2weight = y*(32-x);
+//         int idx3weight = y*x;
+//         idx0weight = (idx0weight * listamount + 512) >> 10;
+//         idx1weight = (idx1weight * listamount + 512) >> 10;
+//         idx2weight = (idx2weight * listamount + 512) >> 10;
+//         idx3weight = (idx3weight * listamount + 512) >> 10;
 
-        int x = mvs[i][0];
-        int y = mvs[i][1];
-        unsigned mbx = (x>>5)+i;
-        unsigned mby = (y>>5)+mb_y;
-        unsigned idx0 = mbx + mby * stride;
-        unsigned idx2 = idx0 + stride;
-        x &= 31;
-        y &= 31;
-        int idx0weight = (32-y)*(32-x);
-        int idx1weight = (32-y)*x;
-        int idx2weight = y*(32-x);
-        int idx3weight = y*x;
-        idx0weight = (idx0weight * listamount + 512) >> 10;
-        idx1weight = (idx1weight * listamount + 512) >> 10;
-        idx2weight = (idx2weight * listamount + 512) >> 10;
-        idx3weight = (idx3weight * listamount + 512) >> 10;
-
-        if( mbx < width-1 && mby < height-1 )
-        {
-            MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
-            MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
-            MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
-            MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
-        }
-        else
-        {
-            /* Note: this takes advantage of unsigned representation to
-             * catch negative mbx/mby. */
-            if( mby < height )
-            {
-                if( mbx < width )
-                    MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
-                if( mbx+1 < width )
-                    MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
-            }
-            if( mby+1 < height )
-            {
-                if( mbx < width )
-                    MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
-                if( mbx+1 < width )
-                    MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
-            }
-        }
-    }
-}
+//         if( mbx < width-1 && mby < height-1 )
+//         {
+//             MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
+//             MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
+//             MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
+//             MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
+//         }
+//         else
+//         {
+//             /* Note: this takes advantage of unsigned representation to
+//              * catch negative mbx/mby. */
+//             if( mby < height )
+//             {
+//                 if( mbx < width )
+//                     MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
+//                 if( mbx+1 < width )
+//                     MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
+//             }
+//             if( mby+1 < height )
+//             {
+//                 if( mbx < width )
+//                     MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
+//                 if( mbx+1 < width )
+//                     MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
+//             }
+//         }
+//     }
+// }
 
 void x264_mc_init( x264_mc_functions_t *pf )
 {

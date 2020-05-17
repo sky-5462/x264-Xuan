@@ -1492,7 +1492,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->param.cpu &= ~X264_CPU_AVX512;
 #endif
     x264_predict_16x16_init( h->param.cpu, h->predict_16x16 );
-    x264_predict_8x8c_init( h->param.cpu, h->predict_8x8c );
+    x264_predict_8x8c_init( h->predict_8x8c );
     x264_predict_8x16c_init( h->param.cpu, h->predict_8x16c );
     x264_predict_8x8_init( h->param.cpu, h->predict_8x8, &h->predict_8x8_filter );
     x264_predict_4x4_init( h->predict_4x4 );

@@ -28,6 +28,7 @@
 #include "common.h"
 #include "x86/dct.h"
 
+/*
 static void dct4x4dc( dctcoef d[16] )
 {
     dctcoef tmp[16];
@@ -196,63 +197,63 @@ static int sub4x4_dct_dc( pixel *pix1, pixel *pix2 )
              - pix2[0] - pix2[1] - pix2[2] - pix2[3];
     return sum;
 }
+*/
+// static void sub8x8_dct_dc( dctcoef dct[4], pixel *pix1, pixel *pix2 )
+// {
+//     dct[0] = sub4x4_dct_dc( &pix1[0], &pix2[0] );
+//     dct[1] = sub4x4_dct_dc( &pix1[4], &pix2[4] );
+//     dct[2] = sub4x4_dct_dc( &pix1[4*FENC_STRIDE+0], &pix2[4*FDEC_STRIDE+0] );
+//     dct[3] = sub4x4_dct_dc( &pix1[4*FENC_STRIDE+4], &pix2[4*FDEC_STRIDE+4] );
 
-static void sub8x8_dct_dc( dctcoef dct[4], pixel *pix1, pixel *pix2 )
-{
-    dct[0] = sub4x4_dct_dc( &pix1[0], &pix2[0] );
-    dct[1] = sub4x4_dct_dc( &pix1[4], &pix2[4] );
-    dct[2] = sub4x4_dct_dc( &pix1[4*FENC_STRIDE+0], &pix2[4*FDEC_STRIDE+0] );
-    dct[3] = sub4x4_dct_dc( &pix1[4*FENC_STRIDE+4], &pix2[4*FDEC_STRIDE+4] );
+//     /* 2x2 DC transform */
+//     int d0 = dct[0] + dct[1];
+//     int d1 = dct[2] + dct[3];
+//     int d2 = dct[0] - dct[1];
+//     int d3 = dct[2] - dct[3];
+//     dct[0] = d0 + d1;
+//     dct[1] = d0 - d1;
+//     dct[2] = d2 + d3;
+//     dct[3] = d2 - d3;
+// }
 
-    /* 2x2 DC transform */
-    int d0 = dct[0] + dct[1];
-    int d1 = dct[2] + dct[3];
-    int d2 = dct[0] - dct[1];
-    int d3 = dct[2] - dct[3];
-    dct[0] = d0 + d1;
-    dct[1] = d0 - d1;
-    dct[2] = d2 + d3;
-    dct[3] = d2 - d3;
-}
+// static void sub8x16_dct_dc( dctcoef dct[8], pixel *pix1, pixel *pix2 )
+// {
+//     int a0 = sub4x4_dct_dc( &pix1[ 0*FENC_STRIDE+0], &pix2[ 0*FDEC_STRIDE+0] );
+//     int a1 = sub4x4_dct_dc( &pix1[ 0*FENC_STRIDE+4], &pix2[ 0*FDEC_STRIDE+4] );
+//     int a2 = sub4x4_dct_dc( &pix1[ 4*FENC_STRIDE+0], &pix2[ 4*FDEC_STRIDE+0] );
+//     int a3 = sub4x4_dct_dc( &pix1[ 4*FENC_STRIDE+4], &pix2[ 4*FDEC_STRIDE+4] );
+//     int a4 = sub4x4_dct_dc( &pix1[ 8*FENC_STRIDE+0], &pix2[ 8*FDEC_STRIDE+0] );
+//     int a5 = sub4x4_dct_dc( &pix1[ 8*FENC_STRIDE+4], &pix2[ 8*FDEC_STRIDE+4] );
+//     int a6 = sub4x4_dct_dc( &pix1[12*FENC_STRIDE+0], &pix2[12*FDEC_STRIDE+0] );
+//     int a7 = sub4x4_dct_dc( &pix1[12*FENC_STRIDE+4], &pix2[12*FDEC_STRIDE+4] );
 
-static void sub8x16_dct_dc( dctcoef dct[8], pixel *pix1, pixel *pix2 )
-{
-    int a0 = sub4x4_dct_dc( &pix1[ 0*FENC_STRIDE+0], &pix2[ 0*FDEC_STRIDE+0] );
-    int a1 = sub4x4_dct_dc( &pix1[ 0*FENC_STRIDE+4], &pix2[ 0*FDEC_STRIDE+4] );
-    int a2 = sub4x4_dct_dc( &pix1[ 4*FENC_STRIDE+0], &pix2[ 4*FDEC_STRIDE+0] );
-    int a3 = sub4x4_dct_dc( &pix1[ 4*FENC_STRIDE+4], &pix2[ 4*FDEC_STRIDE+4] );
-    int a4 = sub4x4_dct_dc( &pix1[ 8*FENC_STRIDE+0], &pix2[ 8*FDEC_STRIDE+0] );
-    int a5 = sub4x4_dct_dc( &pix1[ 8*FENC_STRIDE+4], &pix2[ 8*FDEC_STRIDE+4] );
-    int a6 = sub4x4_dct_dc( &pix1[12*FENC_STRIDE+0], &pix2[12*FDEC_STRIDE+0] );
-    int a7 = sub4x4_dct_dc( &pix1[12*FENC_STRIDE+4], &pix2[12*FDEC_STRIDE+4] );
-
-    /* 2x4 DC transform */
-    int b0 = a0 + a1;
-    int b1 = a2 + a3;
-    int b2 = a4 + a5;
-    int b3 = a6 + a7;
-    int b4 = a0 - a1;
-    int b5 = a2 - a3;
-    int b6 = a4 - a5;
-    int b7 = a6 - a7;
-    a0 = b0 + b1;
-    a1 = b2 + b3;
-    a2 = b4 + b5;
-    a3 = b6 + b7;
-    a4 = b0 - b1;
-    a5 = b2 - b3;
-    a6 = b4 - b5;
-    a7 = b6 - b7;
-    dct[0] = a0 + a1;
-    dct[1] = a2 + a3;
-    dct[2] = a0 - a1;
-    dct[3] = a2 - a3;
-    dct[4] = a4 - a5;
-    dct[5] = a6 - a7;
-    dct[6] = a4 + a5;
-    dct[7] = a6 + a7;
-}
-
+//     /* 2x4 DC transform */
+//     int b0 = a0 + a1;
+//     int b1 = a2 + a3;
+//     int b2 = a4 + a5;
+//     int b3 = a6 + a7;
+//     int b4 = a0 - a1;
+//     int b5 = a2 - a3;
+//     int b6 = a4 - a5;
+//     int b7 = a6 - a7;
+//     a0 = b0 + b1;
+//     a1 = b2 + b3;
+//     a2 = b4 + b5;
+//     a3 = b6 + b7;
+//     a4 = b0 - b1;
+//     a5 = b2 - b3;
+//     a6 = b4 - b5;
+//     a7 = b6 - b7;
+//     dct[0] = a0 + a1;
+//     dct[1] = a2 + a3;
+//     dct[2] = a0 - a1;
+//     dct[3] = a2 - a3;
+//     dct[4] = a4 - a5;
+//     dct[5] = a6 - a7;
+//     dct[6] = a4 + a5;
+//     dct[7] = a6 + a7;
+// }
+/*
 static void add4x4_idct( pixel *p_dst, dctcoef dct[16] )
 {
     dctcoef d[16];
@@ -308,11 +309,11 @@ static void add16x16_idct( pixel *p_dst, dctcoef dct[16][16] )
     add8x8_idct( &p_dst[8*FDEC_STRIDE+0], &dct[8] );
     add8x8_idct( &p_dst[8*FDEC_STRIDE+8], &dct[12] );
 }
-
+*/
 /****************************************************************************
  * 8x8 transform:
  ****************************************************************************/
-
+/*
 #define DCT8_1D {\
     int s07 = SRC(0) + SRC(7);\
     int s16 = SRC(1) + SRC(6);\
@@ -445,7 +446,7 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
         add4x4_idct_dc( &p_dst[12], dct[3] );
     }
 }
-
+*/
 
 /****************************************************************************
  * x264_dct_init:
@@ -472,7 +473,7 @@ void x264_dct_init( x264_dct_function_t *dctf )
     dctf->dct2x4dc = x264_dct2x4dc_avx2;
 }
 
-
+/*
 #define ZIG(i,y,x) level[i] = dct[x*8+y];
 #define ZIGZAG8_FRAME\
     ZIG( 0,0,0) ZIG( 1,0,1) ZIG( 2,1,0) ZIG( 3,2,0)\
@@ -642,6 +643,7 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
         nnz[(i&1) + (i>>1)*8] = !!nz;
     }
 }
+*/
 
 void x264_zigzag_init( x264_zigzag_function_t *pf_progressive )
 {

@@ -146,7 +146,7 @@ void x264_predict_16x16_p_c( pixel *src )
 /****************************************************************************
  * 8x8 prediction for intra chroma block (4:2:0)
  ****************************************************************************/
-
+/*
 static void predict_8x8c_dc_128_c( pixel *src )
 {
     for( int y = 0; y < 8; y++ )
@@ -201,45 +201,47 @@ static void predict_8x8c_dc_top_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void x264_predict_8x8c_dc_c( pixel *src )
-{
-    int s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+*/
+// void x264_predict_8x8c_dc_c( pixel *src )
+// {
+//     int s0 = 0, s1 = 0, s2 = 0, s3 = 0;
 
-    /*
-          s0 s1
-       s2
-       s3
-    */
-    for( int i = 0; i < 4; i++ )
-    {
-        s0 += src[i - FDEC_STRIDE];
-        s1 += src[i + 4 - FDEC_STRIDE];
-        s2 += src[-1 + i * FDEC_STRIDE];
-        s3 += src[-1 + (i+4)*FDEC_STRIDE];
-    }
-    /*
-       dc0 dc1
-       dc2 dc3
-     */
-    pixel4 dc0 = PIXEL_SPLAT_X4( ( s0 + s2 + 4 ) >> 3 );
-    pixel4 dc1 = PIXEL_SPLAT_X4( ( s1 + 2 ) >> 2 );
-    pixel4 dc2 = PIXEL_SPLAT_X4( ( s3 + 2 ) >> 2 );
-    pixel4 dc3 = PIXEL_SPLAT_X4( ( s1 + s3 + 4 ) >> 3 );
+//     /*
+//           s0 s1
+//        s2
+//        s3
+//     */
+//     for( int i = 0; i < 4; i++ )
+//     {
+//         s0 += src[i - FDEC_STRIDE];
+//         s1 += src[i + 4 - FDEC_STRIDE];
+//         s2 += src[-1 + i * FDEC_STRIDE];
+//         s3 += src[-1 + (i+4)*FDEC_STRIDE];
+//     }
+//     /*
+//        dc0 dc1
+//        dc2 dc3
+//      */
+//     pixel4 dc0 = PIXEL_SPLAT_X4( ( s0 + s2 + 4 ) >> 3 );
+//     pixel4 dc1 = PIXEL_SPLAT_X4( ( s1 + 2 ) >> 2 );
+//     pixel4 dc2 = PIXEL_SPLAT_X4( ( s3 + 2 ) >> 2 );
+//     pixel4 dc3 = PIXEL_SPLAT_X4( ( s1 + s3 + 4 ) >> 3 );
 
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc0;
-        MPIXEL_X4( src+4 ) = dc1;
-        src += FDEC_STRIDE;
-    }
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc0;
+//         MPIXEL_X4( src+4 ) = dc1;
+//         src += FDEC_STRIDE;
+//     }
 
-    for( int y = 0; y < 4; y++ )
-    {
-        MPIXEL_X4( src+0 ) = dc2;
-        MPIXEL_X4( src+4 ) = dc3;
-        src += FDEC_STRIDE;
-    }
-}
+//     for( int y = 0; y < 4; y++ )
+//     {
+//         MPIXEL_X4( src+0 ) = dc2;
+//         MPIXEL_X4( src+4 ) = dc3;
+//         src += FDEC_STRIDE;
+//     }
+// }
+/*
 void x264_predict_8x8c_h_c( pixel *src )
 {
     for( int i = 0; i < 8; i++ )
@@ -289,7 +291,7 @@ void x264_predict_8x8c_p_c( pixel *src )
         i00 += c;
     }
 }
-
+*/
 /****************************************************************************
  * 8x16 prediction for intra chroma block (4:2:2)
  ****************************************************************************/
@@ -475,6 +477,7 @@ static void predict_4x4_dc_top_c( pixel *src )
     pixel4 dc = PIXEL_SPLAT_X4( (SRC(0,-1) + SRC(1,-1) + SRC(2,-1) + SRC(3,-1) + 2) >> 2 );
     PREDICT_4x4_DC( dc );
 }
+/*
 void x264_predict_4x4_dc_c( pixel *src )
 {
     pixel4 dc = PIXEL_SPLAT_X4( (SRC(-1,0) + SRC(-1,1) + SRC(-1,2) + SRC(-1,3) +
@@ -488,6 +491,7 @@ void x264_predict_4x4_h_c( pixel *src )
     SRC_X4(0,2) = PIXEL_SPLAT_X4( SRC(-1,2) );
     SRC_X4(0,3) = PIXEL_SPLAT_X4( SRC(-1,3) );
 }
+*/
 void x264_predict_4x4_v_c( pixel *src )
 {
     PREDICT_4x4_DC(SRC_X4(0,-1));
@@ -513,7 +517,7 @@ void x264_predict_4x4_v_c( pixel *src )
 
 #define F1(a,b)   (((a)+(b)+1)>>1)
 #define F2(a,b,c) (((a)+2*(b)+(c)+2)>>2)
-
+/*
 static void predict_4x4_ddl_c( pixel *src )
 {
     PREDICT_4x4_LOAD_TOP
@@ -602,7 +606,7 @@ static void predict_4x4_hu_c( pixel *src )
     SRC(3,2)=SRC(1,3)=SRC(0,3)=
     SRC(2,2)=SRC(2,3)=SRC(3,3)= l3;
 }
-
+*/
 /****************************************************************************
  * 8x8 prediction for intra luma block
  ****************************************************************************/
@@ -884,18 +888,9 @@ void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
 
 }
 
-void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x8c_init( x264_predict_t pf[7] )
 {
-    pf[I_PRED_CHROMA_V ]     = x264_predict_8x8c_v_c;
-    pf[I_PRED_CHROMA_H ]     = x264_predict_8x8c_h_c;
-    pf[I_PRED_CHROMA_DC]     = x264_predict_8x8c_dc_c;
-    pf[I_PRED_CHROMA_P ]     = x264_predict_8x8c_p_c;
-    pf[I_PRED_CHROMA_DC_LEFT]= predict_8x8c_dc_left_c;
-    pf[I_PRED_CHROMA_DC_TOP ]= predict_8x8c_dc_top_c;
-    pf[I_PRED_CHROMA_DC_128 ]= predict_8x8c_dc_128_c;
-
-    x264_predict_8x8c_init_mmx( cpu, pf );
-
+    x264_predict_8x8c_init_mmx( pf );
 }
 
 void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
@@ -938,8 +933,6 @@ void x264_predict_4x4_init( x264_predict_t pf[12] )
     pf[I_PRED_4x4_DC_LEFT]= predict_4x4_dc_left_c;
     pf[I_PRED_4x4_DC_TOP] = predict_4x4_dc_top_c;
     pf[I_PRED_4x4_DC_128] = predict_4x4_dc_128_c;
-
     x264_predict_4x4_init_mmx( pf );
-
 }
 

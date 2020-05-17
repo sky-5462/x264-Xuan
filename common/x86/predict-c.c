@@ -145,73 +145,7 @@ PREDICT_8x16C_P( sse2 )
 PREDICT_8x16C_P( avx )
 PREDICT_8x16C_P( avx2 )
 
-#define PREDICT_8x8C_P_CORE\
-    int H = 0;\
-    int V = 0;\
-    PREDICT_P_SUM(3,1)\
-    PREDICT_P_SUM(3,2)\
-    PREDICT_P_SUM(3,3)\
-    PREDICT_P_SUM(3,4)
 
-#define PREDICT_8x8C_P_END(name)\
-    int a = 16 * ( src[7*FDEC_STRIDE -1] + src[7 - FDEC_STRIDE] );\
-    int b = ( 17 * H + 16 ) >> 5;\
-    int c = ( 17 * V + 16 ) >> 5;\
-    int i00 = a -3*b -3*c + 16;\
-    x264_predict_8x8c_p_core_##name( src, i00, b, c );
-
-#define PREDICT_8x8C_P(name, name2)\
-static void predict_8x8c_p_##name( pixel *src )\
-{\
-    PREDICT_8x8C_P_CORE\
-    PREDICT_8x8C_P_END(name2)\
-}
-
-#if HAVE_X86_INLINE_ASM
-#define PREDICT_8x8C_P_ASM\
-    asm (\
-        "movq           %1, %%mm0 \n"\
-        "pmaddubsw      %2, %%mm0 \n"\
-        "pshufw $14, %%mm0, %%mm1 \n"\
-        "paddw       %%mm1, %%mm0 \n"\
-        "pshufw  $1, %%mm0, %%mm1 \n"\
-        "paddw       %%mm1, %%mm0 \n"\
-        "movd        %%mm0, %0    \n"\
-        "movswl        %w0, %0    \n"\
-        :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE]), "m"(*pb_m32101234)\
-    );
-
-#define PREDICT_8x8C_P_CORE_INLINE\
-    int H, V;\
-    PREDICT_8x8C_P_ASM\
-    V = 1 * ( src[4*FDEC_STRIDE -1] - src[ 2*FDEC_STRIDE -1] )\
-      + 2 * ( src[5*FDEC_STRIDE -1] - src[ 1*FDEC_STRIDE -1] )\
-      + 3 * ( src[6*FDEC_STRIDE -1] - src[ 0*FDEC_STRIDE -1] )\
-      + 4 * ( src[7*FDEC_STRIDE -1] - src[-1*FDEC_STRIDE -1] );\
-    H += -4 * src[-1*FDEC_STRIDE -1];
-
-#define PREDICT_8x8C_P_INLINE(name, name2)\
-static void predict_8x8c_p_##name( pixel *src )\
-{\
-    PREDICT_8x8C_P_CORE_INLINE\
-    PREDICT_8x8C_P_END(name2)\
-}
-#else // !HAVE_X86_INLINE_ASM
-#define PREDICT_8x8C_P_INLINE(name, name2) PREDICT_8x8C_P(name, name2)
-#endif // HAVE_X86_INLINE_ASM
-
-#if !ARCH_X86_64
-PREDICT_8x8C_P( mmx2, mmx2 )
-#endif // !ARCH_X86_64
-PREDICT_8x8C_P( sse2, sse2 )
-#if HAVE_X86_INLINE_ASM
-PREDICT_8x8C_P_INLINE( ssse3, sse2 )
-#endif // HAVE_X86_INLINE_ASM
-PREDICT_8x8C_P_INLINE( avx, avx )
-PREDICT_8x8C_P_INLINE( avx2, avx2 )
-
-#if ARCH_X86_64 && !HIGH_BIT_DEPTH
 static void predict_8x8c_dc_left( uint8_t *src )
 {
     int y;
@@ -237,7 +171,23 @@ static void predict_8x8c_dc_left( uint8_t *src )
         src += FDEC_STRIDE;
     }
 }
-#endif // ARCH_X86_64 && !HIGH_BIT_DEPTH
+
+static void predict_8x8c_v(uint8_t* src) {
+	uint64_t v = M64(src - FDEC_STRIDE);
+	for (int y = 0; y < 8; y++) {
+		M64(src) = v;
+		src += FDEC_STRIDE;
+	}
+}
+
+static void predict_8x8c_dc_128(uint8_t* src) {
+	uint64_t dc = 0x8080808080808080ULL;
+	for (int y = 0; y < 8; y++) {
+		M64(src) = dc;
+		src += FDEC_STRIDE;
+	}
+}
+
 
 /****************************************************************************
  * Exported functions:
@@ -282,39 +232,15 @@ void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
     }
 }
 
-void x264_predict_8x8c_init_mmx( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x8c_init_mmx( x264_predict_t pf[7] )
 {
-    if( !(cpu&X264_CPU_MMX) )
-        return;
-#if ARCH_X86_64
+    pf[I_PRED_CHROMA_V] = predict_8x8c_v;
+    pf[I_PRED_CHROMA_H] = x264_predict_8x8c_h_avx2;
+    pf[I_PRED_CHROMA_DC] = x264_predict_8x8c_dc_avx2;
+    pf[I_PRED_CHROMA_P] = x264_predict_8x8c_p_avx2;
     pf[I_PRED_CHROMA_DC_LEFT] = predict_8x8c_dc_left;
-#endif
-    pf[I_PRED_CHROMA_V]       = x264_predict_8x8c_v_mmx;
-    if( !(cpu&X264_CPU_MMX2) )
-        return;
-    pf[I_PRED_CHROMA_DC_TOP]  = x264_predict_8x8c_dc_top_mmx2;
-    pf[I_PRED_CHROMA_H]       = x264_predict_8x8c_h_mmx2;
-#if !ARCH_X86_64
-    pf[I_PRED_CHROMA_P]       = predict_8x8c_p_mmx2;
-#endif
-    pf[I_PRED_CHROMA_DC]      = x264_predict_8x8c_dc_mmx2;
-    if( !(cpu&X264_CPU_SSE2) )
-        return;
-    pf[I_PRED_CHROMA_P]       = predict_8x8c_p_sse2;
-    if( !(cpu&X264_CPU_SSSE3) )
-        return;
-    pf[I_PRED_CHROMA_H]       = x264_predict_8x8c_h_ssse3;
-#if HAVE_X86_INLINE_ASM
-    pf[I_PRED_CHROMA_P]       = predict_8x8c_p_ssse3;
-#endif
-    if( !(cpu&X264_CPU_AVX) )
-        return;
-    pf[I_PRED_CHROMA_P]       = predict_8x8c_p_avx;
-
-    if( cpu&X264_CPU_AVX2 )
-    {
-        pf[I_PRED_CHROMA_P]   = predict_8x8c_p_avx2;
-    }
+    pf[I_PRED_CHROMA_DC_TOP] = x264_predict_8x8c_dc_top_avx2;
+    pf[I_PRED_CHROMA_DC_128]= predict_8x8c_dc_128;
 }
 
 void x264_predict_8x16c_init_mmx( int cpu, x264_predict_t pf[7] )
@@ -396,8 +322,8 @@ void x264_predict_4x4_init_mmx( x264_predict_t pf[12] )
     pf[I_PRED_4x4_H] = x264_predict_4x4_h_avx2;
     pf[I_PRED_4x4_DDL] = x264_predict_4x4_ddl_avx2;
     pf[I_PRED_4x4_DDR] = x264_predict_4x4_ddr_avx2;
-    pf[I_PRED_4x4_VR]  = x264_predict_4x4_vr_avx2;
-    pf[I_PRED_4x4_HD]  = x264_predict_4x4_hd_avx2;
-    pf[I_PRED_4x4_VL]  = x264_predict_4x4_vl_avx2;
-    pf[I_PRED_4x4_HU]  = x264_predict_4x4_hu_avx2;
+    pf[I_PRED_4x4_VR] = x264_predict_4x4_vr_avx2;
+    pf[I_PRED_4x4_HD] = x264_predict_4x4_hd_avx2;
+    pf[I_PRED_4x4_VL] = x264_predict_4x4_vl_avx2;
+    pf[I_PRED_4x4_HU] = x264_predict_4x4_hu_avx2;
 }
