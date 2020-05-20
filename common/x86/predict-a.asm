@@ -48,7 +48,9 @@ predict_chroma_dc_shuf:     times 4 db  0
                             times 4 db  4
                             times 4 db  8
                             times 4 db 12
-pb_32101234:                db -3, -2, -1, 0, 1, 2, 3, 4
+pb_32101234:                db -3,-2,-1, 0, 1, 2, 3, 4
+pb_87654321:                db -8,-7,-6,-5,-4,-3,-2,-1
+pb_12345678:                db  1, 2, 3, 4, 5, 6, 7, 8
 predict_chroma_dc_top_shuf: times 4 db 0
                             times 4 db 8
 
@@ -527,124 +529,6 @@ PREDICT_8x8_VR b
 %endmacro
 
 
-;-----------------------------------------------------------------------------
-; void predict_16x16_p_core( uint8_t *src, int i00, int b, int c )
-;-----------------------------------------------------------------------------
-%if HIGH_BIT_DEPTH == 0 && ARCH_X86_64 == 0
-INIT_MMX mmx2
-cglobal predict_16x16_p_core, 1,2
-    LOAD_PLANE_ARGS
-    movq        mm5, mm2
-    movq        mm1, mm2
-    pmullw      mm5, [pw_0to15]
-    psllw       mm2, 3
-    psllw       mm1, 2
-    movq        mm3, mm2
-    paddsw      mm0, mm5        ; mm0 = {i+ 0*b, i+ 1*b, i+ 2*b, i+ 3*b}
-    paddsw      mm1, mm0        ; mm1 = {i+ 4*b, i+ 5*b, i+ 6*b, i+ 7*b}
-    paddsw      mm2, mm0        ; mm2 = {i+ 8*b, i+ 9*b, i+10*b, i+11*b}
-    paddsw      mm3, mm1        ; mm3 = {i+12*b, i+13*b, i+14*b, i+15*b}
-
-    mov         r1d, 16
-ALIGN 4
-.loop:
-    movq        mm5, mm0
-    movq        mm6, mm1
-    psraw       mm5, 5
-    psraw       mm6, 5
-    packuswb    mm5, mm6
-    movq        [r0], mm5
-
-    movq        mm5, mm2
-    movq        mm6, mm3
-    psraw       mm5, 5
-    psraw       mm6, 5
-    packuswb    mm5, mm6
-    movq        [r0+8], mm5
-
-    paddsw      mm0, mm4
-    paddsw      mm1, mm4
-    paddsw      mm2, mm4
-    paddsw      mm3, mm4
-    add         r0, FDEC_STRIDE
-    dec         r1d
-    jg          .loop
-    RET
-%endif ; !HIGH_BIT_DEPTH && !ARCH_X86_64
-
-%macro PREDICT_16x16_P 0
-cglobal predict_16x16_p_core, 1,2,8
-    movd     m0, r1m
-    movd     m1, r2m
-    movd     m2, r3m
-    SPLATW   m0, m0, 0
-    SPLATW   m1, m1, 0
-    SPLATW   m2, m2, 0
-    pmullw   m3, m1, [pw_0to15]
-    psllw    m1, 3
-    paddsw   m0, m3  ; m0 = {i+ 0*b, i+ 1*b, i+ 2*b, i+ 3*b, i+ 4*b, i+ 5*b, i+ 6*b, i+ 7*b}
-    paddsw   m1, m0  ; m1 = {i+ 8*b, i+ 9*b, i+10*b, i+11*b, i+12*b, i+13*b, i+14*b, i+15*b}
-    paddsw   m7, m2, m2
-    mov     r1d, 8
-ALIGN 4
-.loop:
-    psraw    m3, m0, 5
-    psraw    m4, m1, 5
-    paddsw   m5, m0, m2
-    paddsw   m6, m1, m2
-    psraw    m5, 5
-    psraw    m6, 5
-    packuswb m3, m4
-    packuswb m5, m6
-    mova [r0+FDEC_STRIDE*0], m3
-    mova [r0+FDEC_STRIDE*1], m5
-    paddsw   m0, m7
-    paddsw   m1, m7
-    add      r0, FDEC_STRIDE*2
-    dec     r1d
-    jg .loop
-    RET
-%endmacro ; PREDICT_16x16_P
-
-INIT_XMM sse2
-PREDICT_16x16_P
-%if HIGH_BIT_DEPTH == 0
-INIT_XMM avx
-PREDICT_16x16_P
-%endif
-
-INIT_YMM avx2
-cglobal predict_16x16_p_core, 1,2,8*HIGH_BIT_DEPTH
-    LOAD_PLANE_ARGS
-    vbroadcasti128 m1, [pw_0to15]
-    mova        xm3, xm4    ; zero high bits
-    pmullw       m1, m2
-    psllw        m2, 3
-    paddsw       m0, m3
-    paddsw       m0, m1     ; X+1*C X+0*C
-    paddsw       m1, m0, m2 ; Y+1*C Y+0*C
-    paddsw       m4, m4
-    mov         r1d, 4
-.loop:
-    psraw        m2, m0, 5
-    psraw        m3, m1, 5
-    paddsw       m0, m4
-    paddsw       m1, m4
-    packuswb     m2, m3     ; X+1*C Y+1*C X+0*C Y+0*C
-    vextracti128 [r0+0*FDEC_STRIDE], m2, 1
-    mova         [r0+1*FDEC_STRIDE], xm2
-    psraw        m2, m0, 5
-    psraw        m3, m1, 5
-    paddsw       m0, m4
-    paddsw       m1, m4
-    packuswb     m2, m3     ; X+3*C Y+3*C X+2*C Y+2*C
-    vextracti128 [r0+2*FDEC_STRIDE], m2, 1
-    mova         [r0+3*FDEC_STRIDE], xm2
-    add          r0, FDEC_STRIDE*4
-    dec         r1d
-    jg .loop
-    RET
-
 %if HIGH_BIT_DEPTH == 0
 %macro PREDICT_8x8 0
 ;-----------------------------------------------------------------------------
@@ -952,145 +836,6 @@ cglobal predict_8x8_hu_ssse3, 2,2
     movhps [r0+(Y+4)*FDEC_STRIDE], m0
     RET
 %endif ; !HIGH_BIT_DEPTH
-
-;-----------------------------------------------------------------------------
-; void predict_8x8c_dc( pixel *src )
-;-----------------------------------------------------------------------------
-%macro LOAD_LEFT 1
-    movzx    r1d, pixel [r0+FDEC_STRIDEB*(%1-4)-SIZEOF_PIXEL]
-    movzx    r2d, pixel [r0+FDEC_STRIDEB*(%1-3)-SIZEOF_PIXEL]
-    add      r1d, r2d
-    movzx    r2d, pixel [r0+FDEC_STRIDEB*(%1-2)-SIZEOF_PIXEL]
-    add      r1d, r2d
-    movzx    r2d, pixel [r0+FDEC_STRIDEB*(%1-1)-SIZEOF_PIXEL]
-    add      r1d, r2d
-%endmacro
-
-%macro STORE_4LINES 2
-    movq [r0+FDEC_STRIDEB*(%2-4)], %1
-    movq [r0+FDEC_STRIDEB*(%2-3)], %1
-    movq [r0+FDEC_STRIDEB*(%2-2)], %1
-    movq [r0+FDEC_STRIDEB*(%2-1)], %1
-%endmacro
-
-;-----------------------------------------------------------------------------
-; void predict_16x16_v( pixel *src )
-;-----------------------------------------------------------------------------
-
-%macro PREDICT_16x16_V 0
-cglobal predict_16x16_v, 1,2
-%assign %%i 0
-%rep 16*SIZEOF_PIXEL/mmsize
-    mova m %+ %%i, [r0-FDEC_STRIDEB+%%i*mmsize]
-%assign %%i %%i+1
-%endrep
-%if 16*SIZEOF_PIXEL/mmsize == 4
-    STORE16 m0, m1, m2, m3
-%elif 16*SIZEOF_PIXEL/mmsize == 2
-    STORE16 m0, m1
-%else
-    STORE16 m0
-%endif
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_16x16_V
-INIT_XMM sse
-PREDICT_16x16_V
-
-;-----------------------------------------------------------------------------
-; void predict_16x16_h( pixel *src )
-;-----------------------------------------------------------------------------
-%macro PREDICT_16x16_H 0
-cglobal predict_16x16_h, 1,2
-%if cpuflag(ssse3) && notcpuflag(avx2)
-    mova  m2, [pb_3]
-%endif
-    mov  r1d, 4
-.loop:
-    PRED_H_4ROWS 16, 1
-    dec  r1d
-    jg .loop
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_16x16_H
-;no SSE2 for 8-bit, it's slower than MMX on all systems that don't support SSSE3
-INIT_XMM ssse3
-PREDICT_16x16_H
-
-;-----------------------------------------------------------------------------
-; void predict_16x16_dc( pixel *src )
-;-----------------------------------------------------------------------------
-%if WIN64
-DECLARE_REG_TMP 6 ; Reduces code size due to fewer REX prefixes
-%else
-DECLARE_REG_TMP 3
-%endif
-
-INIT_XMM
-; Returns the sum of the left pixels in r1d+r2d
-cglobal predict_16x16_dc_left_internal, 0,4
-    movzx r1d, pixel [r0-SIZEOF_PIXEL]
-    movzx r2d, pixel [r0+FDEC_STRIDEB-SIZEOF_PIXEL]
-%assign i 2*FDEC_STRIDEB
-%rep 7
-    movzx t0d, pixel [r0+i-SIZEOF_PIXEL]
-    add   r1d, t0d
-    movzx t0d, pixel [r0+i+FDEC_STRIDEB-SIZEOF_PIXEL]
-    add   r2d, t0d
-%assign i i+2*FDEC_STRIDEB
-%endrep
-    RET
-
-%macro PRED16x16_DC 2
-    pxor        m0, m0
-    psadbw      m0, [r0 - FDEC_STRIDE]
-    MOVHL       m1, m0
-    paddw       m0, m1
-    paddusw     m0, %1
-    psrlw       m0, %2              ; dc
-    SPLATW      m0, m0
-    packuswb    m0, m0              ; dc in bytes
-    STORE16     m0
-%endmacro
-
-%macro PREDICT_16x16_DC 0
-cglobal predict_16x16_dc, 1,3
-    call predict_16x16_dc_left_internal
-    lea          r1d, [r1+r2+16]
-    movd         xm3, r1d
-    PRED16x16_DC xm3, 5
-    RET
-
-cglobal predict_16x16_dc_top, 1,2
-    PRED16x16_DC [pw_8], 4
-    RET
-
-cglobal predict_16x16_dc_left, 1,3
-    call predict_16x16_dc_left_internal
-    lea       r1d, [r1+r2+8]
-    shr       r1d, 4
-    movd      xm0, r1d
-    SPLATW     m0, xm0
-%if HIGH_BIT_DEPTH && mmsize == 16
-    STORE16    m0, m0
-%else
-%if HIGH_BIT_DEPTH == 0
-    packuswb   m0, m0
-%endif
-    STORE16    m0
-%endif
-    RET
-%endmacro
-
-INIT_XMM sse2
-PREDICT_16x16_DC
-INIT_XMM avx2
-PREDICT_16x16_DC
-
 
 
 ;=============================================================================
@@ -1510,7 +1255,7 @@ cglobal predict_8x16c_h, 0, 0
     vmovq          [r0 + 64], m2
     vmovq          [r0 + 96], m3
     add            r0, 256
-    vpbroadcastb   m0, [r0 - 129]        ; l8
+    vpbroadcastb   m0, [r0 - 129]      ; l8
     vpbroadcastb   m1, [r0 - 97]       ; l9
     vpbroadcastb   m2, [r0 - 65]       ; l10
     vpbroadcastb   m3, [r0 - 33]       ; l11
@@ -1749,4 +1494,349 @@ cglobal predict_8x16c_dc_top, 0, 0
     vmovq          [r1 + 32], m0
     vmovq          [r1 + 64], m0
     vmovq          [r1 + 96], m0
+    ret
+
+
+;=============================================================================
+; predict_16x16
+;=============================================================================
+INIT_XMM avx2
+cglobal predict_16x16_v, 0, 0
+    vmovdqu        m0, [r0 - 32]
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    add            r0, 128
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    add            r0, 256
+    vmovdqu        [r0 - 128], m0
+    vmovdqu        [r0 - 96], m0
+    vmovdqu        [r0 - 64], m0
+    vmovdqu        [r0 - 32], m0
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    ret
+
+INIT_XMM avx2
+cglobal predict_16x16_h, 0, 0
+    vpbroadcastb   m0, [r0 - 1]        ; l0
+    vpbroadcastb   m1, [r0 + 31]       ; l1
+    vpbroadcastb   m2, [r0 + 63]       ; l2
+    vpbroadcastb   m3, [r0 + 95]       ; l3
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    vmovdqu        [r0 + 64], m2
+    vmovdqu        [r0 + 96], m3
+    add            r0, 128
+    vpbroadcastb   m0, [r0 - 1]        ; l4
+    vpbroadcastb   m1, [r0 + 31]       ; l5
+    vpbroadcastb   m2, [r0 + 63]       ; l6
+    vpbroadcastb   m3, [r0 + 95]       ; l7
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    vmovdqu        [r0 + 64], m2
+    vmovdqu        [r0 + 96], m3
+    add            r0, 256
+    vpbroadcastb   m0, [r0 - 129]      ; l8
+    vpbroadcastb   m1, [r0 - 97]       ; l9
+    vpbroadcastb   m2, [r0 - 65]       ; l10
+    vpbroadcastb   m3, [r0 - 33]       ; l11
+    vmovdqu        [r0 - 128], m0
+    vmovdqu        [r0 - 96], m1
+    vmovdqu        [r0 - 64], m2
+    vmovdqu        [r0 - 32], m3
+    vpbroadcastb   m0, [r0 - 1]        ; l12
+    vpbroadcastb   m1, [r0 + 31]       ; l13
+    vpbroadcastb   m2, [r0 + 63]       ; l14
+    vpbroadcastb   m3, [r0 + 95]       ; l15
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m1
+    vmovdqu        [r0 + 64], m2
+    vmovdqu        [r0 + 96], m3
+    ret
+
+INIT_XMM avx2
+cglobal predict_16x16_dc, 0, 0
+    vpxor          m5, m5, m5
+    vpsadbw        m0, m5, [r0 - 32]   ; sum of top
+    ; use GPR to reach maximum load-and-expand throughput
+    movzx          r1d, byte [r0 - 1]  ; l0
+    movzx          r6d, byte [r0 + 31] ; l1
+    movzx          r2d, byte [r0 + 63] ; l2
+    movzx          r3d, byte [r0 + 95] ; l3
+    add            r1d, r2d
+    add            r6d, r3d
+    lea            r5, [r0 + 384]
+    add            r0, 128
+    movzx          r2d, byte [r0 - 1]  ; l4
+    movzx          r3d, byte [r0 + 31] ; l5
+    add            r1d, r2d
+    add            r6d, r3d
+    movzx          r2d, byte [r0 + 63] ; l6
+    movzx          r3d, byte [r0 + 95] ; l7
+    add            r1d, r2d
+    add            r6d, r3d
+    movzx          r2d, byte [r5 - 129]; l8
+    movzx          r3d, byte [r5 - 97] ; l9
+    add            r1d, r2d
+    add            r6d, r3d
+    movzx          r2d, byte [r5 - 65] ; l10
+    movzx          r3d, byte [r5 - 33] ; l11
+    add            r1d, r2d
+    add            r6d, r3d
+    movzx          r2d, byte [r5 - 1]  ; l12
+    movzx          r3d, byte [r5 + 31] ; l13
+    add            r1d, r2d
+    add            r6d, r3d
+    movzx          r2d, byte [r5 + 63] ; l14
+    movzx          r3d, byte [r5 + 95] ; l15
+    add            r1d, r2d
+    add            r6d, r3d
+
+    add            r1d, r6d
+    vpunpckhqdq    m1, m0, m0
+    vpaddw         m0, m0, m1
+    vmovd          m1, r1d
+    vpaddw         m0, m0, m1          ; dc
+    vpsrlw         m0, m0, 4
+    vpavgw         m0, m0, m5          ; dcsplat
+    vpbroadcastb   m0, m0
+    
+    vmovdqu        [r0 - 128], m0
+    vmovdqu        [r0 - 96], m0
+    vmovdqu        [r0 - 64], m0
+    vmovdqu        [r0 - 32], m0
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    vmovdqu        [r5 - 128], m0
+    vmovdqu        [r5 - 96], m0
+    vmovdqu        [r5 - 64], m0
+    vmovdqu        [r5 - 32], m0
+    vmovdqu        [r5], m0
+    vmovdqu        [r5 + 32], m0
+    vmovdqu        [r5 + 64], m0
+    vmovdqu        [r5 + 96], m0
+    ret
+
+INIT_YMM avx2
+cglobal predict_16x16_p, 0, 0
+    movzx          r1d, byte [r0 - 17]      ; t15
+    movzx          r2d, byte [r0 - 33]      ; lt
+    movzx          r6d, byte [r0 + 479]     ; l15
+    add            r1d, r6d
+    shl            r1d, 4                   ; a
+    add            r1d, 16                  ; a + 16
+    vmovq          xm0, [r0 - 33]           ; lt t0 ... t6
+    vmovq          xm1, [r0 - 24]           ; t8 t9 ... t15
+    vmovq          xm4, [pb_87654321]
+    vmovq          xm5, [pb_12345678]
+    vpmaddubsw     xm0, xm0, xm4            ; [-8 -7 -6 -5 -4 -3 -2 -1]
+    vpmaddubsw     xm1, xm1, xm5            ; [1 2 3 4 5 6 7 8]
+    vpaddw         xm0, xm0, xm1
+    vpshufd        xm1, xm0, q0001
+    vpaddw         xm0, xm0, xm1
+    vpshuflw       xm1, xm0, q0001
+    vpaddw         xm0, xm0, xm1            ; H
+    mov            r3d, 2560                ; 5 * 512
+    vmovd          xm5, r3d
+    vpmulhrsw      xm0, xm0, xm5            ; b
+
+    lea            r5, [r0 + 384]
+    sub            r6d, r2d
+    shl            r6d, 3                   ; [-8] [8]
+    movzx          r3d, byte [r0 - 1]       ; l0
+    movzx          r4d, byte [r5 + 63]      ; l14
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 8]
+    sub            r6d, r4d                 ; [-7] [7]
+    movzx          r3d, byte [r0 + 31]      ; l1
+    movzx          r4d, byte [r5 + 31]      ; l13
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 4]
+    lea            r6d, [r6 + r4 * 2]       ; [-6] [6]
+    movzx          r3d, byte [r0 + 63]      ; l2
+    movzx          r4d, byte [r5 - 1]       ; l12
+    sub            r4d, r3d
+    lea            r4d, [r4 + r4 * 4]
+    add            r6d, r4d                 ; [-5] [5]
+    movzx          r3d, byte [r0 + 95]      ; l3
+    movzx          r4d, byte [r5 - 33]      ; l11
+    add            r0, 128
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 4]       ; [-4] [4]
+    movzx          r3d, byte [r0 - 1]       ; l4
+    movzx          r4d, byte [r5 - 65]      ; l10
+    sub            r4d, r3d
+    lea            r4, [r4 + r4 * 2]
+    add            r6d, r4d                 ; [-3] [3]
+    movzx          r3d, byte [r0 + 31]      ; l5
+    movzx          r4d, byte [r5 - 97]      ; l9
+    sub            r4d, r3d
+    lea            r6d, [r6 + r4 * 2]       ; [-2] [2]
+    movzx          r3d, byte [r0 + 63]      ; l6
+    movzx          r4d, byte [r5 - 129]     ; l8
+    sub            r4d, r3d
+    add            r6d, r4d                 ; [-1] [1], V
+
+    imul           r6d, r6d, 5
+    add            r6d, 32
+    sar            r6d, 6                   ; c
+    vmovd          xm1, r6d
+    add            r1d, r6d
+    shl            r6d, 3
+    sub            r1d, r6d                 ; a - 7 * c + 16
+    vmovd          xm2, r1d
+    vpsllw         xm4, xm0, 3              ; 8 * b
+    vpsubw         xm3, xm4, xm0            ; 7 * b
+    vpsubw         xm2, xm2, xm3            ; i00
+    vpbroadcastw   m2, xm2
+    vpbroadcastw   m0, xm0
+    vpbroadcastw   m1, xm1
+    vpbroadcastw   m4, xm4
+    vbroadcasti128 m5, [pw_0to15]
+    vpmullw        m0, m0, m5               ; 0 -- 7b | 0 -- 7b
+    vpaddw         m2, m2, m0               ; row0a | row0a
+    vpaddw         m3, m2, m4               ; row0b | row0b
+    vmovdqu        xm0, xm1                 ; c | 0
+    vpaddw         m2, m2, m0               ; row1a | row0a
+    vpaddw         m3, m3, m0               ; row1b | row0b
+    vpaddw         m1, m1, m1               ; 2 * c
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m3, 5
+    vpackuswb      m4, m4, m5               ; row1 | row0
+    vextracti128   [r0 - 128], m4, 1
+    vmovdqu        [r0 - 96], xm4
+
+    add            r0, 384                  ; move to the end
+    mov            r1, -448
+.loop:
+    vpaddw         m2, m2, m1
+    vpaddw         m3, m3, m1
+    vpsraw         m4, m2, 5
+    vpsraw         m5, m3, 5
+    vpackuswb      m4, m4, m5               ; row3 | row2 ...
+    vextracti128   [r0 + r1], m4, 1
+    vmovdqu        [r0 + r1 + 32], xm4
+    add            r1, 64
+    jl             .loop
+    RET
+
+INIT_XMM avx2
+cglobal predict_16x16_dc_left, 0, 0
+    movzx          r1d, byte [r0 - 1]
+    movzx          r2d, byte [r0 + 31]
+    movzx          r6d, byte [r0 + 63]
+    add            r1d, r6d
+    movzx          r3d, byte [r0 + 95]
+    add            r2d, r3d
+    lea            r5, [r0 + 383]
+    add            r0, 127
+    movzx          r6d, byte [r0]
+    add            r1d, r6d
+    movzx          r3d, byte [r0 + 32]
+    add            r2d, r3d
+    movzx          r6d, byte [r0 + 64]
+    add            r1d, r6d
+    movzx          r3d, byte [r0 + 96]
+    add            r2d, r3d
+    movzx          r6d, byte [r5 - 128]
+    add            r1d, r6d
+    movzx          r3d, byte [r5 - 96]
+    add            r2d, r3d
+    movzx          r6d, byte [r5 - 64]
+    add            r1d, r6d
+    movzx          r3d, byte [r5 - 32]
+    add            r2d, r3d
+    movzx          r6d, byte [r5]
+    add            r1d, r6d
+    movzx          r3d, byte [r5 + 32]
+    add            r2d, r3d
+    movzx          r6d, byte [r5 + 64]
+    add            r1d, r6d
+    movzx          r3d, byte [r5 + 96]
+    add            r2d, r3d
+    add            r1d, r2d
+
+    add            r1d, 8
+    shr            r1d, 4
+    vmovd          m0, r1d
+    vpbroadcastb   m0, m0
+    vmovdqu        [r0 - 127], m0
+    vmovdqu        [r0 - 95], m0
+    vmovdqu        [r0 - 63], m0
+    vmovdqu        [r0 - 31], m0
+    vmovdqu        [r0 + 1], m0
+    vmovdqu        [r0 + 33], m0
+    vmovdqu        [r0 + 65], m0
+    vmovdqu        [r0 + 97], m0
+    vmovdqu        [r5 - 127], m0
+    vmovdqu        [r5 - 95], m0
+    vmovdqu        [r5 - 63], m0
+    vmovdqu        [r5 - 31], m0
+    vmovdqu        [r5 + 1], m0
+    vmovdqu        [r5 + 33], m0
+    vmovdqu        [r5 + 65], m0
+    vmovdqu        [r5 + 97], m0
+    ret
+
+INIT_XMM avx2
+cglobal predict_16x16_dc_top, 0, 0
+    vpxor          m2, m2, m2
+    vpsadbw        m0, m2, [r0 - 32]
+    vpunpckhqdq    m1, m0, m0
+    vpaddw         m0, m0, m1
+    vpsrlw         m0, m0, 3
+    vpavgw         m0, m0, m2
+    vpbroadcastb   m0, m0
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    lea            r1, [r0 + 384]
+    add            r0, 128
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    vmovdqu        [r1 - 128], m0
+    vmovdqu        [r1 - 96], m0
+    vmovdqu        [r1 - 64], m0
+    vmovdqu        [r1 - 32], m0
+    vmovdqu        [r1], m0
+    vmovdqu        [r1 + 32], m0
+    vmovdqu        [r1 + 64], m0
+    vmovdqu        [r1 + 96], m0
+    ret
+
+INIT_XMM avx2
+cglobal predict_16x16_dc_128, 0, 0
+    mov            r1d, 128
+    vmovd          m0, r1d
+    vpbroadcastb   m0, m0
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    lea            r1, [r0 + 384]
+    add            r0, 128
+    vmovdqu        [r0], m0
+    vmovdqu        [r0 + 32], m0
+    vmovdqu        [r0 + 64], m0
+    vmovdqu        [r0 + 96], m0
+    vmovdqu        [r1 - 128], m0
+    vmovdqu        [r1 - 96], m0
+    vmovdqu        [r1 - 64], m0
+    vmovdqu        [r1 - 32], m0
+    vmovdqu        [r1], m0
+    vmovdqu        [r1 + 32], m0
+    vmovdqu        [r1 + 64], m0
+    vmovdqu        [r1 + 96], m0
     ret

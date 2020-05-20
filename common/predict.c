@@ -36,7 +36,7 @@
 /****************************************************************************
  * 16x16 prediction for intra luma block
  ****************************************************************************/
-
+/*
 #define PREDICT_16x16_DC(v)\
     for( int i = 0; i < 16; i++ )\
     {\
@@ -112,35 +112,36 @@ void x264_predict_16x16_v_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void x264_predict_16x16_p_c( pixel *src )
-{
-    int H = 0, V = 0;
+*/
+// void x264_predict_16x16_p_c( pixel *src )
+// {
+//     int H = 0, V = 0;
 
-    /* calculate H and V */
-    for( int i = 0; i <= 7; i++ )
-    {
-        H += ( i + 1 ) * ( src[ 8 + i - FDEC_STRIDE ] - src[6 -i -FDEC_STRIDE] );
-        V += ( i + 1 ) * ( src[-1 + (8+i)*FDEC_STRIDE] - src[-1 + (6-i)*FDEC_STRIDE] );
-    }
+//     /* calculate H and V */
+//     for( int i = 0; i <= 7; i++ )
+//     {
+//         H += ( i + 1 ) * ( src[ 8 + i - FDEC_STRIDE ] - src[6 -i -FDEC_STRIDE] );
+//         V += ( i + 1 ) * ( src[-1 + (8+i)*FDEC_STRIDE] - src[-1 + (6-i)*FDEC_STRIDE] );
+//     }
 
-    int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[15 - FDEC_STRIDE] );
-    int b = ( 5 * H + 32 ) >> 6;
-    int c = ( 5 * V + 32 ) >> 6;
+//     int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[15 - FDEC_STRIDE] );
+//     int b = ( 5 * H + 32 ) >> 6;
+//     int c = ( 5 * V + 32 ) >> 6;
 
-    int i00 = a - b * 7 - c * 7 + 16;
+//     int i00 = a - b * 7 - c * 7 + 16;
 
-    for( int y = 0; y < 16; y++ )
-    {
-        int pix = i00;
-        for( int x = 0; x < 16; x++ )
-        {
-            src[x] = x264_clip_pixel( pix>>5 );
-            pix += b;
-        }
-        src += FDEC_STRIDE;
-        i00 += c;
-    }
-}
+//     for( int y = 0; y < 16; y++ )
+//     {
+//         int pix = i00;
+//         for( int x = 0; x < 16; x++ )
+//         {
+//             src[x] = x264_clip_pixel( pix>>5 );
+//             pix += b;
+//         }
+//         src += FDEC_STRIDE;
+//         i00 += c;
+//     }
+// }
 
 
 /****************************************************************************
@@ -875,19 +876,9 @@ static void predict_8x8_hu_c( pixel *src, pixel edge[36] )
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_16x16_init( x264_predict_t pf[7] )
 {
-    pf[I_PRED_16x16_V ]     = x264_predict_16x16_v_c;
-    pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c;
-    pf[I_PRED_16x16_DC]     = x264_predict_16x16_dc_c;
-    pf[I_PRED_16x16_P ]     = x264_predict_16x16_p_c;
-    pf[I_PRED_16x16_DC_LEFT]= predict_16x16_dc_left_c;
-    pf[I_PRED_16x16_DC_TOP ]= predict_16x16_dc_top_c;
-    pf[I_PRED_16x16_DC_128 ]= predict_16x16_dc_128_c;
-
-    x264_predict_16x16_init_mmx( cpu, pf );
-
-
+    x264_predict_16x16_init_mmx( pf );
 }
 
 void x264_predict_8x8c_init( x264_predict_t pf[7] )

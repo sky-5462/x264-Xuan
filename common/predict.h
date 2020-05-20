@@ -147,7 +147,7 @@ void x264_predict_8x16c_v_c ( pixel *src );
 void x264_predict_8x16c_p_c ( pixel *src );
 
 #define x264_predict_16x16_init x264_template(predict_16x16_init)
-void x264_predict_16x16_init ( int cpu, x264_predict_t pf[7] );
+void x264_predict_16x16_init ( x264_predict_t pf[7] );
 #define x264_predict_8x8c_init x264_template(predict_8x8c_init)
 void x264_predict_8x8c_init  ( x264_predict_t pf[7] );
 #define x264_predict_8x16c_init x264_template(predict_8x16c_init)

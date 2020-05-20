@@ -29,95 +29,6 @@
 #include "predict.h"
 #include "pixel.h"
 
-#define PREDICT_P_SUM(j,i)\
-    H += i * ( src[j+i - FDEC_STRIDE ]  - src[j-i - FDEC_STRIDE ] );\
-    V += i * ( src[(j+i)*FDEC_STRIDE -1] - src[(j-i)*FDEC_STRIDE -1] );
-
-#if HAVE_X86_INLINE_ASM
-ALIGNED_8( static const int8_t pb_12345678[8] ) = {1,2,3,4,5,6,7,8};
-ALIGNED_8( static const int8_t pb_m87654321[8] ) = {-8,-7,-6,-5,-4,-3,-2,-1};
-ALIGNED_8( static const int8_t pb_m32101234[8] ) = {-3,-2,-1,0,1,2,3,4};
-#endif // HAVE_X86_INLINE_ASM
-
-#define PREDICT_16x16_P_CORE\
-    int H = 0;\
-    int V = 0;\
-    PREDICT_P_SUM(7,1)\
-    PREDICT_P_SUM(7,2)\
-    PREDICT_P_SUM(7,3)\
-    PREDICT_P_SUM(7,4)\
-    PREDICT_P_SUM(7,5)\
-    PREDICT_P_SUM(7,6)\
-    PREDICT_P_SUM(7,7)\
-    PREDICT_P_SUM(7,8)
-
-#define PREDICT_16x16_P_END(name)\
-    int a = 16 * ( src[15*FDEC_STRIDE -1] + src[15 - FDEC_STRIDE] );\
-    int b = ( 5 * H + 32 ) >> 6;\
-    int c = ( 5 * V + 32 ) >> 6;\
-    int i00 = a - b * 7 - c * 7 + 16;\
-    x264_predict_16x16_p_core_##name( src, i00, b, c );
-
-#define PREDICT_16x16_P(name, name2)\
-static void predict_16x16_p_##name( pixel *src )\
-{\
-    PREDICT_16x16_P_CORE\
-    PREDICT_16x16_P_END(name2)\
-}
-
-#if HAVE_X86_INLINE_ASM
-#define PREDICT_16x16_P_ASM\
-    asm (\
-        "movq           %1, %%mm1 \n"\
-        "movq           %2, %%mm0 \n"\
-        "palignr $7,    %3, %%mm1 \n"\
-        "pmaddubsw      %4, %%mm0 \n"\
-        "pmaddubsw      %5, %%mm1 \n"\
-        "paddw       %%mm1, %%mm0 \n"\
-        "pshufw $14, %%mm0, %%mm1 \n"\
-        "paddw       %%mm1, %%mm0 \n"\
-        "pshufw  $1, %%mm0, %%mm1 \n"\
-        "paddw       %%mm1, %%mm0 \n"\
-        "movd        %%mm0, %0    \n"\
-        "movswl        %w0, %0    \n"\
-        :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE]), "m"(src[-FDEC_STRIDE+8]),\
-         "m"(src[-FDEC_STRIDE-8]), "m"(*pb_12345678), "m"(*pb_m87654321)\
-    );
-
-#define PREDICT_16x16_P_CORE_INLINE\
-    int H, V;\
-    PREDICT_16x16_P_ASM\
-    V = 8 * ( src[15*FDEC_STRIDE-1] - src[-1*FDEC_STRIDE-1] )\
-      + 7 * ( src[14*FDEC_STRIDE-1] - src[ 0*FDEC_STRIDE-1] )\
-      + 6 * ( src[13*FDEC_STRIDE-1] - src[ 1*FDEC_STRIDE-1] )\
-      + 5 * ( src[12*FDEC_STRIDE-1] - src[ 2*FDEC_STRIDE-1] )\
-      + 4 * ( src[11*FDEC_STRIDE-1] - src[ 3*FDEC_STRIDE-1] )\
-      + 3 * ( src[10*FDEC_STRIDE-1] - src[ 4*FDEC_STRIDE-1] )\
-      + 2 * ( src[ 9*FDEC_STRIDE-1] - src[ 5*FDEC_STRIDE-1] )\
-      + 1 * ( src[ 8*FDEC_STRIDE-1] - src[ 6*FDEC_STRIDE-1] );
-
-#define PREDICT_16x16_P_INLINE(name, name2)\
-static void predict_16x16_p_##name( pixel *src )\
-{\
-    PREDICT_16x16_P_CORE_INLINE\
-    PREDICT_16x16_P_END(name2)\
-}
-#else // !HAVE_X86_INLINE_ASM
-#define PREDICT_16x16_P_INLINE(name, name2) PREDICT_16x16_P(name, name2)
-#endif // HAVE_X86_INLINE_ASM
-
-#if !ARCH_X86_64
-PREDICT_16x16_P( mmx2, mmx2 )
-#endif // !ARCH_X86_64
-PREDICT_16x16_P( sse2, sse2 )
-#if HAVE_X86_INLINE_ASM
-PREDICT_16x16_P_INLINE( ssse3, sse2 )
-#endif // HAVE_X86_INLINE_ASM
-PREDICT_16x16_P_INLINE( avx, avx )
-PREDICT_16x16_P_INLINE( avx2, avx2 )
-
-
 static void predict_8x8c_dc_left( uint8_t *src )
 {
     int y;
@@ -214,44 +125,15 @@ static void predict_8x16c_dc_128(uint8_t* src) {
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
+void x264_predict_16x16_init_mmx( x264_predict_t pf[7] )
 {
-    if( !(cpu&X264_CPU_MMX2) )
-        return;
-    pf[I_PRED_16x16_V]       = x264_predict_16x16_v_mmx2;
-    pf[I_PRED_16x16_H]       = x264_predict_16x16_h_mmx2;
-#if !ARCH_X86_64
-    pf[I_PRED_16x16_P]       = predict_16x16_p_mmx2;
-#endif
-    if( !(cpu&X264_CPU_SSE) )
-        return;
-    pf[I_PRED_16x16_V]       = x264_predict_16x16_v_sse;
-    if( !(cpu&X264_CPU_SSE2) )
-        return;
-    pf[I_PRED_16x16_DC]      = x264_predict_16x16_dc_sse2;
-    if( cpu&X264_CPU_SSE2_IS_SLOW )
-        return;
-    pf[I_PRED_16x16_DC_TOP]  = x264_predict_16x16_dc_top_sse2;
-    pf[I_PRED_16x16_DC_LEFT] = x264_predict_16x16_dc_left_sse2;
-    pf[I_PRED_16x16_P]       = predict_16x16_p_sse2;
-    if( !(cpu&X264_CPU_SSSE3) )
-        return;
-    if( !(cpu&X264_CPU_SLOW_PSHUFB) )
-        pf[I_PRED_16x16_H]       = x264_predict_16x16_h_ssse3;
-#if HAVE_X86_INLINE_ASM
-    pf[I_PRED_16x16_P]       = predict_16x16_p_ssse3;
-#endif
-    if( !(cpu&X264_CPU_AVX) )
-        return;
-    pf[I_PRED_16x16_P]       = predict_16x16_p_avx;
-
-    if( cpu&X264_CPU_AVX2 )
-    {
-        pf[I_PRED_16x16_P]       = predict_16x16_p_avx2;
-        pf[I_PRED_16x16_DC]      = x264_predict_16x16_dc_avx2;
-        pf[I_PRED_16x16_DC_TOP]  = x264_predict_16x16_dc_top_avx2;
-        pf[I_PRED_16x16_DC_LEFT] = x264_predict_16x16_dc_left_avx2;
-    }
+    pf[I_PRED_16x16_V] = x264_predict_16x16_v_avx2;
+    pf[I_PRED_16x16_H] = x264_predict_16x16_h_avx2;
+    pf[I_PRED_16x16_DC] = x264_predict_16x16_dc_avx2;
+    pf[I_PRED_16x16_P] = x264_predict_16x16_p_avx2;
+    pf[I_PRED_16x16_DC_LEFT] = x264_predict_16x16_dc_left_avx2;
+    pf[I_PRED_16x16_DC_TOP] = x264_predict_16x16_dc_top_avx2;
+    pf[I_PRED_16x16_DC_128]= x264_predict_16x16_dc_128_avx2;
 }
 
 void x264_predict_8x8c_init_mmx( x264_predict_t pf[7] )
