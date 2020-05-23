@@ -614,59 +614,59 @@ static void predict_4x4_hu_c( pixel *src )
  * 8x8 prediction for intra luma block
  ****************************************************************************/
 
-#define PL(y) \
-    edge[14-y] = F2(SRC(-1,y-1), SRC(-1,y), SRC(-1,y+1));
-#define PT(x) \
-    edge[16+x] = F2(SRC(x-1,-1), SRC(x,-1), SRC(x+1,-1));
+// #define PL(y) \
+//     edge[14-y] = F2(SRC(-1,y-1), SRC(-1,y), SRC(-1,y+1));
+// #define PT(x) \
+//     edge[16+x] = F2(SRC(x-1,-1), SRC(x,-1), SRC(x+1,-1));
 
-static void predict_8x8_filter_c( pixel *src, pixel edge[36], int i_neighbor, int i_filters )
-{
-    /* edge[7..14] = l7..l0
-     * edge[15] = lt
-     * edge[16..31] = t0 .. t15
-     * edge[32] = t15 */
+// static void predict_8x8_filter_c( pixel *src, pixel edge[36], int i_neighbor, int i_filters )
+// {
+//     /* edge[7..14] = l7..l0
+//      * edge[15] = lt
+//      * edge[16..31] = t0 .. t15
+//      * edge[32] = t15 */
 
-    int have_lt = i_neighbor & MB_TOPLEFT;
-    if( i_filters & MB_LEFT )
-    {
-        edge[15] = (SRC(0,-1) + 2*SRC(-1,-1) + SRC(-1,0) + 2) >> 2;
-        edge[14] = ((have_lt ? SRC(-1,-1) : SRC(-1,0))
-                 + 2*SRC(-1,0) + SRC(-1,1) + 2) >> 2;
-        PL(1) PL(2) PL(3) PL(4) PL(5) PL(6)
-        edge[6] =
-        edge[7] = (SRC(-1,6) + 3*SRC(-1,7) + 2) >> 2;
-    }
+//     int have_lt = i_neighbor & MB_TOPLEFT;
+//     if( i_filters & MB_LEFT )
+//     {
+//         edge[15] = (SRC(0,-1) + 2*SRC(-1,-1) + SRC(-1,0) + 2) >> 2;
+//         edge[14] = ((have_lt ? SRC(-1,-1) : SRC(-1,0))
+//                  + 2*SRC(-1,0) + SRC(-1,1) + 2) >> 2;
+//         PL(1) PL(2) PL(3) PL(4) PL(5) PL(6)
+//         edge[6] =
+//         edge[7] = (SRC(-1,6) + 3*SRC(-1,7) + 2) >> 2;
+//     }
 
-    if( i_filters & MB_TOP )
-    {
-        int have_tr = i_neighbor & MB_TOPRIGHT;
-        edge[16] = ((have_lt ? SRC(-1,-1) : SRC(0,-1))
-                 + 2*SRC(0,-1) + SRC(1,-1) + 2) >> 2;
-        PT(1) PT(2) PT(3) PT(4) PT(5) PT(6)
-        edge[23] = (SRC(6,-1) + 2*SRC(7,-1)
-                 + (have_tr ? SRC(8,-1) : SRC(7,-1)) + 2) >> 2;
+//     if( i_filters & MB_TOP )
+//     {
+//         int have_tr = i_neighbor & MB_TOPRIGHT;
+//         edge[16] = ((have_lt ? SRC(-1,-1) : SRC(0,-1))
+//                  + 2*SRC(0,-1) + SRC(1,-1) + 2) >> 2;
+//         PT(1) PT(2) PT(3) PT(4) PT(5) PT(6)
+//         edge[23] = (SRC(6,-1) + 2*SRC(7,-1)
+//                  + (have_tr ? SRC(8,-1) : SRC(7,-1)) + 2) >> 2;
 
-        if( i_filters & MB_TOPRIGHT )
-        {
-            if( have_tr )
-            {
-                PT(8) PT(9) PT(10) PT(11) PT(12) PT(13) PT(14)
-                edge[31] =
-                edge[32] = (SRC(14,-1) + 3*SRC(15,-1) + 2) >> 2;
-            }
-            else
-            {
-                MPIXEL_X4( edge+24 ) = PIXEL_SPLAT_X4( SRC(7,-1) );
-                MPIXEL_X4( edge+28 ) = PIXEL_SPLAT_X4( SRC(7,-1) );
-                edge[32] = SRC(7,-1);
-            }
-        }
-    }
-}
+//         if( i_filters & MB_TOPRIGHT )
+//         {
+//             if( have_tr )
+//             {
+//                 PT(8) PT(9) PT(10) PT(11) PT(12) PT(13) PT(14)
+//                 edge[31] =
+//                 edge[32] = (SRC(14,-1) + 3*SRC(15,-1) + 2) >> 2;
+//             }
+//             else
+//             {
+//                 MPIXEL_X4( edge+24 ) = PIXEL_SPLAT_X4( SRC(7,-1) );
+//                 MPIXEL_X4( edge+28 ) = PIXEL_SPLAT_X4( SRC(7,-1) );
+//                 edge[32] = SRC(7,-1);
+//             }
+//         }
+//     }
+// }
 
-#undef PL
-#undef PT
-
+// #undef PL
+// #undef PT
+/*
 #define PL(y) \
     UNUSED int l##y = edge[14-y];
 #define PT(x) \
@@ -872,7 +872,7 @@ static void predict_8x8_hu_c( pixel *src, pixel edge[36] )
     SRC_X4(4,4)=SRC_X4(0,6)= pack_pixel_2to4(p7,p8);
     SRC_X4(4,5)=SRC_X4(4,6)= SRC_X4(0,7) = SRC_X4(4,7) = pack_pixel_2to4(p8,p8);
 }
-
+*/
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
@@ -891,24 +891,9 @@ void x264_predict_8x16c_init( x264_predict_t pf[7] )
     x264_predict_8x16c_init_mmx( pf );
 }
 
-void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
+void x264_predict_8x8_init( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
 {
-    pf[I_PRED_8x8_V]      = x264_predict_8x8_v_c;
-    pf[I_PRED_8x8_H]      = x264_predict_8x8_h_c;
-    pf[I_PRED_8x8_DC]     = x264_predict_8x8_dc_c;
-    pf[I_PRED_8x8_DDL]    = predict_8x8_ddl_c;
-    pf[I_PRED_8x8_DDR]    = predict_8x8_ddr_c;
-    pf[I_PRED_8x8_VR]     = predict_8x8_vr_c;
-    pf[I_PRED_8x8_HD]     = predict_8x8_hd_c;
-    pf[I_PRED_8x8_VL]     = predict_8x8_vl_c;
-    pf[I_PRED_8x8_HU]     = predict_8x8_hu_c;
-    pf[I_PRED_8x8_DC_LEFT]= predict_8x8_dc_left_c;
-    pf[I_PRED_8x8_DC_TOP] = predict_8x8_dc_top_c;
-    pf[I_PRED_8x8_DC_128] = predict_8x8_dc_128_c;
-    *predict_filter       = predict_8x8_filter_c;
-
-    x264_predict_8x8_init_mmx( cpu, pf, predict_filter );
-
+    x264_predict_8x8_init_mmx( pf, predict_filter );
 }
 
 void x264_predict_4x4_init( x264_predict_t pf[12] )
