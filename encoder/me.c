@@ -1035,8 +1035,6 @@ static ALWAYS_INLINE void me_refine_bidir( x264_t *h, x264_me_t *m0, x264_me_t *
     pixel *pix  = &h->mb.pic.p_fdec[0][8*x + 8*y*FDEC_STRIDE];
     pixel *pixu = &h->mb.pic.p_fdec[1][chroma_x + chroma_y*FDEC_STRIDE];
     pixel *pixv = &h->mb.pic.p_fdec[2][chroma_x + chroma_y*FDEC_STRIDE];
-    int ref0 = h->mb.cache.ref[0][s8];
-    int ref1 = h->mb.cache.ref[1][s8];
     const int mv0y_offset = 0;
     const int mv1y_offset = 0;
     intptr_t stride[3][2][9];

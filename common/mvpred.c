@@ -168,7 +168,6 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
     int partition_col[2] = { h->fref[1][0]->mb_partition[mb_xy], h->fref[1][0]->mb_partition[mb_xy] };
     int preshift = 0;
     int postshift = 0;
-    int offset = 1;
     int yshift = 1;
     h->mb.i_partition = partition_col[0];
     int i_mb_4x4 = 16 * h->mb.i_mb_stride * mb_y + 4 * mb_x;
@@ -362,11 +361,6 @@ static ALWAYS_INLINE int mb_predict_mv_direct16x16_spatial( x264_t *h, int b_int
     return 1;
 }
 
-
-static int mb_predict_mv_direct16x16_spatial_interlaced( x264_t *h )
-{
-    return mb_predict_mv_direct16x16_spatial( h, 1 );
-}
 
 static int mb_predict_mv_direct16x16_spatial_progressive( x264_t *h )
 {

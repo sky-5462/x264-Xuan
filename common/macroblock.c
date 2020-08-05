@@ -626,7 +626,6 @@ static const x264_left_table_t left_indices[4] =
 
 static ALWAYS_INLINE void macroblock_cache_load_neighbours( x264_t *h, int mb_x, int mb_y, int b_interlaced )
 {
-    const int mb_interlaced = 0;
     int top_y = mb_y - 1;
     int top = top_y * h->mb.i_mb_stride + mb_x;
 
