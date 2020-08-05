@@ -622,191 +622,8 @@ static int validate_parameters( x264_t *h, int b_open )
 
     if( h->param.i_avcintra_class )
     {
-        if( BIT_DEPTH != 10 )
-        {
-            x264_log( h, X264_LOG_ERROR, "%2d-bit AVC-Intra is not widely compatible\n", BIT_DEPTH );
-            x264_log( h, X264_LOG_ERROR, "10-bit x264 is required to encode AVC-Intra\n" );
-            return -1;
-        }
-
-        int type = h->param.i_avcintra_class == 200 ? 2 :
-                   h->param.i_avcintra_class == 100 ? 1 :
-                   h->param.i_avcintra_class == 50 ? 0 : -1;
-        if( type < 0 )
-        {
-            x264_log( h, X264_LOG_ERROR, "Invalid AVC-Intra class\n" );
-            return -1;
-        }
-
-        /* [50/100/200][res][fps] */
-        static const struct
-        {
-            uint16_t fps_num;
-            uint16_t fps_den;
-            uint8_t interlaced;
-            uint16_t frame_size;
-            const uint8_t *cqm_4ic;
-            const uint8_t *cqm_8iy;
-        } avcintra_lut[3][2][7] =
-        {
-            {{{ 60000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              {    50,    1, 0, 1100, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              { 30000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              {    25,    1, 0, 1100, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              { 24000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy }},
-             {{ 30000, 1001, 1, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_1080i_8iy },
-              {    25,    1, 1, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_1080i_8iy },
-              { 60000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              { 30000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              {    50,    1, 0, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              {    25,    1, 0, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
-              { 24000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy }}},
-            {{{ 60000, 1001, 0, 1848, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
-              {    50,    1, 0, 2224, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
-              { 30000, 1001, 0, 1848, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
-              {    25,    1, 0, 2224, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
-              { 24000, 1001, 0, 1848, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy }},
-             {{ 30000, 1001, 1, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
-              {    25,    1, 1, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
-              { 60000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              { 30000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              {    50,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              {    25,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              { 24000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}},
-            {{{ 60000, 1001, 0, 3724, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
-              {    50,    1, 0, 4472, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy }},
-             {{ 30000, 1001, 1, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
-              {    25,    1, 1, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
-              { 60000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              { 30000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              {    50,    1, 0, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              {    25,    1, 0, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              { 24000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}}
-        };
-
-        int res = -1;
-        if( i_csp >= X264_CSP_I420 && i_csp < X264_CSP_I422 && !type )
-        {
-            if(      h->param.i_width == 1440 && h->param.i_height == 1080 ) res =  1;
-            else if( h->param.i_width ==  960 && h->param.i_height ==  720 ) res =  0;
-        }
-        else if( i_csp >= X264_CSP_I422 && i_csp < X264_CSP_I444 && type )
-        {
-            if(      h->param.i_width == 1920 && h->param.i_height == 1080 ) res =  1;
-            else if( h->param.i_width == 1280 && h->param.i_height ==  720 ) res =  0;
-        }
-        else
-        {
-            x264_log( h, X264_LOG_ERROR, "Invalid colorspace for AVC-Intra %d\n", h->param.i_avcintra_class );
-            return -1;
-        }
-
-        if( res < 0 )
-        {
-            x264_log( h, X264_LOG_ERROR, "Resolution %dx%d invalid for AVC-Intra %d\n",
-                      h->param.i_width, h->param.i_height, h->param.i_avcintra_class );
-            return -1;
-        }
-
-        if( h->param.nalu_process )
-        {
-            x264_log( h, X264_LOG_ERROR, "nalu_process is not supported in AVC-Intra mode\n" );
-            return -1;
-        }
-
-        if( !h->param.b_repeat_headers )
-        {
-            x264_log( h, X264_LOG_ERROR, "Separate headers not supported in AVC-Intra mode\n" );
-            return -1;
-        }
-
-        int i;
-        uint32_t fps_num = h->param.i_fps_num, fps_den = h->param.i_fps_den;
-        x264_reduce_fraction( &fps_num, &fps_den );
-        for( i = 0; i < 7; i++ )
-        {
-            if( avcintra_lut[type][res][i].fps_num == fps_num &&
-                avcintra_lut[type][res][i].fps_den == fps_den &&
-                avcintra_lut[type][res][i].interlaced == 0 )
-            {
-                break;
-            }
-        }
-        if( i == 7 )
-        {
-            x264_log( h, X264_LOG_ERROR, "FPS %d/%d%c not compatible with AVC-Intra\n",
-                      h->param.i_fps_num, h->param.i_fps_den, 'p' );
-            return -1;
-        }
-
-        h->param.i_keyint_max = 1;
-        h->param.b_intra_refresh = 0;
-        h->param.analyse.i_weighted_pred = 0;
-        h->param.i_frame_reference = 1;
-        h->param.i_dpb_size = 1;
-
-        h->param.b_bluray_compat = 0;
-        h->param.b_vfr_input = 0;
-        h->param.b_aud = 1;
-        h->param.vui.i_chroma_loc = 0;
-        h->param.i_nal_hrd = X264_NAL_HRD_NONE;
-        h->param.b_deblocking_filter = 0;
-        h->param.b_stitchable = 1;
-        h->param.b_pic_struct = 0;
-        h->param.analyse.b_transform_8x8 = 1;
-        h->param.analyse.intra = X264_ANALYSE_I8x8;
-        h->param.analyse.i_chroma_qp_offset = res && type ? 3 : 4;
-        h->param.b_cabac = !type;
-        h->param.rc.i_vbv_buffer_size = avcintra_lut[type][res][i].frame_size;
-        h->param.rc.i_vbv_max_bitrate =
-        h->param.rc.i_bitrate = h->param.rc.i_vbv_buffer_size * fps_num / fps_den;
-        h->param.rc.i_rc_method = X264_RC_ABR;
-        h->param.rc.f_vbv_buffer_init = 1.0;
-        h->param.rc.b_filler = 1;
-        h->param.i_cqm_preset = X264_CQM_CUSTOM;
-        memcpy( h->param.cqm_4iy, x264_cqm_jvt4i, sizeof(h->param.cqm_4iy) );
-        memcpy( h->param.cqm_4ic, avcintra_lut[type][res][i].cqm_4ic, sizeof(h->param.cqm_4ic) );
-        memcpy( h->param.cqm_8iy, avcintra_lut[type][res][i].cqm_8iy, sizeof(h->param.cqm_8iy) );
-
-        /* Sony XAVC flavor much more simple */
-        if( h->param.i_avcintra_flavor == X264_AVCINTRA_FLAVOR_SONY )
-        {
-            h->param.i_slice_count = 8;
-            if( h->param.b_sliced_threads )
-                h->param.i_threads = h->param.i_slice_count;
-            /* Sony XAVC unlike AVC-Intra doesn't seem to have a QP floor */
-        }
-        else
-        {
-            /* Need exactly 10 slices of equal MB count... why?  $deity knows... */
-            h->param.i_slice_max_mbs = ((h->param.i_width + 15) / 16) * ((h->param.i_height + 15) / 16) / 10;
-            h->param.i_slice_max_size = 0;
-            /* The slice structure only allows a maximum of 2 threads for 1080i/p
-             * and 1 or 5 threads for 720p */
-            if( h->param.b_sliced_threads )
-            {
-                if( res )
-                    h->param.i_threads = X264_MIN( 2, h->param.i_threads );
-                else
-                {
-                    h->param.i_threads = X264_MIN( 5, h->param.i_threads );
-                    if( h->param.i_threads < 5 )
-                        h->param.i_threads = 1;
-                }
-            }
-
-            /* Official encoder doesn't appear to go under 13
-             * and Avid cannot handle negative QPs */
-            h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET + 1 );
-        }
-
-        if( type )
-            h->param.vui.i_sar_width = h->param.vui.i_sar_height = 1;
-        else
-        {
-            h->param.vui.i_sar_width  = 4;
-            h->param.vui.i_sar_height = 3;
-        }
+        x264_log( h, X264_LOG_ERROR, "8-bit AVC-Intra is not widely compatible\n" );
+        return -1;
     }
 
     h->param.rc.f_rf_constant = x264_clip3f( h->param.rc.f_rf_constant, -QP_BD_OFFSET, 51 );
@@ -1298,8 +1115,6 @@ static void chroma_dsp_init( x264_t *h )
             memcpy( h->predict_chroma, h->predict_8x8c, sizeof(h->predict_chroma) );
             h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_420;
             h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_420_intra;
-            h->loopf.deblock_chroma_mbaff = h->loopf.deblock_chroma_420_mbaff;
-            h->loopf.deblock_chroma_intra_mbaff = h->loopf.deblock_chroma_420_intra_mbaff;
             h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x8c;
             h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last4;
             h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run4;
@@ -1308,15 +1123,9 @@ static void chroma_dsp_init( x264_t *h )
             memcpy( h->predict_chroma, h->predict_8x16c, sizeof(h->predict_chroma) );
             h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_422;
             h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_422_intra;
-            h->loopf.deblock_chroma_mbaff = h->loopf.deblock_chroma_422_mbaff;
-            h->loopf.deblock_chroma_intra_mbaff = h->loopf.deblock_chroma_422_intra_mbaff;
             h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x16c;
             h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last8;
             h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run8;
-            break;
-        case CHROMA_444:
-            h->loopf.deblock_chroma_mbaff = h->loopf.deblock_luma_mbaff;
-            h->loopf.deblock_chroma_intra_mbaff = h->loopf.deblock_luma_intra_mbaff;
             break;
     }
 }
@@ -1485,12 +1294,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_rdo_init();
 
     /* init CPU functions */
-#if (ARCH_X86 || ARCH_X86_64) && HIGH_BIT_DEPTH
-    /* FIXME: Only 8-bit has been optimized for AVX-512 so far. The few AVX-512 functions
-     * enabled in high bit-depth are insignificant and just causes potential issues with
-     * unnecessary thermal throttling and whatnot, so keep it disabled for now. */
-    h->param.cpu &= ~X264_CPU_AVX512;
-#endif
     x264_predict_16x16_init( h->predict_16x16 );
     x264_predict_8x8c_init( h->predict_8x8c );
     x264_predict_8x16c_init( h->predict_8x16c );
@@ -1501,7 +1304,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_zigzag_init( &h->zigzagf );
     x264_mc_init( &h->mc );
     x264_quant_init( h, h->param.cpu, &h->quantf );
-    x264_deblock_init( h->param.cpu, &h->loopf, 0 );
+    x264_deblock_init( &h->loopf );
     x264_bitstream_init( h->param.cpu, &h->bsf );
     if( h->param.b_cabac )
         x264_cabac_init( h );
@@ -1669,8 +1472,8 @@ x264_t *x264_encoder_open( x264_param_t *param )
         strcpy( level, "1b" );
 
     static const char * const subsampling[4] = { "4:0:0", "4:2:0", "4:2:2", "4:4:4" };
-    x264_log( h, X264_LOG_INFO, "profile %s, level %s, %s, %d-bit\n",
-              profile, level, subsampling[CHROMA_FORMAT], BIT_DEPTH );
+    x264_log( h, X264_LOG_INFO, "profile %s, level %s, %s, 8-bit\n",
+              profile, level, subsampling[CHROMA_FORMAT] );
 
     return h;
 fail:
@@ -1985,12 +1788,6 @@ static int weighted_reference_duplicate( x264_t *h, int i_ref, const x264_weight
 
     //Duplication is only used in X264_WEIGHTP_SMART
     if( h->param.analyse.i_weighted_pred != X264_WEIGHTP_SMART )
-        return -1;
-
-    /* Duplication is a hack to compensate for crappy rounding in motion compensation.
-     * With high bit depth, it's not worth doing, so turn it off except in the case of
-     * unweighted dupes. */
-    if( BIT_DEPTH > 8 && w != x264_weight_none )
         return -1;
 
     newframe = x264_frame_pop_blank_unused( h );
@@ -3660,9 +3457,6 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
     pic_out->opaque = h->fenc->opaque;
 
     pic_out->img.i_csp = h->fdec->i_csp;
-#if HIGH_BIT_DEPTH
-    pic_out->img.i_csp |= X264_CSP_HIGH_DEPTH;
-#endif
     pic_out->img.i_plane = h->fdec->i_plane;
     for( int i = 0; i < pic_out->img.i_plane; i++ )
     {

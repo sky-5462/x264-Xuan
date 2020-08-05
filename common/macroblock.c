@@ -1086,72 +1086,6 @@ void x264_macroblock_cache_load_progressive( x264_t *h, int mb_x, int mb_y )
     macroblock_cache_load( h, mb_x, mb_y, 0 );
 }
 
-static void macroblock_deblock_strength_mbaff( x264_t *h, uint8_t (*bs)[8][4] )
-{
-    if( (h->mb.i_neighbour & MB_LEFT) && h->mb.field[h->mb.i_mb_left_xy[0]] != 0 )
-    {
-        static const uint8_t offset[2][2][8] =
-        {   {   { 0, 0, 0, 0, 1, 1, 1, 1 },
-                { 2, 2, 2, 2, 3, 3, 3, 3 }, },
-            {   { 0, 1, 2, 3, 0, 1, 2, 3 },
-                { 0, 1, 2, 3, 0, 1, 2, 3 }, }
-        };
-        ALIGNED_ARRAY_8( uint8_t, tmpbs, [8] );
-
-        const uint8_t *off = offset[0][h->mb.i_mb_y&1];
-        uint8_t (*nnz)[48] = h->mb.non_zero_count;
-
-        for( int i = 0; i < 8; i++ )
-        {
-            int left = h->mb.i_mb_left_xy[i&1];
-            int nnz_this = h->mb.cache.non_zero_count[x264_scan8[0]+8*(i>>1)];
-            int nnz_left = nnz[left][3 + 4*off[i]];
-            if( !h->param.b_cabac && h->pps->b_transform_8x8_mode )
-            {
-                int j = off[i]&~1;
-                if( h->mb.mb_transform_size[left] )
-                    nnz_left = !!(M16( &nnz[left][2+4*j] ) | M16( &nnz[left][2+4*(1+j)] ));
-            }
-            tmpbs[i] = (nnz_left || nnz_this) ? 2 : 1;
-        }
-
-        for( int i = 0; i < 4; i++ ) bs[0][0][i] = tmpbs[2*i];
-        for( int i = 0; i < 4; i++ ) bs[0][4][i] = tmpbs[1+2*i];
-    }
-
-    if( (h->mb.i_neighbour & MB_TOP) && 0 != h->mb.field[h->mb.i_mb_top_xy] )
-    {
-        if( !(h->mb.i_mb_y&1) )
-        {
-            /* Need to filter both fields (even for frame macroblocks).
-             * Filter top two rows using the top macroblock of the above
-             * pair and then the bottom one. */
-            int mbn_xy = h->mb.i_mb_xy - 2 * h->mb.i_mb_stride;
-            uint8_t *nnz_cur = &h->mb.cache.non_zero_count[x264_scan8[0]];
-
-            for( int j = 0; j < 2; j++, mbn_xy += h->mb.i_mb_stride )
-            {
-                uint8_t (*nnz)[48] = h->mb.non_zero_count;
-
-                ALIGNED_4( uint8_t nnz_top[4] );
-                CP32( nnz_top, &nnz[mbn_xy][3*4] );
-
-                if( !h->param.b_cabac && h->pps->b_transform_8x8_mode && h->mb.mb_transform_size[mbn_xy] )
-                {
-                    nnz_top[0] = nnz_top[1] = M16( &nnz[mbn_xy][ 8] ) || M16( &nnz[mbn_xy][12] );
-                    nnz_top[2] = nnz_top[3] = M16( &nnz[mbn_xy][10] ) || M16( &nnz[mbn_xy][14] );
-                }
-
-                for( int i = 0; i < 4; i++ )
-                    bs[1][4*j][i] = (nnz_cur[i] || nnz_top[i]) ? 2 : 1;
-            }
-        }
-        else
-            for( int i = 0; i < 4; i++ )
-                bs[1][0][i] = X264_MAX( bs[1][0][i], 1 );
-    }
-}
-
 void x264_macroblock_deblock_strength( x264_t *h )
 {
     uint8_t (*bs)[8][4] = h->mb.cache.deblock_strength;
@@ -1321,7 +1255,7 @@ void x264_macroblock_deblock_strength( x264_t *h )
     }
 
     h->loopf.deblock_strength( h->mb.cache.non_zero_count, h->mb.cache.ref, h->mb.cache.mv,
-                               bs, 4, h->sh.i_type == SLICE_TYPE_B );
+                               bs, h->sh.i_type == SLICE_TYPE_B );
 }
 
 static ALWAYS_INLINE void macroblock_store_pic( x264_t *h, int mb_x, int mb_y, int i, int b_chroma, int b_mbaff )

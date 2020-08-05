@@ -1928,6 +1928,8 @@ static int check_deblock( int cpu_ref, int cpu_new )
 #define TEST_DEBLOCK( name, align, ... ) \
     for( int i = 0; i < 36; i++ ) \
     { \
+        if (!alphas[i] || !betas[i]) \
+            continue; \
         intptr_t off = 8*32 + (i&15)*4*!align; /* benchmark various alignments of h filter */ \
         for( int j = 0; j < 1024; j++ ) \
             /* two distributions of random to excersize different failure modes */ \
@@ -1954,15 +1956,11 @@ static int check_deblock( int cpu_ref, int cpu_new )
     TEST_DEBLOCK( deblock_luma[1], 1, tcs[i] );
     TEST_DEBLOCK( deblock_h_chroma_420, 0, tcs[i] );
     TEST_DEBLOCK( deblock_h_chroma_422, 0, tcs[i] );
-    TEST_DEBLOCK( deblock_chroma_420_mbaff, 0, tcs[i] );
-    TEST_DEBLOCK( deblock_chroma_422_mbaff, 0, tcs[i] );
     TEST_DEBLOCK( deblock_chroma[1], 1, tcs[i] );
     TEST_DEBLOCK( deblock_luma_intra[0], 0 );
     TEST_DEBLOCK( deblock_luma_intra[1], 1 );
     TEST_DEBLOCK( deblock_h_chroma_420_intra, 0 );
     TEST_DEBLOCK( deblock_h_chroma_422_intra, 0 );
-    TEST_DEBLOCK( deblock_chroma_420_intra_mbaff, 0 );
-    TEST_DEBLOCK( deblock_chroma_422_intra_mbaff, 0 );
     TEST_DEBLOCK( deblock_chroma_intra[1], 1 );
 
     if( db_a.deblock_strength != db_ref.deblock_strength )
@@ -1986,8 +1984,8 @@ static int check_deblock( int cpu_ref, int cpu_new )
                     for( int l = 0; l < 2; l++ )
                         mv[j][k][l] = ((rand()&7) != 7) ? (rand()&7) - 3 : (rand()&16383) - 8192;
                 }
-            call_c( db_c.deblock_strength, nnz, ref, mv, bs[0], 2<<(i&1), ((i>>1)&1) );
-            call_a( db_a.deblock_strength, nnz, ref, mv, bs[1], 2<<(i&1), ((i>>1)&1) );
+            call_c( db_c.deblock_strength, nnz, ref, mv, bs[0], 4, ((i>>1)&1) );
+            call_a( db_a.deblock_strength, nnz, ref, mv, bs[1], 4, ((i>>1)&1) );
             if( memcmp( bs[0], bs[1], sizeof(uint8_t)*2*4*8 ) )
             {
                 ok = 0;
