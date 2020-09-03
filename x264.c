@@ -1165,7 +1165,6 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
     int b_turbo = 1;
     int b_user_ref = 0;
     int b_user_fps = 0;
-    int b_user_interlaced = 0;
     cli_input_opt_t input_opt;
     cli_output_opt_t output_opt;
     char *preset = NULL;
@@ -1394,13 +1393,13 @@ generic_option:
     info.fps_num    = param->i_fps_num;
     info.fps_den    = param->i_fps_den;
     info.fullrange  = input_opt.input_range == RANGE_PC;
-    info.interlaced = param->b_interlaced;
+    info.interlaced = 0;
     if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
     {
         info.sar_width  = param->vui.i_sar_width;
         info.sar_height = param->vui.i_sar_height;
     }
-    info.tff        = param->b_tff;
+    info.tff        = 1;
     info.vfr        = param->b_vfr_input;
 
     input_opt.seek = opt->i_seek;
@@ -1434,10 +1433,8 @@ generic_option:
     /* init threaded input while the information about the input video is unaltered by filtering */
 #if HAVE_THREAD
     const cli_input_t *thread_input;
-    if( /*HAVE_BITDEPTH8 &&*/ param->i_bitdepth == 8 )
+    if( param->i_bitdepth == 8 )
         thread_input = &thread_8_input;
-    // else if( HAVE_BITDEPTH10 && param->i_bitdepth == 10 )
-    //     thread_input = &thread_10_input;
     else
         thread_input = NULL;
 
@@ -1488,11 +1485,6 @@ generic_option:
         info.timebase_den = i_user_timebase_den;
         info.vfr = 1;
     }
-    if( b_user_interlaced )
-    {
-        info.interlaced = param->b_interlaced;
-        info.tff = param->b_tff;
-    }
     if( input_opt.input_range != RANGE_AUTO )
         info.fullrange = input_opt.input_range;
 
@@ -1514,7 +1506,7 @@ generic_option:
         info.num_frames = param->i_frame_total;
     param->i_frame_total = info.num_frames;
 
-    if( !b_user_interlaced && info.interlaced )
+    if( info.interlaced )
     {
         x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, but not compiled with interlaced support\n" );
     }

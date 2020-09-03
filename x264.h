@@ -352,7 +352,6 @@ typedef struct x264_param_t
     int         i_deblocking_filter_alphac0;    /* [-6, 6] -6 light filter, 6 strong */
     int         i_deblocking_filter_beta;       /* [-6, 6]  idem */
 
-    int         b_interlaced;
     int         b_constrained_intra;
 
     /* Log */
@@ -473,8 +472,6 @@ typedef struct x264_param_t
     uint32_t i_timebase_num;    /* Timebase numerator */
     uint32_t i_timebase_den;    /* Timebase denominator */
 
-    int b_tff;
-
     /* Pulldown:
      * The correct pic_struct must be passed with each input frame.
      * The input timebase should be the timebase corresponding to the output framerate. This should be constant.
@@ -486,14 +483,6 @@ typedef struct x264_param_t
      */
 
     int b_pic_struct;
-
-    /* Fake Interlaced.
-     *
-     * Used only when b_interlaced=0. Setting this flag makes it possible to flag the stream as PAFF interlaced yet
-     * encode all frames progessively. It is useful for encoding 25p and 30p Blu-Ray streams.
-     */
-
-    int b_fake_interlaced;
 
     /* Don't optimize header parameters based on video content, e.g. ensure that splitting an input video, compressing
      * each part, and stitching them back together will result in identical SPS/PPS. This is necessary for stitching

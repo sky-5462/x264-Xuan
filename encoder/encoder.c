@@ -135,10 +135,6 @@ static void slice_header_init( x264_t *h, x264_slice_header_t *sh,
 
     sh->i_frame_num = i_frame;
 
-    sh->b_mbaff = 0;
-    sh->b_field_pic = 0;    /* no field support for now */
-    sh->b_bottom_field = 0; /* not yet used */
-
     sh->i_idr_pic_id = i_idr_pic_id;
 
     /* poc stuff, fixed later */
@@ -210,26 +206,11 @@ static void slice_header_init( x264_t *h, x264_slice_header_t *sh,
 
 static void slice_header_write( bs_t *s, x264_slice_header_t *sh, int i_nal_ref_idc )
 {
-    if( sh->b_mbaff )
-    {
-        int first_x = sh->i_first_mb % sh->sps->i_mb_width;
-        int first_y = sh->i_first_mb / sh->sps->i_mb_width;
-        assert( (first_y&1) == 0 );
-        bs_write_ue( s, (2*first_x + sh->sps->i_mb_width*(first_y&~1) + (first_y&1)) >> 1 );
-    }
-    else
-        bs_write_ue( s, sh->i_first_mb );
+    bs_write_ue( s, sh->i_first_mb );
 
     bs_write_ue( s, sh->i_type + 5 );   /* same type things */
     bs_write_ue( s, sh->i_pps_id );
     bs_write( s, sh->sps->i_log2_max_frame_num, sh->i_frame_num & ((1<<sh->sps->i_log2_max_frame_num)-1) );
-
-    if( !sh->sps->b_frame_mbs_only )
-    {
-        bs_write1( s, sh->b_field_pic );
-        if( sh->b_field_pic )
-            bs_write1( s, sh->b_bottom_field );
-    }
 
     if( sh->i_idr_pic_id >= 0 ) /* NAL IDR */
         bs_write_ue( s, sh->i_idr_pic_id );
@@ -237,8 +218,6 @@ static void slice_header_write( bs_t *s, x264_slice_header_t *sh, int i_nal_ref_
     if( sh->sps->i_poc_type == 0 )
     {
         bs_write( s, sh->sps->i_log2_max_poc_lsb, sh->i_poc & ((1<<sh->sps->i_log2_max_poc_lsb)-1) );
-        if( sh->pps->b_pic_order && !sh->b_field_pic )
-            bs_write_se( s, sh->i_delta_poc_bottom );
     }
 
     if( sh->pps->b_redundant_pic_cnt )
@@ -458,12 +437,6 @@ static int validate_parameters( x264_t *h, int b_open )
         }
     }
 
-    if( h->param.b_interlaced )
-    {
-        x264_log( h, X264_LOG_ERROR, "not compiled with interlaced support\n" );
-        return -1;
-    }
-
 #define MAX_RESOLUTION 16384
     if( h->param.i_width <= 0 || h->param.i_height <= 0 ||
         h->param.i_width > MAX_RESOLUTION || h->param.i_height > MAX_RESOLUTION )
@@ -482,7 +455,7 @@ static int validate_parameters( x264_t *h, int b_open )
     }
 
     int w_mod = 1;
-    int h_mod = 1 << (h->param.b_fake_interlaced);
+    int h_mod = 1;
     if( i_csp == X264_CSP_I400 )
     {
         h->param.analyse.i_chroma_qp_offset = 0;
@@ -1205,11 +1178,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
 
     h->mb.chroma_h_shift = CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422;
     h->mb.chroma_v_shift = CHROMA_FORMAT == CHROMA_420;
-
-    /* Adaptive MBAFF and subme 0 are not supported as we require halving motion
-     * vectors during prediction, resulting in hpel mvs.
-     * The chosen solution is to make MBAFF non-adaptive in this case. */
-    h->mb.b_adaptive_mbaff = 0;
 
     /* Init frames. */
     if( h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS && !h->param.rc.b_stat_read )

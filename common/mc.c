@@ -61,9 +61,8 @@ void x264_mc_init( x264_mc_functions_t *pf )
 
 void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
 {
-    const int b_interlaced = 0;
     int start = mb_y*16 - 8; // buffer = 4 for deblock + 3 for 6tap, rounded to 8
-    int height = (b_end ? frame->i_lines[0] : (mb_y+b_interlaced)*16) + 8;
+    int height = (b_end ? frame->i_lines[0] : mb_y*16) + 8;
 
     for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
     {

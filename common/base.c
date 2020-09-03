@@ -321,7 +321,6 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->i_bframe_adaptive = X264_B_ADAPT_FAST;
     param->i_bframe_bias = 0;
     param->i_bframe_pyramid = X264_B_PYRAMID_NORMAL;
-    param->b_interlaced = 0;
     param->b_constrained_intra = 0;
 
     param->b_deblocking_filter = 1;
@@ -392,9 +391,7 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->b_aud = 0;
     param->b_vfr_input = 1;
     param->i_nal_hrd = X264_NAL_HRD_NONE;
-    param->b_tff = 1;
     param->b_pic_struct = 0;
-    param->b_fake_interlaced = 0;
     param->i_frame_packing = -1;
     param->i_alternative_transfer = 2; /* undef */
     param->i_avcintra_class = 0;

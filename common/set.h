@@ -64,8 +64,6 @@ typedef struct
     int b_gaps_in_frame_num_value_allowed;
     int i_mb_width;
     int i_mb_height;
-    int b_frame_mbs_only;
-    int b_mb_adaptive_frame_field;
     int b_direct8x8_inference;
 
     int b_crop;
@@ -151,7 +149,6 @@ typedef struct
     int i_id;
     int i_sps_id;
 
-    int b_pic_order;
     int i_num_slice_groups;
 
     int i_num_ref_idx_l0_default_active;

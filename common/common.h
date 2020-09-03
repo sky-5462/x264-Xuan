@@ -131,10 +131,6 @@ typedef struct
 
     int i_frame_num;
 
-    int b_mbaff;
-    int b_field_pic;
-    int b_bottom_field;
-
     int i_idr_pic_id;   /* -1 if nal_type != 5 */
 
     int i_poc;
@@ -429,9 +425,6 @@ struct x264_t
         int     b_dct_decimate;
         int     i_psy_rd; /* Psy RD strength--fixed point value*/
         int     i_psy_trellis; /* Psy trellis strength--fixed point value*/
-
-        int     b_interlaced;
-        int     b_adaptive_mbaff; /* MBAFF+subme 0 requires non-adaptive MBAFF i.e. all field mbs */
 
         /* Allowed qpel MV range to stay within the picture + emulated edge pixels */
         int     mv_min[2];

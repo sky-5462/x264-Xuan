@@ -2610,7 +2610,6 @@ static int check_cabac( int cpu_ref, int cpu_new )
                             nz |= dct[0][ac+k] = dct[1][ac+k] = coef * ((rand()&1) ? 1 : -1);\
                         }\
                     }\
-                    h.mb.b_interlaced = i;\
                     x264_cabac_t cb[2];\
                     x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26, 0 );\
                     x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26, 0 );\

@@ -115,7 +115,6 @@ static ALWAYS_INLINE void macroblock_cache_load_neighbours_deblock( x264_t *h, i
 
     h->mb.i_neighbour = 0;
     h->mb.i_mb_xy = mb_y * h->mb.i_mb_stride + mb_x;
-    h->mb.b_interlaced = 0;
     h->mb.i_mb_top_y = mb_y - 1;
     h->mb.i_mb_top_xy = mb_x + h->mb.i_mb_stride*h->mb.i_mb_top_y;
     h->mb.i_mb_left_xy[1] =
@@ -131,7 +130,6 @@ static ALWAYS_INLINE void macroblock_cache_load_neighbours_deblock( x264_t *h, i
 
 void x264_frame_deblock_row( x264_t *h, int mb_y )
 {
-    int b_interlaced = 0;
     int a = h->sh.i_alpha_c0_offset - QP_BD_OFFSET;
     int b = h->sh.i_beta_offset - QP_BD_OFFSET;
     int qp_thresh = 15 - X264_MIN( a, b ) - X264_MAX( 0, h->pps->i_chroma_qp_index_offset );
@@ -142,7 +140,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
     int chroma_height = 16 >> CHROMA_V_SHIFT;
     intptr_t uvdiff = chroma444 ? h->fdec->plane[2] - h->fdec->plane[1] : 1;
 
-    for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x += (~b_interlaced | mb_y)&1, mb_y ^= b_interlaced )
+    for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x++ )
     {
         macroblock_cache_load_neighbours_deblock( h, mb_x, mb_y );
 

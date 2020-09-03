@@ -68,9 +68,6 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->i_id = i_id;
     sps->i_mb_width = ( param->i_width + 15 ) / 16;
     sps->i_mb_height= ( param->i_height + 15 ) / 16;
-    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced);
-    if( !sps->b_frame_mbs_only )
-        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
     sps->i_chroma_format_idc = csp >= X264_CSP_I444 ? CHROMA_444 :
                                csp >= X264_CSP_I422 ? CHROMA_422 :
                                csp >= X264_CSP_I420 ? CHROMA_420 : CHROMA_400;
@@ -129,7 +126,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     while( (1 << sps->i_log2_max_frame_num) <= max_frame_num )
         sps->i_log2_max_frame_num++;
 
-    sps->i_poc_type = param->i_bframe || param->b_interlaced || param->i_avcintra_class ? 0 : 2;
+    sps->i_poc_type = param->i_bframe || param->i_avcintra_class ? 0 : 2;
     if( sps->i_poc_type == 0 )
     {
         int max_delta_poc = (param->i_bframe + 2) * (!!param->i_bframe_pyramid + 1) * 2;
@@ -141,7 +138,6 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->b_vui = 1;
 
     sps->b_gaps_in_frame_num_value_allowed = 0;
-    sps->b_mb_adaptive_frame_field = param->b_interlaced;
     sps->b_direct8x8_inference = 1;
 
     x264_sps_init_reconfigurable( sps, param );
@@ -279,17 +275,15 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     bs_write_ue( s, sps->i_num_ref_frames );
     bs_write1( s, sps->b_gaps_in_frame_num_value_allowed );
     bs_write_ue( s, sps->i_mb_width - 1 );
-    bs_write_ue( s, (sps->i_mb_height >> !sps->b_frame_mbs_only) - 1);
-    bs_write1( s, sps->b_frame_mbs_only );
-    if( !sps->b_frame_mbs_only )
-        bs_write1( s, sps->b_mb_adaptive_frame_field );
+    bs_write_ue( s, sps->i_mb_height - 1);
+    bs_write1( s, 1 );
     bs_write1( s, sps->b_direct8x8_inference );
 
     bs_write1( s, sps->b_crop );
     if( sps->b_crop )
     {
         int h_shift = sps->i_chroma_format_idc == CHROMA_420 || sps->i_chroma_format_idc == CHROMA_422;
-        int v_shift = (sps->i_chroma_format_idc == CHROMA_420) + !sps->b_frame_mbs_only;
+        int v_shift = (sps->i_chroma_format_idc == CHROMA_420);
         bs_write_ue( s, sps->crop.i_left   >> h_shift );
         bs_write_ue( s, sps->crop.i_right  >> h_shift );
         bs_write_ue( s, sps->crop.i_top    >> v_shift );
@@ -406,7 +400,6 @@ void x264_pps_init( x264_pps_t *pps, int i_id, x264_param_t *param, x264_sps_t *
     pps->i_id = i_id;
     pps->i_sps_id = sps->i_id;
 
-    pps->b_pic_order = !param->i_avcintra_class && param->b_interlaced;
     pps->i_num_slice_groups = 1;
 
     pps->i_num_ref_idx_l0_default_active = param->i_frame_reference;
@@ -433,7 +426,7 @@ void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
     bs_write_ue( s, pps->i_sps_id );
 
     bs_write1( s, 1 );
-    bs_write1( s, pps->b_pic_order );
+    bs_write1( s, 0 );
     bs_write_ue( s, pps->i_num_slice_groups - 1 );
 
     bs_write_ue( s, pps->i_num_ref_idx_l0_default_active - 1 );
@@ -646,8 +639,6 @@ void x264_sei_dec_ref_pic_marking_write( x264_t *h, bs_t *s )
     /* We currently only use this for repeating B-refs, as required by Blu-ray. */
     bs_write1( &q, 0 );                 //original_idr_flag
     bs_write_ue( &q, sh->i_frame_num ); //original_frame_num
-    if( !h->sps->b_frame_mbs_only )
-        bs_write1( &q, 0 );             //original_field_pic_flag
 
     bs_write1( &q, sh->i_mmco_command_count > 0 );
     if( sh->i_mmco_command_count > 0 )
@@ -748,8 +739,6 @@ int x264_validate_levels( x264_t *h, int verbose )
     CHECK( "VBV bitrate", (l->bitrate * cbp_factor) / 4, h->param.rc.i_vbv_max_bitrate );
     CHECK( "VBV buffer", (l->cpb * cbp_factor) / 4, h->param.rc.i_vbv_buffer_size );
     CHECK( "MV range", l->mv_range, h->param.analyse.i_mv_range );
-    CHECK( "interlaced", !l->frame_only, h->param.b_interlaced );
-    CHECK( "fake interlaced", !l->frame_only, h->param.b_fake_interlaced );
 
     if( h->param.i_fps_den > 0 )
         CHECK( "MB rate", l->mbps, (int64_t)mbs * h->param.i_fps_num / h->param.i_fps_den );
