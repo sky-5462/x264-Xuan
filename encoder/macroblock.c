@@ -178,7 +178,7 @@ static void mb_encode_i16x16( x264_t *h, int p, int i_qp )
             {
                 block_cbp = 0xf;
                 h->zigzagf.scan_4x4( h->dct.luma4x4[16*p+idx], dct4x4[idx] );
-                h->quantf.dequant_4x4( dct4x4[idx], h->dequant4_mf[i_quant_cat], i_qp );
+                h->quantf.dequant_4x4( dct4x4[idx], i_qp );
                 if( decimate_score < 6 ) decimate_score += h->quantf.decimate_score15( h->dct.luma4x4[16*p+idx] );
                 h->mb.cache.non_zero_count[x264_scan8[16*p+idx]] = 1;
             }
@@ -194,7 +194,7 @@ static void mb_encode_i16x16( x264_t *h, int p, int i_qp )
                 FOREACH_BIT( idx, i8x8*4, nz )
                 {
                     h->zigzagf.scan_4x4( h->dct.luma4x4[16*p+idx], dct4x4[idx] );
-                    h->quantf.dequant_4x4( dct4x4[idx], h->dequant4_mf[i_quant_cat], i_qp );
+                    h->quantf.dequant_4x4( dct4x4[idx], i_qp );
                     if( decimate_score < 6 ) decimate_score += h->quantf.decimate_score15( h->dct.luma4x4[16*p+idx] );
                     h->mb.cache.non_zero_count[x264_scan8[16*p+idx]] = 1;
                 }
@@ -225,7 +225,7 @@ static void mb_encode_i16x16( x264_t *h, int p, int i_qp )
 
         /* output samples to fdec */
         h->dctf.idct4x4dc( dct_dc4x4 );
-        h->quantf.dequant_4x4_dc( dct_dc4x4, h->dequant4_mf[i_quant_cat], i_qp );  /* XXX not inversed */
+        h->quantf.dequant_4x4_dc( dct_dc4x4, i_qp );  /* XXX not inversed */
         if( block_cbp )
             for( int i = 0; i < 16; i++ )
                 dct4x4[i][0] = dct_dc4x4[block_idx_xy_1d[i]];
@@ -242,9 +242,10 @@ static void mb_encode_i16x16( x264_t *h, int p, int i_qp )
  * Unlike luma blocks, this can't be done with a lookup table or
  * other shortcut technique because of the interdependencies
  * between the coefficients due to the chroma DC transform. */
-static ALWAYS_INLINE int mb_optimize_chroma_dc( x264_t *h, dctcoef *dct_dc, int dequant_mf[6][16], int i_qp, int chroma422 )
+static ALWAYS_INLINE int mb_optimize_chroma_dc( x264_t *h, dctcoef *dct_dc, int i_qp, int chroma422 )
 {
-    int dmf = dequant_mf[i_qp%6][0] << i_qp/6;
+    static const int dequant_mf_table[6] = { 160, 176, 208, 224, 256, 288 };
+    int dmf = dequant_mf_table[i_qp%6] << i_qp/6;
 
     /* If the QP is too high, there's no benefit to rounding optimization. */
     if( dmf > 32*64 )
@@ -316,13 +317,13 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
 
                     if( nz_dc )
                     {
-                        if( !mb_optimize_chroma_dc( h, dct_dc, dequant_mf, i_qp+3*chroma422, chroma422 ) )
+                        if( !mb_optimize_chroma_dc( h, dct_dc, i_qp+3*chroma422, chroma422 ) )
                             continue;
                         h->mb.cache.non_zero_count[x264_scan8[CHROMA_DC+ch]] = 1;
                         if( chroma422 )
                         {
                             zigzag_scan_2x4_dc( h->dct.chroma_dc[ch], dct_dc );
-                            h->quantf.idct_dequant_2x4_dconly( dct_dc, dequant_mf, i_qp+3 );
+                            h->quantf.idct_dequant_2x4_dconly( dct_dc, i_qp+3 );
                         }
                         else
                         {
@@ -389,7 +390,7 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
                     {
                         int idx = 16+ch*16+i8x8*8+i4x4;
                         h->zigzagf.scan_4x4( h->dct.luma4x4[idx], dct4x4[i8x8*4+i4x4] );
-                        h->quantf.dequant_4x4( dct4x4[i8x8*4+i4x4], dequant_mf, i_qp );
+                        h->quantf.dequant_4x4( dct4x4[i8x8*4+i4x4], i_qp );
                         if( i_decimate_score < 7 )
                             i_decimate_score += h->quantf.decimate_score15( h->dct.luma4x4[idx] );
                         h->mb.cache.non_zero_count[x264_scan8[idx]] = 1;
@@ -408,7 +409,7 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
                     int idx = 16+ch*16+i8x8*8+i4x4;
 
                     h->zigzagf.scan_4x4( h->dct.luma4x4[idx], dct4x4[i8x8*4+i4x4] );
-                    h->quantf.dequant_4x4( dct4x4[i8x8*4+i4x4], dequant_mf, i_qp );
+                    h->quantf.dequant_4x4( dct4x4[i8x8*4+i4x4], i_qp );
                     if( i_decimate_score < 7 )
                         i_decimate_score += h->quantf.decimate_score15( h->dct.luma4x4[idx] );
                     h->mb.cache.non_zero_count[x264_scan8[idx]] = 1;
@@ -441,7 +442,7 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
 
             if( !nz_dc ) /* Whole block is empty */
                 continue;
-            if( !mb_optimize_chroma_dc( h, dct_dc, dequant_mf, i_qp+3*chroma422, chroma422 ) )
+            if( !mb_optimize_chroma_dc( h, dct_dc, i_qp+3*chroma422, chroma422 ) )
             {
                 h->mb.cache.non_zero_count[x264_scan8[CHROMA_DC+ch]] = 0;
                 continue;
@@ -450,7 +451,7 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
             if( chroma422 )
             {
                 zigzag_scan_2x4_dc( h->dct.chroma_dc[ch], dct_dc );
-                h->quantf.idct_dequant_2x4_dconly( dct_dc, dequant_mf, i_qp+3 );
+                h->quantf.idct_dequant_2x4_dconly( dct_dc, i_qp+3 );
             }
             else
             {
@@ -470,7 +471,7 @@ static ALWAYS_INLINE void mb_encode_chroma_internal( x264_t *h, int b_inter, int
                 if( chroma422 )
                 {
                     zigzag_scan_2x4_dc( h->dct.chroma_dc[ch], dct_dc );
-                    h->quantf.idct_dequant_2x4_dc( dct_dc, dct4x4, dequant_mf, i_qp+3 );
+                    h->quantf.idct_dequant_2x4_dc( dct_dc, dct4x4, i_qp+3 );
                 }
                 else
                 {
@@ -835,7 +836,7 @@ static ALWAYS_INLINE void macroblock_encode_internal( x264_t *h, int plane_count
                     h->mb.i_cbp_luma |= plane_cbp;
                     FOREACH_BIT( idx, 0, plane_cbp )
                     {
-                        h->quantf.dequant_8x8( dct8x8[idx], h->dequant8_mf[quant_cat], i_qp );
+                        h->quantf.dequant_8x8( dct8x8[idx], i_qp );
                         h->dctf.add8x8_idct8( &h->mb.pic.p_fdec[p][8*(idx&1) + 8*(idx>>1)*FDEC_STRIDE], dct8x8[idx] );
                         STORE_8x8_NNZ( p, idx, 1 );
                     }
@@ -871,7 +872,7 @@ static ALWAYS_INLINE void macroblock_encode_internal( x264_t *h, int plane_count
                             if( x264_quant_4x4_trellis( h, dct4x4[idx], quant_cat, i_qp, ctx_cat_plane[DCT_LUMA_4x4][p], 0, !!p, p*16+idx ) )
                             {
                                 h->zigzagf.scan_4x4( h->dct.luma4x4[p*16+idx], dct4x4[idx] );
-                                h->quantf.dequant_4x4( dct4x4[idx], h->dequant4_mf[quant_cat], i_qp );
+                                h->quantf.dequant_4x4( dct4x4[idx], i_qp );
                                 if( i_decimate_8x8 < 6 )
                                     i_decimate_8x8 += h->quantf.decimate_score16( h->dct.luma4x4[p*16+idx] );
                                 h->mb.cache.non_zero_count[x264_scan8[p*16+idx]] = 1;
@@ -887,7 +888,7 @@ static ALWAYS_INLINE void macroblock_encode_internal( x264_t *h, int plane_count
                             FOREACH_BIT( idx, i8x8*4, nz )
                             {
                                 h->zigzagf.scan_4x4( h->dct.luma4x4[p*16+idx], dct4x4[idx] );
-                                h->quantf.dequant_4x4( dct4x4[idx], h->dequant4_mf[quant_cat], i_qp );
+                                h->quantf.dequant_4x4( dct4x4[idx], i_qp );
                                 if( i_decimate_8x8 < 6 )
                                     i_decimate_8x8 += h->quantf.decimate_score16( h->dct.luma4x4[p*16+idx] );
                                 h->mb.cache.non_zero_count[x264_scan8[p*16+idx]] = 1;
@@ -1256,7 +1257,7 @@ static ALWAYS_INLINE void macroblock_encode_p8x8_internal( x264_t *h, int i8, in
 
                     if( nnz8x8 )
                     {
-                        h->quantf.dequant_8x8( dct8x8, h->dequant8_mf[quant_cat], i_qp );
+                        h->quantf.dequant_8x8( dct8x8, i_qp );
                         h->dctf.add8x8_idct8( p_fdec, dct8x8 );
                         STORE_8x8_NNZ( p, i8, 1 );
                         h->mb.i_cbp_luma |= 1 << i8;
@@ -1293,7 +1294,7 @@ static ALWAYS_INLINE void macroblock_encode_p8x8_internal( x264_t *h, int i8, in
                         if( x264_quant_4x4_trellis( h, dct4x4[i4x4], quant_cat, i_qp, ctx_cat_plane[DCT_LUMA_4x4][p], 0, !!p, i8*4+i4x4+p*16 ) )
                         {
                             h->zigzagf.scan_4x4( h->dct.luma4x4[p*16+i8*4+i4x4], dct4x4[i4x4] );
-                            h->quantf.dequant_4x4( dct4x4[i4x4], h->dequant4_mf[quant_cat], i_qp );
+                            h->quantf.dequant_4x4( dct4x4[i4x4], i_qp );
                             if( i_decimate_8x8 < 4 )
                                 i_decimate_8x8 += h->quantf.decimate_score16( h->dct.luma4x4[p*16+i8*4+i4x4] );
                             h->mb.cache.non_zero_count[x264_scan8[p*16+i8*4+i4x4]] = 1;
@@ -1309,7 +1310,7 @@ static ALWAYS_INLINE void macroblock_encode_p8x8_internal( x264_t *h, int i8, in
                         FOREACH_BIT( i4x4, 0, nz )
                         {
                             h->zigzagf.scan_4x4( h->dct.luma4x4[p*16+i8*4+i4x4], dct4x4[i4x4] );
-                            h->quantf.dequant_4x4( dct4x4[i4x4], h->dequant4_mf[quant_cat], i_qp );
+                            h->quantf.dequant_4x4( dct4x4[i4x4], i_qp );
                             if( i_decimate_8x8 < 4 )
                                 i_decimate_8x8 += h->quantf.decimate_score16( h->dct.luma4x4[p*16+i8*4+i4x4] );
                             h->mb.cache.non_zero_count[x264_scan8[p*16+i8*4+i4x4]] = 1;
@@ -1357,7 +1358,7 @@ static ALWAYS_INLINE void macroblock_encode_p8x8_internal( x264_t *h, int i8, in
                     if( nz )
                     {
                         h->zigzagf.scan_4x4( h->dct.luma4x4[16+offset+ch*16], dct4x4[i4x4] );
-                        h->quantf.dequant_4x4( dct4x4[i4x4], h->dequant4_mf[CQM_4PC], i_qp );
+                        h->quantf.dequant_4x4( dct4x4[i4x4], i_qp );
                         h->dctf.add4x4_idct( p_fdec + 4*i4x4*FDEC_STRIDE, dct4x4[i4x4] );
                     }
                 }
@@ -1409,7 +1410,7 @@ static ALWAYS_INLINE void macroblock_encode_p4x4_internal( x264_t *h, int i4, in
             if( nz )
             {
                 h->zigzagf.scan_4x4( h->dct.luma4x4[p*16+i4], dct4x4 );
-                h->quantf.dequant_4x4( dct4x4, h->dequant4_mf[quant_cat], i_qp );
+                h->quantf.dequant_4x4( dct4x4, i_qp );
                 h->dctf.add4x4_idct( p_fdec, dct4x4 );
             }
         }

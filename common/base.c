@@ -390,16 +390,6 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->analyse.b_psnr = 0;
     param->analyse.b_ssim = 0;
 
-    param->i_cqm_preset = X264_CQM_FLAT;
-    memset( param->cqm_4iy, 16, sizeof( param->cqm_4iy ) );
-    memset( param->cqm_4py, 16, sizeof( param->cqm_4py ) );
-    memset( param->cqm_4ic, 16, sizeof( param->cqm_4ic ) );
-    memset( param->cqm_4pc, 16, sizeof( param->cqm_4pc ) );
-    memset( param->cqm_8iy, 16, sizeof( param->cqm_8iy ) );
-    memset( param->cqm_8py, 16, sizeof( param->cqm_8py ) );
-    memset( param->cqm_8ic, 16, sizeof( param->cqm_8ic ) );
-    memset( param->cqm_8pc, 16, sizeof( param->cqm_8pc ) );
-
     param->b_repeat_headers = 1;
     param->b_annexb = 1;
     param->b_aud = 0;
@@ -718,8 +708,6 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
     {
         param->analyse.b_transform_8x8 = 0;
         param->b_cabac = 0;
-        param->i_cqm_preset = X264_CQM_FLAT;
-        param->psz_cqm_file = NULL;
         param->i_bframe = 0;
         param->analyse.i_weighted_pred = X264_WEIGHTP_NONE;
         if( param->b_interlaced )
@@ -736,8 +724,6 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
     else if( p == PROFILE_MAIN )
     {
         param->analyse.b_transform_8x8 = 0;
-        param->i_cqm_preset = X264_CQM_FLAT;
-        param->psz_cqm_file = NULL;
     }
     return 0;
 }
@@ -751,18 +737,6 @@ static int parse_enum( const char *arg, const char * const *names, int *dst )
             return 0;
         }
     return -1;
-}
-
-static int parse_cqm( const char *str, uint8_t *cqm, int length )
-{
-    int i = 0;
-    do {
-        int coef;
-        if( !sscanf( str, "%d", &coef ) || coef < 1 || coef > 255 )
-            return -1;
-        cqm[i++] = coef;
-    } while( i < length && (str = strchr( str, ',' )) && str++ );
-    return (i == length) ? 0 : -1;
 }
 
 static int atobool_internal( const char *str, int *b_error )
@@ -1033,77 +1007,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->i_cabac_init_idc = atoi(value);
     OPT("constrained-intra")
         p->b_constrained_intra = atobool(value);
-    OPT("cqm")
-    {
-        if( strstr( value, "flat" ) )
-            p->i_cqm_preset = X264_CQM_FLAT;
-        else if( strstr( value, "jvt" ) )
-            p->i_cqm_preset = X264_CQM_JVT;
-        else
-            p->psz_cqm_file = strdup(value);
-    }
-    OPT("cqmfile")
-        p->psz_cqm_file = strdup(value);
-    OPT("cqm4")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4iy, 16 );
-        b_error |= parse_cqm( value, p->cqm_4py, 16 );
-        b_error |= parse_cqm( value, p->cqm_4ic, 16 );
-        b_error |= parse_cqm( value, p->cqm_4pc, 16 );
-    }
-    OPT("cqm8")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_8iy, 64 );
-        b_error |= parse_cqm( value, p->cqm_8py, 64 );
-        b_error |= parse_cqm( value, p->cqm_8ic, 64 );
-        b_error |= parse_cqm( value, p->cqm_8pc, 64 );
-    }
-    OPT("cqm4i")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4iy, 16 );
-        b_error |= parse_cqm( value, p->cqm_4ic, 16 );
-    }
-    OPT("cqm4p")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4py, 16 );
-        b_error |= parse_cqm( value, p->cqm_4pc, 16 );
-    }
-    OPT("cqm4iy")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4iy, 16 );
-    }
-    OPT("cqm4ic")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4ic, 16 );
-    }
-    OPT("cqm4py")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4py, 16 );
-    }
-    OPT("cqm4pc")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_4pc, 16 );
-    }
-    OPT("cqm8i")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_8iy, 64 );
-        b_error |= parse_cqm( value, p->cqm_8ic, 64 );
-    }
-    OPT("cqm8p")
-    {
-        p->i_cqm_preset = X264_CQM_CUSTOM;
-        b_error |= parse_cqm( value, p->cqm_8py, 64 );
-        b_error |= parse_cqm( value, p->cqm_8pc, 64 );
-    }
     OPT("log")
         p->i_log_level = atoi(value);
     OPT("dump-yuv")
@@ -1319,7 +1222,6 @@ char *x264_param2string( x264_param_t *p, int b_res )
     s += sprintf( s, " chroma_me=%d", p->analyse.b_chroma_me );
     s += sprintf( s, " trellis=%d", p->analyse.i_trellis );
     s += sprintf( s, " 8x8dct=%d", p->analyse.b_transform_8x8 );
-    s += sprintf( s, " cqm=%d", p->i_cqm_preset );
     s += sprintf( s, " deadzone=%d,%d", p->analyse.i_luma_deadzone[0], p->analyse.i_luma_deadzone[1] );
     s += sprintf( s, " fast_pskip=%d", p->analyse.b_fast_pskip );
     s += sprintf( s, " chroma_qp_offset=%d", p->analyse.i_chroma_qp_offset );

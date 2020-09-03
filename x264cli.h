@@ -37,7 +37,6 @@
 typedef void *hnd_t;
 
 extern const char * const x264_avcintra_class_names[];
-extern const char * const x264_cqm_names[];
 extern const char * const x264_log_level_names[];
 extern const char * const x264_partition_names[];
 extern const char * const x264_pulldown_names[];

@@ -359,17 +359,6 @@ typedef struct x264_param_t
     int         b_interlaced;
     int         b_constrained_intra;
 
-    int         i_cqm_preset;
-    char        *psz_cqm_file;      /* filename (in UTF-8) of CQM file, JM format */
-    uint8_t     cqm_4iy[16];        /* used only if i_cqm_preset == X264_CQM_CUSTOM */
-    uint8_t     cqm_4py[16];
-    uint8_t     cqm_4ic[16];
-    uint8_t     cqm_4pc[16];
-    uint8_t     cqm_8iy[64];
-    uint8_t     cqm_8py[64];
-    uint8_t     cqm_8ic[64];
-    uint8_t     cqm_8pc[64];
-
     /* Log */
     void        (*pf_log)( void *, int i_level, const char *psz, va_list );
     void        *p_log_private;

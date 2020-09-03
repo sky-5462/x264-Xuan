@@ -2031,33 +2031,9 @@ static int check_quant( int cpu_ref, int cpu_new )
     h->chroma_qp_table = i_chroma_qp_table + 12;
     h->param.analyse.b_transform_8x8 = 1;
 
-    for( int i_cqm = 0; i_cqm < 4; i_cqm++ )
-    {
-        if( i_cqm == 0 )
-        {
-            for( int i = 0; i < 6; i++ )
-                h->sps->scaling_list[i] = x264_cqm_flat16;
-            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_FLAT;
-        }
-        else if( i_cqm == 1 )
-        {
-            for( int i = 0; i < 6; i++ )
-                h->sps->scaling_list[i] = x264_cqm_jvt[i];
-            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_JVT;
-        }
-        else
-        {
-            int max_scale = BIT_DEPTH < 10 ? 255 : 228;
-            if( i_cqm == 2 )
-                for( int i = 0; i < 64; i++ )
-                    cqm_buf[i] = 10 + rand() % (max_scale - 9);
-            else
-                for( int i = 0; i < 64; i++ )
-                    cqm_buf[i] = 1;
-            for( int i = 0; i < 6; i++ )
-                h->sps->scaling_list[i] = cqm_buf;
-            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_CUSTOM;
-        }
+    for( int i = 0; i < 6; i++ )
+        h->sps->scaling_list[i] = x264_cqm_flat16;
+    h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_FLAT;
 
         h->param.rc.i_qp_min = 0;
         h->param.rc.i_qp_max = QP_MAX_SPEC;

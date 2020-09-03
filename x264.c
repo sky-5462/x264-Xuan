@@ -151,7 +151,6 @@ static cli_output_t cli_output;
 static cli_vid_filter_t filter;
 
 const char * const x264_avcintra_class_names[] = { "50", "100", "200", 0 };
-const char * const x264_cqm_names[] = { "flat", "jvt", 0 };
 const char * const x264_log_level_names[] = { "none", "error", "warning", "info", "debug", 0 };
 const char * const x264_partition_names[] = { "p8x8", "p4x4", "b8x8", "i8x8", "i4x4", "none", "all", 0 };
 const char * const x264_pulldown_names[] = { "none", "22", "32", "64", "double", "triple", "euro", 0 };
@@ -459,10 +458,10 @@ static void help( x264_param_t *defaults, int longhelp )
     H2(
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
-        "                                    --cqm flat --weightp 0\n"
+        "                                    --weightp 0\n"
         "                                    No lossless.\n"
         "                                  - main:\n"
-        "                                    --no-8x8dct --cqm flat\n"
+        "                                    --no-8x8dct\n"
         "                                    No lossless.\n"
         "                                  - high:\n"
         "                                    No lossless.\n"
@@ -704,18 +703,6 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --deadzone-inter <int>  Set the size of the inter luma quantization deadzone [%d]\n", defaults->analyse.i_luma_deadzone[0] );
     H2( "      --deadzone-intra <int>  Set the size of the intra luma quantization deadzone [%d]\n", defaults->analyse.i_luma_deadzone[1] );
     H2( "                                  Deadzones should be in the range 0 - 32.\n" );
-    H2( "      --cqm <string>          Preset quant matrices [\"%s\"]\n"
-        "                                  - %s\n", x264_cqm_names[0], stringify_names( buf, x264_cqm_names ) );
-    H1( "      --cqmfile <string>      Read custom quant matrices from a JM-compatible file\n" );
-    H2( "                                  Overrides any other --cqm* options.\n" );
-    H2( "      --cqm4 <list>           Set all 4x4 quant matrices\n"
-        "                                  Takes a comma-separated list of 16 integers.\n" );
-    H2( "      --cqm8 <list>           Set all 8x8 quant matrices\n"
-        "                                  Takes a comma-separated list of 64 integers.\n" );
-    H2( "      --cqm4i, --cqm4p, --cqm8i, --cqm8p <list>\n"
-        "                              Set both luma and chroma quant matrices\n" );
-    H2( "      --cqm4iy, --cqm4ic, --cqm4py, --cqm4pc <list>\n"
-        "                              Set individual quant matrices\n" );
     H2( "\n" );
     H2( "Video Usability Info (Annex E):\n" );
     H2( "The VUI settings are not used by the encoder but are merely suggestions to\n" );
@@ -984,18 +971,6 @@ static struct option long_options[] =
     { "sps-id",      required_argument, NULL, 0 },
     { "aud",               no_argument, NULL, 0 },
     { "nr",          required_argument, NULL, 0 },
-    { "cqm",         required_argument, NULL, 0 },
-    { "cqmfile",     required_argument, NULL, 0 },
-    { "cqm4",        required_argument, NULL, 0 },
-    { "cqm4i",       required_argument, NULL, 0 },
-    { "cqm4iy",      required_argument, NULL, 0 },
-    { "cqm4ic",      required_argument, NULL, 0 },
-    { "cqm4p",       required_argument, NULL, 0 },
-    { "cqm4py",      required_argument, NULL, 0 },
-    { "cqm4pc",      required_argument, NULL, 0 },
-    { "cqm8",        required_argument, NULL, 0 },
-    { "cqm8i",       required_argument, NULL, 0 },
-    { "cqm8p",       required_argument, NULL, 0 },
     { "overscan",    required_argument, NULL, 0 },
     { "videoformat", required_argument, NULL, 0 },
     { "range",       required_argument, NULL, OPT_RANGE },

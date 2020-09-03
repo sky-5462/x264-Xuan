@@ -30,18 +30,23 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA 64
+SECTION_RODATA 32
 
-%if HIGH_BIT_DEPTH
-decimate_shuf_avx512: dd 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14, 3, 7,11,15
-%else
-dequant_shuf_avx512: dw  0, 2, 4, 6, 8,10,12,14,16,18,20,22,24,26,28,30
-                     dw 32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62
-%endif
-
-%macro DQM4 3
-    dw %1, %2, %1, %2, %2, %3, %2, %3
+%macro DQM8D 6
+    dd %1, %4, %5, %4, %1, %4, %5, %4
+    dd %4, %2, %6, %2, %4, %2, %6, %2
+    dd %5, %6, %3, %6, %5, %6, %3, %6
+    dd %4, %2, %6, %2, %4, %2, %6, %2
 %endmacro
+
+dequant8_scale_dword:
+    DQM8D 20, 18, 32, 19, 25, 24
+    DQM8D 22, 19, 35, 21, 28, 26
+    DQM8D 26, 23, 42, 24, 33, 31
+    DQM8D 28, 25, 45, 26, 35, 33
+    DQM8D 32, 28, 51, 30, 40, 38
+    DQM8D 36, 32, 58, 34, 46, 43
+
 %macro DQM8 6
     dw %1, %4, %5, %4, %1, %4, %5, %4
     dw %4, %2, %6, %2, %4, %2, %6, %2
@@ -57,6 +62,10 @@ dequant8_scale:
     DQM8 32, 28, 51, 30, 40, 38
     DQM8 36, 32, 58, 34, 46, 43
 
+%macro DQM4 3
+    dw %1, %2, %1, %2, %2, %3, %2, %3
+%endmacro
+
 dequant4_scale:
     DQM4 10, 13, 16
     DQM4 11, 14, 18
@@ -64,6 +73,35 @@ dequant4_scale:
     DQM4 14, 18, 23
     DQM4 16, 20, 25
     DQM4 18, 23, 29
+
+chroma_dc_mf_perm:  dd  2, 2, 2, 2, 2, 2, 2, 2
+                    dd  2, 3, 2, 3, 2, 3, 2, 3
+                    dd  2, 2, 2, 2, 3, 3, 3, 3
+                    dd  2, 3, 2, 3, 3, 2, 3, 2
+                    dd  2, 2, 3, 3, 3, 3, 2, 2
+                    dd  2, 3, 3, 2, 3, 2, 2, 3
+                    dd  2, 2, 3, 3, 2, 2, 3, 3
+                    dd  2, 3, 3, 2, 2, 3, 3, 2
+
+idct_dequant4_scale:    dw 10, 10, 10, -10
+                        dw 11, 11, 11, -11
+                        dw 13, 13, 13, -13
+                        dw 14, 14, 14, -14
+                        dw 16, 16, 16, -16
+                        dw 18, 18, 18, -18
+
+chroma_dc_dmf_mask:     dw 1, 1,-1,-1, 1,-1,-1, 1
+chroma_dc_dct_mask:     dw 1, 1,-1,-1
+
+chroma_dc_dmf_2x4_mask: dw 1, 1, 1,-1
+pd_2080:  dd 2080
+pd_7:     dd 7
+
+decimate_table4:    db  3,2,2,1,1,1,0,0,0,0,0,0,0,0,0,0
+decimate_table8:	db  3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1
+                    db  1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0
+                    db  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+                    db  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 decimate_mask_table4:
     db  0,3,2,6,2,5,5,9,1,5,4,8,5,8,8,12,1,4,4,8,4,7,7,11,4,8,7,11,8,11,11,15,1,4
@@ -76,10 +114,267 @@ decimate_mask_table4:
     db  9,13,9,12,12,16,9,13,12,16,13,16,16,20,7,10,9,13,10,13,13,17,9,13,12,16
     db 13,16,16,20,10,13,13,17,13,16,16,20,13,17,16,20,17,20,20,24
 
-chroma_dc_dct_mask_mmx: dw 0, 0,-1,-1, 0, 0,-1,-1
-chroma_dc_dmf_mask_mmx: dw 0, 0,-1,-1, 0,-1,-1, 0
-chroma_dc_dct_mask:     dw 1, 1,-1,-1, 1, 1,-1,-1
-chroma_dc_dmf_mask:     dw 1, 1,-1,-1, 1,-1,-1, 1
+coeff_level_shuffle:
+    db -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 0
+    db  0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 1
+    db  2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 2
+    db  2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 3
+    db  4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 4
+    db  4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 5
+    db  4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 6
+    db  4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 7
+    db  6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 8
+    db  6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 9
+    db  6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 10
+    db  6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 11
+    db  6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 12
+    db  6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 13
+    db  6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 14
+    db  6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1   ; 15
+    db  8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 16
+    db  8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 17
+    db  8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 18
+    db  8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 19
+    db  8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 20
+    db  8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 21
+    db  8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 22
+    db  8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1   ; 23
+    db  8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 24
+    db  8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 25
+    db  8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 26
+    db  8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1   ; 27
+    db  8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   ; 28
+    db  8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1   ; 29
+    db  8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1   ; 30
+    db  8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1   ; 31
+    db 10,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1   ; 63
+    db 12,13,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 12,13, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 12,13,10,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1
+    db 12,13,10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1
+    db 14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,10,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1
+    db 14,15,10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1
+    db 14,15,12,13,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1
+    db 14,15,12,13, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1
+    db 14,15,12,13,10,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 0, 1,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 2, 3,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 2, 3, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 4, 5,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 4, 5, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 4, 5, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 4, 5, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 4, 5,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 4, 5, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 4, 5, 2, 3,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 6, 7, 4, 5, 2, 3, 0, 1,-1,-1
+    db 14,15,12,13,10,11, 8, 9,-1,-1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 0, 1,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 2, 3,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 2, 3, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 4, 5,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 4, 5, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 4, 5, 2, 3,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 4, 5, 2, 3, 0, 1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7,-1,-1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 0, 1,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 2, 3,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 2, 3, 0, 1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 4, 5,-1,-1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 4, 5, 0, 1,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 4, 5, 2, 3,-1,-1
+    db 14,15,12,13,10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1   ; 255
+
+
+
+
 
 %if HIGH_BIT_DEPTH==0
 dct_coef_shuffle:
@@ -114,405 +409,6 @@ cextern pd_1024
 cextern deinterleave_shufd
 cextern popcnt_table
 
-%macro QUANT_DC_START 2
-    movd      xm%1, r1m     ; mf
-    movd      xm%2, r2m     ; bias
-%if cpuflag(avx2)
-    vpbroadcastdct m%1, xm%1
-    vpbroadcastdct m%2, xm%2
-%elif HIGH_BIT_DEPTH
-    SPLATD     m%1, m%1
-    SPLATD     m%2, m%2
-%elif cpuflag(sse4) ; ssse3, but not faster on conroe
-    mova       m5, [pb_01]
-    pshufb     m%1, m5
-    pshufb     m%2, m5
-%else
-    SPLATW     m%1, m%1
-    SPLATW     m%2, m%2
-%endif
-%endmacro
-
-%macro QUANT_END 0
-    xor      eax, eax
-%if cpuflag(sse4)
-    ptest     m5, m5
-%else ; !sse4
-%if ARCH_X86_64
-%if mmsize == 16
-    packsswb  m5, m5
-%endif
-    movq     rcx, m5
-    test     rcx, rcx
-%else
-%if mmsize == 16
-    pxor      m4, m4
-    pcmpeqb   m5, m4
-    pmovmskb ecx, m5
-    cmp      ecx, (1<<mmsize)-1
-%else
-    packsswb  m5, m5
-    movd     ecx, m5
-    test     ecx, ecx
-%endif
-%endif
-%endif ; cpuflag
-    setne     al
-%endmacro
-
-%if HIGH_BIT_DEPTH
-%macro QUANT_ONE_DC 4
-%if cpuflag(sse4)
-    mova        m0, [%1]
-    ABSD        m1, m0
-    paddd       m1, %3
-    pmulld      m1, %2
-    psrad       m1, 16
-%else ; !sse4
-    mova        m0, [%1]
-    ABSD        m1, m0
-    paddd       m1, %3
-    mova        m2, m1
-    psrlq       m2, 32
-    pmuludq     m1, %2
-    pmuludq     m2, %2
-    psllq       m2, 32
-    paddd       m1, m2
-    psrld       m1, 16
-%endif ; cpuflag
-    PSIGND      m1, m0
-    mova      [%1], m1
-    ACCUM     por, 5, 1, %4
-%endmacro
-
-%macro QUANT_TWO_DC 4
-%if cpuflag(sse4)
-    mova        m0, [%1       ]
-    mova        m1, [%1+mmsize]
-    ABSD        m2, m0
-    ABSD        m3, m1
-    paddd       m2, %3
-    paddd       m3, %3
-    pmulld      m2, %2
-    pmulld      m3, %2
-    psrad       m2, 16
-    psrad       m3, 16
-    PSIGND      m2, m0
-    PSIGND      m3, m1
-    mova [%1       ], m2
-    mova [%1+mmsize], m3
-    ACCUM      por, 5, 2, %4
-    por         m5, m3
-%else ; !sse4
-    QUANT_ONE_DC %1, %2, %3, %4
-    QUANT_ONE_DC %1+mmsize, %2, %3, %4+mmsize
-%endif ; cpuflag
-%endmacro
-
-%macro QUANT_ONE_AC_MMX 5
-    mova        m0, [%1]
-    mova        m2, [%2]
-    ABSD        m1, m0
-    mova        m4, m2
-    paddd       m1, [%3]
-    mova        m3, m1
-    psrlq       m4, 32
-    psrlq       m3, 32
-    pmuludq     m1, m2
-    pmuludq     m3, m4
-    psllq       m3, 32
-    paddd       m1, m3
-    psrad       m1, 16
-    PSIGND      m1, m0
-    mova      [%1], m1
-    ACCUM      por, %5, 1, %4
-%endmacro
-
-%macro QUANT_TWO_AC 5
-%if cpuflag(sse4)
-    mova        m0, [%1       ]
-    mova        m1, [%1+mmsize]
-    ABSD        m2, m0
-    ABSD        m3, m1
-    paddd       m2, [%3       ]
-    paddd       m3, [%3+mmsize]
-    pmulld      m2, [%2       ]
-    pmulld      m3, [%2+mmsize]
-    psrad       m2, 16
-    psrad       m3, 16
-    PSIGND      m2, m0
-    PSIGND      m3, m1
-    mova [%1       ], m2
-    mova [%1+mmsize], m3
-    ACCUM      por, %5, 2, %4
-    por        m%5, m3
-%else ; !sse4
-    QUANT_ONE_AC_MMX %1, %2, %3, %4, %5
-    QUANT_ONE_AC_MMX %1+mmsize, %2+mmsize, %3+mmsize, 1, %5
-%endif ; cpuflag
-%endmacro
-
-;-----------------------------------------------------------------------------
-; int quant_2x2( int32_t dct[M*N], int mf, int bias )
-;-----------------------------------------------------------------------------
-%macro QUANT_DC 2
-cglobal quant_%1x%2_dc, 3,3,8
-    QUANT_DC_START 6,7
-%if %1*%2 <= mmsize/4
-    QUANT_ONE_DC r0, m6, m7, 0
-%else
-%assign x 0
-%rep %1*%2/(mmsize/2)
-    QUANT_TWO_DC r0+x, m6, m7, x
-%assign x x+mmsize*2
-%endrep
-%endif
-    QUANT_END
-    RET
-%endmacro
-
-;-----------------------------------------------------------------------------
-; int quant_MxN( int32_t dct[M*N], uint32_t mf[M*N], uint32_t bias[M*N] )
-;-----------------------------------------------------------------------------
-%macro QUANT_AC 2
-cglobal quant_%1x%2, 3,3,8
-%assign x 0
-%rep %1*%2/(mmsize/2)
-    QUANT_TWO_AC r0+x, r1+x, r2+x, x, 5
-%assign x x+mmsize*2
-%endrep
-    QUANT_END
-    RET
-%endmacro
-
-%macro QUANT_4x4 2
-    QUANT_TWO_AC r0+%1+mmsize*0, r1+mmsize*0, r2+mmsize*0, 0, %2
-    QUANT_TWO_AC r0+%1+mmsize*2, r1+mmsize*2, r2+mmsize*2, 1, %2
-%endmacro
-
-%macro QUANT_4x4x4 0
-cglobal quant_4x4x4, 3,3,8
-    QUANT_4x4  0, 5
-    QUANT_4x4 64, 6
-    add       r0, 128
-    packssdw  m5, m6
-    QUANT_4x4  0, 6
-    QUANT_4x4 64, 7
-    packssdw  m6, m7
-    packssdw  m5, m6  ; AAAA BBBB CCCC DDDD
-    pxor      m4, m4
-    pcmpeqd   m5, m4
-    movmskps eax, m5
-    xor      eax, 0xf
-    RET
-%endmacro
-
-INIT_XMM sse2
-QUANT_DC 2, 2
-QUANT_DC 4, 4
-QUANT_AC 4, 4
-QUANT_AC 8, 8
-QUANT_4x4x4
-
-INIT_XMM ssse3
-QUANT_DC 2, 2
-QUANT_DC 4, 4
-QUANT_AC 4, 4
-QUANT_AC 8, 8
-QUANT_4x4x4
-
-INIT_XMM sse4
-QUANT_DC 2, 2
-QUANT_DC 4, 4
-QUANT_AC 4, 4
-QUANT_AC 8, 8
-QUANT_4x4x4
-
-INIT_YMM avx2
-QUANT_DC 4, 4
-QUANT_AC 4, 4
-QUANT_AC 8, 8
-
-INIT_YMM avx2
-cglobal quant_4x4x4, 3,3,6
-    QUANT_TWO_AC r0,    r1, r2, 0, 4
-    QUANT_TWO_AC r0+64, r1, r2, 0, 5
-    add       r0, 128
-    packssdw  m4, m5
-    QUANT_TWO_AC r0,    r1, r2, 0, 5
-    QUANT_TWO_AC r0+64, r1, r2, 0, 1
-    packssdw  m5, m1
-    packssdw  m4, m5
-    pxor      m3, m3
-    pcmpeqd   m4, m3
-    movmskps eax, m4
-    mov      edx, eax
-    shr      eax, 4
-    and      eax, edx
-    xor      eax, 0xf
-    RET
-
-%endif ; HIGH_BIT_DEPTH
-
-%if HIGH_BIT_DEPTH == 0
-%macro QUANT_ONE 5
-;;; %1      (m64)       dct[y][x]
-;;; %2      (m64/mmx)   mf[y][x] or mf[0][0] (as uint16_t)
-;;; %3      (m64/mmx)   bias[y][x] or bias[0][0] (as uint16_t)
-    mova       m1, %1   ; load dct coeffs
-    ABSW       m0, m1, sign
-    paddusw    m0, %3   ; round
-    pmulhuw    m0, %2   ; divide
-    PSIGNW     m0, m1   ; restore sign
-    mova       %1, m0   ; store
-    ACCUM     por, %5, 0, %4
-%endmacro
-
-%macro QUANT_TWO 8
-    mova       m1, %1
-    mova       m3, %2
-    ABSW       m0, m1, sign
-    ABSW       m2, m3, sign
-    paddusw    m0, %5
-    paddusw    m2, %6
-    pmulhuw    m0, %3
-    pmulhuw    m2, %4
-    PSIGNW     m0, m1
-    PSIGNW     m2, m3
-    mova       %1, m0
-    mova       %2, m2
-    ACCUM     por, %8, 0, %7
-    ACCUM     por, %8, 2, %7+mmsize
-%endmacro
-
-;-----------------------------------------------------------------------------
-; void quant_4x4_dc( int16_t dct[16], int mf, int bias )
-;-----------------------------------------------------------------------------
-%macro QUANT_DC 2-3 0
-cglobal %1, 1,1,%3
-%if %2==1
-    QUANT_DC_START 2,3
-    QUANT_ONE [r0], m2, m3, 0, 5
-%else
-    QUANT_DC_START 4,6
-%assign x 0
-%rep %2/2
-    QUANT_TWO [r0+x], [r0+x+mmsize], m4, m4, m6, m6, x, 5
-%assign x x+mmsize*2
-%endrep
-%endif
-    QUANT_END
-    RET
-%endmacro
-
-;-----------------------------------------------------------------------------
-; int quant_4x4( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] )
-;-----------------------------------------------------------------------------
-%macro QUANT_AC 2
-cglobal %1, 3,3
-%if %2==1
-    QUANT_ONE [r0], [r1], [r2], 0, 5
-%else
-%assign x 0
-%rep %2/2
-    QUANT_TWO [r0+x], [r0+x+mmsize], [r1+x], [r1+x+mmsize], [r2+x], [r2+x+mmsize], x, 5
-%assign x x+mmsize*2
-%endrep
-%endif
-    QUANT_END
-    RET
-%endmacro
-
-%macro QUANT_4x4 2
-%if UNIX64
-    QUANT_TWO [r0+%1+mmsize*0], [r0+%1+mmsize*1], m8, m9, m10, m11, mmsize*0, %2
-%else
-    QUANT_TWO [r0+%1+mmsize*0], [r0+%1+mmsize*1], [r1+mmsize*0], [r1+mmsize*1], [r2+mmsize*0], [r2+mmsize*1], mmsize*0, %2
-%if mmsize==8
-    QUANT_TWO [r0+%1+mmsize*2], [r0+%1+mmsize*3], [r1+mmsize*2], [r1+mmsize*3], [r2+mmsize*2], [r2+mmsize*3], mmsize*2, %2
-%endif
-%endif
-%endmacro
-
-%macro QUANT_4x4x4 0
-cglobal quant_4x4x4, 3,3,7
-%if UNIX64
-    mova      m8, [r1+mmsize*0]
-    mova      m9, [r1+mmsize*1]
-    mova     m10, [r2+mmsize*0]
-    mova     m11, [r2+mmsize*1]
-%endif
-    QUANT_4x4  0, 4
-    QUANT_4x4 32, 5
-    packssdw  m4, m5
-    QUANT_4x4 64, 5
-    QUANT_4x4 96, 6
-    packssdw  m5, m6
-    packssdw  m4, m5  ; AAAA BBBB CCCC DDDD
-    pxor      m3, m3
-    pcmpeqd   m4, m3
-    movmskps eax, m4
-    xor      eax, 0xf
-    RET
-%endmacro
-
-INIT_MMX mmx2
-QUANT_DC quant_2x2_dc, 1
-%if ARCH_X86_64 == 0 ; not needed because sse2 is faster
-QUANT_DC quant_4x4_dc, 4
-INIT_MMX mmx2
-QUANT_AC quant_4x4, 4
-QUANT_AC quant_8x8, 16
-%endif
-
-INIT_XMM sse2
-QUANT_DC quant_4x4_dc, 2, 7
-QUANT_AC quant_4x4, 2
-QUANT_AC quant_8x8, 8
-QUANT_4x4x4
-
-INIT_XMM ssse3
-QUANT_DC quant_4x4_dc, 2, 7
-QUANT_AC quant_4x4, 2
-QUANT_AC quant_8x8, 8
-QUANT_4x4x4
-
-INIT_MMX ssse3
-QUANT_DC quant_2x2_dc, 1
-
-INIT_XMM sse4
-;Not faster on Conroe, so only used in SSE4 versions
-QUANT_DC quant_4x4_dc, 2, 7
-QUANT_AC quant_4x4, 2
-QUANT_AC quant_8x8, 8
-
-INIT_YMM avx2
-QUANT_AC quant_4x4, 1
-QUANT_AC quant_8x8, 4
-QUANT_DC quant_4x4_dc, 1, 6
-
-INIT_YMM avx2
-cglobal quant_4x4x4, 3,3,6
-    mova      m2, [r1]
-    mova      m3, [r2]
-    QUANT_ONE [r0+ 0], m2, m3, 0, 4
-    QUANT_ONE [r0+32], m2, m3, 0, 5
-    packssdw  m4, m5
-    QUANT_ONE [r0+64], m2, m3, 0, 5
-    QUANT_ONE [r0+96], m2, m3, 0, 1
-    packssdw  m5, m1
-    packssdw  m4, m5
-    pxor      m3, m3
-    pcmpeqd   m4, m3
-    movmskps eax, m4
-    mov      edx, eax
-    shr      eax, 4
-    and      eax, edx
-    xor      eax, 0xf
-    RET
-%endif ; !HIGH_BIT_DEPTH
-
-
 
 ;=============================================================================
 ; dequant
@@ -522,16 +418,6 @@ cglobal quant_4x4x4, 3,3,6
 ;;; %1      dct[y][x]
 ;;; %2,%3   dequant_mf[i_mf][y][x]
 ;;; m2      i_qbits
-%if HIGH_BIT_DEPTH
-    mova     m0, %1
-    mova     m1, %4
-    pmaddwd  m0, %2
-    pmaddwd  m1, %3
-    pslld    m0, xm2
-    pslld    m1, xm2
-    mova     %1, m0
-    mova     %4, m1
-%else
     mova     m0, %2
     packssdw m0, %3
 %if mmsize==32
@@ -540,7 +426,6 @@ cglobal quant_4x4x4, 3,3,6
     pmullw   m0, %1
     psllw    m0, xm2
     mova     %1, m0
-%endif
 %endmacro
 
 %macro DEQUANT32_R 4
@@ -549,16 +434,6 @@ cglobal quant_4x4x4, 3,3,6
 ;;; m2      -i_qbits
 ;;; m3      f
 ;;; m4      0
-%if HIGH_BIT_DEPTH
-    mova      m0, %1
-    mova      m1, %4
-    pmadcswd  m0, m0, %2, m3
-    pmadcswd  m1, m1, %3, m3
-    psrad     m0, xm2
-    psrad     m1, xm2
-    mova      %1, m0
-    mova      %4, m1
-%else
 %if mmsize == 32
     pmovzxwd  m0, %1
     pmovzxwd  m1, %4
@@ -576,7 +451,6 @@ cglobal quant_4x4x4, 3,3,6
     vpermq    m0, m0, q3120
 %endif
     mova      %1, m0
-%endif
 %endmacro
 
 %macro DEQUANT_LOOP 3
@@ -720,35 +594,6 @@ cglobal dequant_%1x%1_flat16, 0,3
 %endif ; !HIGH_BIT_DEPTH && !AVX
 %endmacro ; DEQUANT
 
-%if HIGH_BIT_DEPTH
-INIT_XMM sse2
-DEQUANT 4, 4, 2
-DEQUANT 8, 6, 2
-INIT_XMM xop
-DEQUANT 4, 4, 2
-DEQUANT 8, 6, 2
-INIT_YMM avx2
-DEQUANT 4, 4, 4
-DEQUANT 8, 6, 4
-%else
-%if ARCH_X86_64 == 0
-INIT_MMX mmx
-DEQUANT 4, 4, 1
-DEQUANT 8, 6, 1
-%endif
-INIT_XMM sse2
-DEQUANT 4, 4, 2
-DEQUANT 8, 6, 2
-INIT_XMM avx
-DEQUANT 4, 4, 2
-DEQUANT 8, 6, 2
-INIT_XMM xop
-DEQUANT 4, 4, 2
-DEQUANT 8, 6, 2
-INIT_YMM avx2
-DEQUANT 4, 4, 4
-DEQUANT 8, 6, 4
-%endif
 
 %macro DEQUANT_START_AVX512 1-2 0 ; shift, flat
 %if %2 == 0
@@ -776,134 +621,6 @@ DEQUANT 8, 6, 4
     movifnidn r0, r0mp
 %endmacro
 
-INIT_ZMM avx512
-cglobal dequant_4x4, 0,3
-    DEQUANT_START_AVX512 6
-    mova          m0, [dmf]
-%if HIGH_BIT_DEPTH
-    pmaddwd       m0, [r0]
-%endif
-    sub          t0d, 4
-    jl .rshift
-%if HIGH_BIT_DEPTH
-    vpbroadcastd  m1, t0d
-    vpsllvd       m0, m1
-    mova        [r0], m0
-%else
-    vpbroadcastw ym1, t0d
-    vpmovsdw     ym0, m0
-    pmullw       ym0, [r0]
-    vpsllvw      ym0, ym1
-    mova        [r0], ym0
-%endif
-    RET
-.rshift:
-%if HIGH_BIT_DEPTH == 0
-    pmovzxwd      m1, [r0]
-    pmaddwd       m0, m1
-%endif
-    mov          r1d, 1<<31
-    shrx         r1d, r1d, t0d ; 1 << (-i_qbits-1)
-    neg          t0d
-    vpbroadcastd  m1, r1d
-    vpbroadcastd  m2, t0d
-    paddd         m0, m1
-    vpsravd       m0, m2
-%if HIGH_BIT_DEPTH
-    mova        [r0], m0
-%else
-    vpmovsdw    [r0], m0
-%endif
-    RET
-
-cglobal dequant_8x8, 0,3
-    DEQUANT_START_AVX512 8
-    mova          m0, [dmf+0*64]
-    mova          m1, [dmf+1*64]
-    mova          m2, [dmf+2*64]
-    mova          m3, [dmf+3*64]
-%if HIGH_BIT_DEPTH
-    pmaddwd       m0, [r0+0*64]
-    pmaddwd       m1, [r0+1*64]
-    pmaddwd       m2, [r0+2*64]
-    pmaddwd       m3, [r0+3*64]
-%else
-    mova          m6, [dequant_shuf_avx512]
-%endif
-    sub          t0d, 6
-    jl .rshift
-%if HIGH_BIT_DEPTH
-    vpbroadcastd  m4, t0d
-    vpsllvd       m0, m4
-    vpsllvd       m1, m4
-    vpsllvd       m2, m4
-    vpsllvd       m3, m4
-    jmp .end
-.rshift:
-%else
-    vpbroadcastw  m4, t0d
-    vpermt2w      m0, m6, m1
-    vpermt2w      m2, m6, m3
-    pmullw        m0, [r0]
-    pmullw        m2, [r0+64]
-    vpsllvw       m0, m4
-    vpsllvw       m2, m4
-    mova        [r0], m0
-    mova     [r0+64], m2
-    RET
-.rshift:
-    pmovzxwd      m4, [r0+0*32]
-    pmovzxwd      m5, [r0+1*32]
-    pmaddwd       m0, m4
-    pmaddwd       m1, m5
-    pmovzxwd      m4, [r0+2*32]
-    pmovzxwd      m5, [r0+3*32]
-    pmaddwd       m2, m4
-    pmaddwd       m3, m5
-%endif
-    mov          r1d, 1<<31
-    shrx         r1d, r1d, t0d ; 1 << (-i_qbits-1)
-    neg          t0d
-    vpbroadcastd  m4, r1d
-    vpbroadcastd  m5, t0d
-    paddd         m0, m4
-    paddd         m1, m4
-    vpsravd       m0, m5
-    vpsravd       m1, m5
-    paddd         m2, m4
-    paddd         m3, m4
-    vpsravd       m2, m5
-    vpsravd       m3, m5
-%if HIGH_BIT_DEPTH
-.end:
-    mova   [r0+0*64], m0
-    mova   [r0+1*64], m1
-    mova   [r0+2*64], m2
-    mova   [r0+3*64], m3
-%else
-    vpermt2w      m0, m6, m1
-    vpermt2w      m2, m6, m3
-    mova        [r0], m0
-    mova     [r0+64], m2
-%endif
-    RET
-
-%if HIGH_BIT_DEPTH == 0
-cglobal dequant_8x8_flat16, 0,3
-    movifnidn    t2d, r2m
-    cmp          t2d, 12
-    jl dequant_8x8_avx512
-    sub          t2d, 12
-    DEQUANT_START_AVX512 6, 1
-    vpbroadcastw  m0, t0d
-    mova          m1, [dmf]
-    vpsllvw       m1, m0
-    pmullw        m0, m1, [r0]
-    pmullw        m1, [r0+64]
-    mova        [r0], m0
-    mova     [r0+64], m1
-    RET
-%endif
 
 %undef dmf
 
@@ -939,19 +656,6 @@ cglobal dequant_4x4dc, 0,3,6
     movd     xm3, t0d
     pslld     m4, m5, xm3
     psrld     m4, 1
-%if HIGH_BIT_DEPTH
-%if notcpuflag(avx2)
-    pshufd    m2, m2, 0
-%endif
-%assign %%x 0
-%rep SIZEOF_PIXEL*32/mmsize
-    pmadcswd  m0, m2, [r0+%%x], m4
-    psrad     m0, xm3
-    mova      [r0+%%x], m0
-%assign %%x %%x+mmsize
-%endrep
-
-%else ; !HIGH_BIT_DEPTH
 %if notcpuflag(avx2)
     PSHUFLW   m2, m2, 0
 %endif
@@ -969,738 +673,9 @@ cglobal dequant_4x4dc, 0,3,6
     mova      [r0+%%x], m0
 %assign %%x %%x+mmsize
 %endrep
-%endif ; !HIGH_BIT_DEPTH
     RET
 %endmacro
 
-%if HIGH_BIT_DEPTH
-INIT_XMM sse2
-DEQUANT_DC d, pmaddwd
-INIT_XMM xop
-DEQUANT_DC d, pmaddwd
-INIT_YMM avx2
-DEQUANT_DC d, pmaddwd
-%else
-%if ARCH_X86_64 == 0
-INIT_MMX mmx2
-DEQUANT_DC w, pmullw
-%endif
-INIT_XMM sse2
-DEQUANT_DC w, pmullw
-INIT_XMM avx
-DEQUANT_DC w, pmullw
-INIT_YMM avx2
-DEQUANT_DC w, pmullw
-%endif
-
-%macro PEXTRW 4
-    %if cpuflag(sse4)
-        pextrw %1, %2, %3
-    %else
-        ; pextrw with a memory destination requires SSE4.1, go through a GPR as a fallback
-        %if %3
-            pextrw %4d, %2, %3
-        %else
-            movd %4d, %2
-        %endif
-        mov %1, %4w
-    %endif
-%endmacro
-
-;-----------------------------------------------------------------------------
-; void idct_dequant_2x4_dc( dctcoef dct[8], dctcoef dct4x4[8][16], int dequant_mf[6][16], int i_qp )
-; void idct_dequant_2x4_dconly( dctcoef dct[8], int dequant_mf[6][16], int i_qp )
-;-----------------------------------------------------------------------------
-
-%macro DEQUANT_2x4_DC 1
-%ifidn %1, dconly
-    DECLARE_REG_TMP 6,3,2
-    %define %%args dct, dmf, qp
-%else
-    DECLARE_REG_TMP 6,4,3
-    %define %%args dct, dct4x4, dmf, qp
-%endif
-
-%if ARCH_X86_64 == 0
-    DECLARE_REG_TMP 2,0,1
-%endif
-
-cglobal idct_dequant_2x4_%1, 0,3,5, %%args
-    movifnidn  t2d, qpm
-    imul       t0d, t2d, 0x2b
-    shr        t0d, 8         ; qp / 6
-    lea        t1d, [t0*5]
-    sub        t2d, t0d
-    sub        t2d, t1d       ; qp % 6
-    shl        t2d, 6         ; 16 * sizeof(int)
-%if ARCH_X86_64
-    imul       t2d, [dmfq+t2], -0xffff ; (-dmf) << 16 | dmf
-%else
-    mov       dctq, dctmp
-    add         t2, dmfmp
-    imul       t2d, [t2], -0xffff
-%endif
-%if HIGH_BIT_DEPTH
-    mova        m0, [dctq]
-    mova        m1, [dctq+16]
-    SUMSUB_BA    d, 1, 0, 2   ; 16-bit intermediate precision is enough for the first two sumsub steps,
-    packssdw    m1, m0        ; and by packing to words we can use pmaddwd instead of pmulld later.
-%else
-    movq        m0, [dctq]
-    movq        m1, [dctq+8]
-    SUMSUB_BA    w, 1, 0, 2
-    punpcklqdq  m1, m0        ; a0 a1 a2 a3 a4 a5 a6 a7
-%endif
-    pshufd      m0, m1, q2301 ; a2 a3 a0 a1 a6 a7 a4 a5
-    movd        m3, t2d
-    pshuflw     m3, m3, q1000 ; +  +  +  -
-    SUMSUB_BA    w, 0, 1, 2
-    punpcklqdq  m3, m3        ; +  +  +  -  +  +  +  -
-    pshufd      m1, m1, q0022
-    sub        t0d, 6
-    jl .rshift
-    movd        m2, t0d
-    psllw       m3, m2
-    pmaddwd     m0, m3
-    pmaddwd     m1, m3
-    jmp .end
-.rshift:
-    neg        t0d
-    movd        m2, t0d
-    pcmpeqd     m4, m4
-    pmaddwd     m0, m3
-    pmaddwd     m1, m3
-    pslld       m4, m2
-    psrad       m4, 1
-    psubd       m0, m4 ; + 1 << (qp/6-1)
-    psubd       m1, m4
-    psrad       m0, m2
-    psrad       m1, m2
-.end:
-%ifidn %1, dconly
-%if HIGH_BIT_DEPTH
-    mova    [dctq], m0
-    mova [dctq+16], m1
-%else
-    packssdw    m0, m1
-    mova    [dctq], m0
-%endif
-%else
-    movifnidn dct4x4q, dct4x4mp
-%if HIGH_BIT_DEPTH
-    movd   [dct4x4q+0*64], m0
-%if cpuflag(sse4)
-    pextrd [dct4x4q+1*64], m0, 1
-    add    dct4x4q, 4*64
-    pextrd [dct4x4q-2*64], m0, 2
-    pextrd [dct4x4q-1*64], m0, 3
-    movd   [dct4x4q+0*64], m1
-    pextrd [dct4x4q+1*64], m1, 1
-    pextrd [dct4x4q+2*64], m1, 2
-    pextrd [dct4x4q+3*64], m1, 3
-%else
-    MOVHL       m2, m0
-    psrlq       m0, 32
-    movd   [dct4x4q+1*64], m0
-    add    dct4x4q, 4*64
-    movd   [dct4x4q-2*64], m2
-    psrlq       m2, 32
-    movd   [dct4x4q-1*64], m2
-    movd   [dct4x4q+0*64], m1
-    MOVHL       m2, m1
-    psrlq       m1, 32
-    movd   [dct4x4q+1*64], m1
-    movd   [dct4x4q+2*64], m2
-    psrlq       m2, 32
-    movd   [dct4x4q+3*64], m2
-%endif
-%else
-    PEXTRW [dct4x4q+0*32], m0, 0, eax
-    PEXTRW [dct4x4q+1*32], m0, 2, eax
-    PEXTRW [dct4x4q+2*32], m0, 4, eax
-    PEXTRW [dct4x4q+3*32], m0, 6, eax
-    add    dct4x4q, 4*32
-    PEXTRW [dct4x4q+0*32], m1, 0, eax
-    PEXTRW [dct4x4q+1*32], m1, 2, eax
-    PEXTRW [dct4x4q+2*32], m1, 4, eax
-    PEXTRW [dct4x4q+3*32], m1, 6, eax
-%endif
-%endif
-    RET
-%endmacro
-
-; sse4 reduces code size compared to sse2 but isn't any faster, so just go with sse2+avx
-INIT_XMM sse2
-DEQUANT_2x4_DC dc
-DEQUANT_2x4_DC dconly
-INIT_XMM avx
-DEQUANT_2x4_DC dc
-DEQUANT_2x4_DC dconly
-
-; t4 is eax for return value.
-%if ARCH_X86_64
-    DECLARE_REG_TMP 0,1,2,3,6,4  ; Identical for both Windows and *NIX
-%else
-    DECLARE_REG_TMP 4,1,2,3,0,5
-%endif
-
-;-----------------------------------------------------------------------------
-; x264_optimize_chroma_2x2_dc( dctcoef dct[4], int dequant_mf )
-;-----------------------------------------------------------------------------
-
-%macro OPTIMIZE_CHROMA_2x2_DC 0
-cglobal optimize_chroma_2x2_dc, 0,6-cpuflag(sse4),7
-    movifnidn t0, r0mp
-    movd      m2, r1m
-    movq      m1, [t0]
-%if cpuflag(sse4)
-    pcmpeqb   m4, m4
-    pslld     m4, 11
-%else
-    pxor      m4, m4
-%endif
-%if cpuflag(ssse3)
-    mova      m3, [chroma_dc_dct_mask]
-    mova      m5, [chroma_dc_dmf_mask]
-%else
-    mova      m3, [chroma_dc_dct_mask_mmx]
-    mova      m5, [chroma_dc_dmf_mask_mmx]
-%endif
-    pshuflw   m2, m2, 0
-    pshufd    m0, m1, q0101      ;  1  0  3  2  1  0  3  2
-    punpcklqdq m2, m2
-    punpcklqdq m1, m1            ;  3  2  1  0  3  2  1  0
-    mova      m6, [pd_1024]      ; 32<<5, elements are shifted 5 bits to the left
-    PSIGNW    m0, m3             ; -1 -0  3  2 -1 -0  3  2
-    PSIGNW    m2, m5             ;  +  -  -  +  -  -  +  +
-    paddw     m0, m1             ; -1+3 -0+2  1+3  0+2 -1+3 -0+2  1+3  0+2
-    pmaddwd   m0, m2             ;  0-1-2+3  0-1+2-3  0+1-2-3  0+1+2+3  * dmf
-    punpcklwd m1, m1
-    psrad     m2, 16             ;  +  -  -  +
-    mov      t1d, 3
-    paddd     m0, m6
-    xor      t4d, t4d
-%if notcpuflag(ssse3)
-    psrad     m1, 31             ; has to be 0 or -1 in order for PSIGND_MMX to work correctly
-%endif
-%if cpuflag(sse4)
-    ptest     m0, m4
-%else
-    mova      m6, m0
-    SWAP       0, 6
-    psrad     m6, 11
-    pcmpeqd   m6, m4
-    pmovmskb t5d, m6
-    cmp      t5d, 0xffff
-%endif
-    jz .ret                      ; if the DC coefficients already round to zero, terminate early
-    mova      m3, m0
-.outer_loop:
-    movsx    t3d, word [t0+2*t1] ; dct[coeff]
-    pshufd    m6, m1, q3333
-    pshufd    m1, m1, q2100      ; move the next element to high dword
-    PSIGND    m5, m2, m6
-    test     t3d, t3d
-    jz .loop_end
-.outer_loop_0:
-    mov      t2d, t3d
-    sar      t3d, 31
-    or       t3d, 1
-.inner_loop:
-    psubd     m3, m5             ; coeff -= sign
-    pxor      m6, m0, m3
-%if cpuflag(sse4)
-    ptest     m6, m4
-%else
-    psrad     m6, 11
-    pcmpeqd   m6, m4
-    pmovmskb t5d, m6
-    cmp      t5d, 0xffff
-%endif
-    jz .round_coeff
-    paddd     m3, m5             ; coeff += sign
-    mov      t4d, 1
-.loop_end:
-    dec      t1d
-    jz .last_coeff
-    pshufd    m2, m2, q1320      ;  -  +  -  +  /  -  -  +  +
-    jg .outer_loop
-.ret:
-    REP_RET
-.round_coeff:
-    sub      t2d, t3d
-    mov [t0+2*t1], t2w
-    jnz .inner_loop
-    jmp .loop_end
-.last_coeff:
-    movsx    t3d, word [t0]
-    punpcklqdq m2, m2            ;  +  +  +  +
-    PSIGND    m5, m2, m1
-    test     t3d, t3d
-    jnz .outer_loop_0
-    RET
-%endmacro
-
-%if HIGH_BIT_DEPTH == 0
-INIT_XMM sse2
-OPTIMIZE_CHROMA_2x2_DC
-INIT_XMM ssse3
-OPTIMIZE_CHROMA_2x2_DC
-INIT_XMM sse4
-OPTIMIZE_CHROMA_2x2_DC
-INIT_XMM avx
-OPTIMIZE_CHROMA_2x2_DC
-%endif ; !HIGH_BIT_DEPTH
-
-%if HIGH_BIT_DEPTH
-;-----------------------------------------------------------------------------
-; void denoise_dct( int32_t *dct, uint32_t *sum, uint32_t *offset, int size )
-;-----------------------------------------------------------------------------
-%macro DENOISE_DCT 0
-cglobal denoise_dct, 4,4,6
-    pxor      m5, m5
-    movsxdifnidn r3, r3d
-.loop:
-    mova      m2, [r0+r3*4-2*mmsize]
-    mova      m3, [r0+r3*4-1*mmsize]
-    ABSD      m0, m2
-    ABSD      m1, m3
-    paddd     m4, m0, [r1+r3*4-2*mmsize]
-    psubd     m0, [r2+r3*4-2*mmsize]
-    mova      [r1+r3*4-2*mmsize], m4
-    paddd     m4, m1, [r1+r3*4-1*mmsize]
-    psubd     m1, [r2+r3*4-1*mmsize]
-    mova      [r1+r3*4-1*mmsize], m4
-    pcmpgtd   m4, m0, m5
-    pand      m0, m4
-    pcmpgtd   m4, m1, m5
-    pand      m1, m4
-    PSIGND    m0, m2
-    PSIGND    m1, m3
-    mova      [r0+r3*4-2*mmsize], m0
-    mova      [r0+r3*4-1*mmsize], m1
-    sub      r3d, mmsize/2
-    jg .loop
-    RET
-%endmacro
-
-%if ARCH_X86_64 == 0
-INIT_MMX mmx
-DENOISE_DCT
-%endif
-INIT_XMM sse2
-DENOISE_DCT
-INIT_XMM ssse3
-DENOISE_DCT
-INIT_XMM avx
-DENOISE_DCT
-INIT_YMM avx2
-DENOISE_DCT
-
-%else ; !HIGH_BIT_DEPTH
-
-;-----------------------------------------------------------------------------
-; void denoise_dct( int16_t *dct, uint32_t *sum, uint16_t *offset, int size )
-;-----------------------------------------------------------------------------
-%macro DENOISE_DCT 0
-cglobal denoise_dct, 4,4,7
-    pxor      m6, m6
-    movsxdifnidn r3, r3d
-.loop:
-    mova      m2, [r0+r3*2-2*mmsize]
-    mova      m3, [r0+r3*2-1*mmsize]
-    ABSW      m0, m2, sign
-    ABSW      m1, m3, sign
-    psubusw   m4, m0, [r2+r3*2-2*mmsize]
-    psubusw   m5, m1, [r2+r3*2-1*mmsize]
-    PSIGNW    m4, m2
-    PSIGNW    m5, m3
-    mova      [r0+r3*2-2*mmsize], m4
-    mova      [r0+r3*2-1*mmsize], m5
-    punpcklwd m2, m0, m6
-    punpcklwd m3, m1, m6
-    punpckhwd m0, m6
-    punpckhwd m1, m6
-    paddd     m2, [r1+r3*4-4*mmsize]
-    paddd     m0, [r1+r3*4-3*mmsize]
-    paddd     m3, [r1+r3*4-2*mmsize]
-    paddd     m1, [r1+r3*4-1*mmsize]
-    mova      [r1+r3*4-4*mmsize], m2
-    mova      [r1+r3*4-3*mmsize], m0
-    mova      [r1+r3*4-2*mmsize], m3
-    mova      [r1+r3*4-1*mmsize], m1
-    sub       r3, mmsize
-    jg .loop
-    RET
-%endmacro
-
-%if ARCH_X86_64 == 0
-INIT_MMX mmx
-DENOISE_DCT
-%endif
-INIT_XMM sse2
-DENOISE_DCT
-INIT_XMM ssse3
-DENOISE_DCT
-INIT_XMM avx
-DENOISE_DCT
-
-INIT_YMM avx2
-cglobal denoise_dct, 4,4,4
-    pxor      m3, m3
-    movsxdifnidn r3, r3d
-.loop:
-    mova      m1, [r0+r3*2-mmsize]
-    pabsw     m0, m1
-    psubusw   m2, m0, [r2+r3*2-mmsize]
-    vpermq    m0, m0, q3120
-    psignw    m2, m1
-    mova [r0+r3*2-mmsize], m2
-    punpcklwd m1, m0, m3
-    punpckhwd m0, m3
-    paddd     m1, [r1+r3*4-2*mmsize]
-    paddd     m0, [r1+r3*4-1*mmsize]
-    mova      [r1+r3*4-2*mmsize], m1
-    mova      [r1+r3*4-1*mmsize], m0
-    sub       r3, mmsize/2
-    jg .loop
-    RET
-
-%endif ; !HIGH_BIT_DEPTH
-
-;-----------------------------------------------------------------------------
-; int decimate_score( dctcoef *dct )
-;-----------------------------------------------------------------------------
-
-%macro DECIMATE_MASK 4
-%if HIGH_BIT_DEPTH
-    mova      m0, [%3+0*16]
-    packssdw  m0, [%3+1*16]
-    mova      m1, [%3+2*16]
-    packssdw  m1, [%3+3*16]
-    ABSW2     m0, m1, m0, m1, m3, m4
-%else
-    ABSW      m0, [%3+ 0], m3
-    ABSW      m1, [%3+16], m4
-%endif
-    packsswb  m0, m1
-    pxor      m2, m2
-    pcmpeqb   m2, m0
-    pcmpgtb   m0, %4
-    pmovmskb  %1, m2
-    pmovmskb  %2, m0
-%endmacro
-
-%macro DECIMATE_MASK16_AVX512 0
-    mova      m0, [r0]
-%if HIGH_BIT_DEPTH
-    vptestmd  k0, m0, m0
-    pabsd     m0, m0
-    vpcmpud   k1, m0, [pd_1] {1to16}, 6
-%else
-    vptestmw  k0, m0, m0
-    pabsw     m0, m0
-    vpcmpuw   k1, m0, [pw_1], 6
-%endif
-%endmacro
-
-%macro SHRX 2
-%if cpuflag(bmi2)
-    shrx %1, %1, %2
-%else
-    shr  %1, %2b ; %2 has to be rcx/ecx
-%endif
-%endmacro
-
-%macro BLSR 2
-%if cpuflag(bmi1)
-    blsr   %1, %2
-%else
-    lea    %1, [%2-1]
-    and    %1, %2
-%endif
-%endmacro
-
-cextern_common decimate_table4
-cextern_common decimate_table8
-
-%macro DECIMATE4x4 1
-
-cglobal decimate_score%1, 1,3
-%if cpuflag(avx512)
-    DECIMATE_MASK16_AVX512
-    xor   eax, eax
-    kmovw edx, k0
-%if %1 == 15
-    shr   edx, 1
-%else
-    test  edx, edx
-%endif
-    jz .ret
-    ktestw k1, k1
-    jnz .ret9
-%else
-    DECIMATE_MASK edx, eax, r0, [pb_1]
-    xor   edx, 0xffff
-    jz .ret
-    test  eax, eax
-    jnz .ret9
-%if %1 == 15
-    shr   edx, 1
-%endif
-%endif
-%if ARCH_X86_64
-    lea    r4, [decimate_mask_table4]
-    %define mask_table r4
-%else
-    %define mask_table decimate_mask_table4
-%endif
-    movzx ecx, dl
-    movzx eax, byte [mask_table + rcx]
-%if ARCH_X86_64
-    xor   edx, ecx
-    jz .ret
-%if cpuflag(lzcnt)
-    lzcnt ecx, ecx
-    lea    r5, [decimate_table4-32]
-    add    r5, rcx
-%else
-    bsr   ecx, ecx
-    lea    r5, [decimate_table4-1]
-    sub    r5, rcx
-%endif
-    %define table r5
-%else
-    cmp   edx, ecx
-    jz .ret
-    bsr   ecx, ecx
-    shr   edx, 1
-    SHRX  edx, ecx
-    %define table decimate_table4
-%endif
-    tzcnt ecx, edx
-    shr   edx, 1
-    SHRX  edx, ecx
-    add    al, byte [table + rcx]
-    add    al, byte [mask_table + rdx]
-.ret:
-    REP_RET
-.ret9:
-    mov   eax, 9
-    RET
-%endmacro
-
-%macro DECIMATE_MASK64_AVX2 2 ; nz_low, nz_high
-    mova      m0, [r0+0*32]
-    packsswb  m0, [r0+1*32]
-    mova      m1, [r0+2*32]
-    packsswb  m1, [r0+3*32]
-    mova      m4, [pb_1]
-    pabsb     m2, m0
-    pabsb     m3, m1
-    por       m2, m3 ; the > 1 checks don't care about order, so
-    ptest     m4, m2 ; we can save latency by doing them here
-    jnc .ret9
-    vpermq    m0, m0, q3120
-    vpermq    m1, m1, q3120
-    pxor      m4, m4
-    pcmpeqb   m0, m4
-    pcmpeqb   m1, m4
-    pmovmskb  %1, m0
-    pmovmskb  %2, m1
-%endmacro
-
-%macro DECIMATE_MASK64_AVX512 0
-    mova            m0, [r0]
-%if HIGH_BIT_DEPTH
-    packssdw        m0, [r0+1*64]
-    mova            m1, [r0+2*64]
-    packssdw        m1, [r0+3*64]
-    packsswb        m0, m1
-    vbroadcasti32x4 m1, [pb_1]
-    pabsb           m2, m0
-    vpcmpub         k0, m2, m1, 6
-    ktestq          k0, k0
-    jnz .ret9
-    mova            m1, [decimate_shuf_avx512]
-    vpermd          m0, m1, m0
-    vptestmb        k1, m0, m0
-%else
-    mova            m1, [r0+64]
-    vbroadcasti32x4 m3, [pb_1]
-    packsswb        m2, m0, m1
-    pabsb           m2, m2
-    vpcmpub         k0, m2, m3, 6
-    ktestq          k0, k0
-    jnz .ret9
-    vptestmw        k1, m0, m0
-    vptestmw        k2, m1, m1
-%endif
-%endmacro
-
-%macro DECIMATE8x8 0
-%if ARCH_X86_64
-cglobal decimate_score64, 1,5
-%if mmsize == 64
-    DECIMATE_MASK64_AVX512
-    xor     eax, eax
-%if HIGH_BIT_DEPTH
-    kmovq    r1, k1
-    test     r1, r1
-    jz .ret
-%else
-    kortestd k1, k2
-    jz .ret
-    kunpckdq k1, k2, k1
-    kmovq    r1, k1
-%endif
-%elif mmsize == 32
-    DECIMATE_MASK64_AVX2 r1d, eax
-    not    r1
-    shl   rax, 32
-    xor    r1, rax
-    jz .ret
-%else
-    mova   m5, [pb_1]
-    DECIMATE_MASK r1d, eax, r0+SIZEOF_DCTCOEF* 0, m5
-    test  eax, eax
-    jnz .ret9
-    DECIMATE_MASK r2d, eax, r0+SIZEOF_DCTCOEF*16, m5
-    shl   r2d, 16
-    or    r1d, r2d
-    DECIMATE_MASK r2d, r3d, r0+SIZEOF_DCTCOEF*32, m5
-    shl    r2, 32
-    or    eax, r3d
-    or     r1, r2
-    DECIMATE_MASK r2d, r3d, r0+SIZEOF_DCTCOEF*48, m5
-    not    r1
-    shl    r2, 48
-    xor    r1, r2
-    jz .ret
-    add   eax, r3d
-    jnz .ret9
-%endif
-    lea    r4, [decimate_table8]
-    mov    al, -6
-.loop:
-    tzcnt rcx, r1
-    add    al, byte [r4 + rcx]
-    jge .ret9
-    shr    r1, 1
-    SHRX   r1, rcx
-%if cpuflag(bmi2)
-    test   r1, r1
-%endif
-    jnz .loop
-    add    al, 6
-.ret:
-    REP_RET
-.ret9:
-    mov   eax, 9
-    RET
-
-%else ; ARCH
-cglobal decimate_score64, 1,4
-%if mmsize == 64
-    DECIMATE_MASK64_AVX512
-    xor     eax, eax
-%if HIGH_BIT_DEPTH
-    kshiftrq k2, k1, 32
-%endif
-    kmovd    r2, k1
-    kmovd    r3, k2
-    test     r2, r2
-    jz .tryret
-%elif mmsize == 32
-    DECIMATE_MASK64_AVX2 r2, r3
-    xor   eax, eax
-    not    r3
-    xor    r2, -1
-    jz .tryret
-%else
-    mova   m5, [pb_1]
-    DECIMATE_MASK r2, r1, r0+SIZEOF_DCTCOEF* 0, m5
-    test   r1, r1
-    jnz .ret9
-    DECIMATE_MASK r3, r1, r0+SIZEOF_DCTCOEF*16, m5
-    not    r2
-    shl    r3, 16
-    xor    r2, r3
-    mov   r0m, r2
-    DECIMATE_MASK r3, r2, r0+SIZEOF_DCTCOEF*32, m5
-    or     r2, r1
-    DECIMATE_MASK r1, r0, r0+SIZEOF_DCTCOEF*48, m5
-    add    r0, r2
-    jnz .ret9
-    mov    r2, r0m
-    not    r3
-    shl    r1, 16
-    xor    r3, r1
-    test   r2, r2
-    jz .tryret
-%endif
-    mov    al, -6
-.loop:
-    tzcnt ecx, r2
-    add    al, byte [decimate_table8 + ecx]
-    jge .ret9
-    sub   ecx, 31 ; increase the shift count by one to shift away the lowest set bit as well
-    jz .run31     ; only bits 0-4 are used so we have to explicitly handle the case of 1<<31
-    shrd   r2, r3, cl
-    SHRX   r3, ecx
-%if notcpuflag(bmi2)
-    test   r2, r2
-%endif
-    jnz .loop
-    BLSR   r2, r3
-    jz .end
-.largerun:
-    tzcnt ecx, r3
-    shr    r3, 1
-    SHRX   r3, ecx
-.loop2:
-    tzcnt ecx, r3
-    add    al, byte [decimate_table8 + ecx]
-    jge .ret9
-    shr    r3, 1
-    SHRX   r3, ecx
-.run31:
-    test   r3, r3
-    jnz .loop2
-.end:
-    add    al, 6
-    RET
-.tryret:
-    BLSR   r2, r3
-    jz .ret
-    mov    al, -6
-    jmp .largerun
-.ret9:
-    mov   eax, 9
-.ret:
-    REP_RET
-%endif ; ARCH
-%endmacro
-
-INIT_XMM sse2
-DECIMATE4x4 15
-DECIMATE4x4 16
-DECIMATE8x8
-INIT_XMM ssse3
-DECIMATE4x4 15
-DECIMATE4x4 16
-DECIMATE8x8
-%if HIGH_BIT_DEPTH
-INIT_ZMM avx512
-%else
-INIT_YMM avx2
-DECIMATE8x8
-INIT_YMM avx512
-%endif
-DECIMATE4x4 15
-DECIMATE4x4 16
-INIT_ZMM avx512
-DECIMATE8x8
 
 ;-----------------------------------------------------------------------------
 ; int coeff_last( dctcoef *dct )
@@ -1724,94 +699,6 @@ DECIMATE8x8
 %endif
 %endmacro
 
-%if HIGH_BIT_DEPTH
-%macro LAST_MASK 3-4
-%if %1 == 4
-    movq     mm0, [%3]
-    packssdw mm0, [%3+8]
-    packsswb mm0, mm0
-    pcmpeqb  mm0, mm2
-    pmovmskb  %2, mm0
-%elif mmsize == 16
-    movdqa   xmm0, [%3+ 0]
-%if %1 == 8
-    packssdw xmm0, [%3+16]
-    packsswb xmm0, xmm0
-%else
-    movdqa   xmm1, [%3+32]
-    packssdw xmm0, [%3+16]
-    packssdw xmm1, [%3+48]
-    packsswb xmm0, xmm1
-%endif
-    pcmpeqb  xmm0, xmm2
-    pmovmskb   %2, xmm0
-%elif %1 == 8
-    movq     mm0, [%3+ 0]
-    movq     mm1, [%3+16]
-    packssdw mm0, [%3+ 8]
-    packssdw mm1, [%3+24]
-    packsswb mm0, mm1
-    pcmpeqb  mm0, mm2
-    pmovmskb  %2, mm0
-%else
-    movq     mm0, [%3+ 0]
-    movq     mm1, [%3+16]
-    packssdw mm0, [%3+ 8]
-    packssdw mm1, [%3+24]
-    movq     mm3, [%3+32]
-    movq     mm4, [%3+48]
-    packssdw mm3, [%3+40]
-    packssdw mm4, [%3+56]
-    packsswb mm0, mm1
-    packsswb mm3, mm4
-    pcmpeqb  mm0, mm2
-    pcmpeqb  mm3, mm2
-    pmovmskb  %2, mm0
-    pmovmskb  %4, mm3
-    shl       %4, 8
-    or        %2, %4
-%endif
-%endmacro
-
-%macro COEFF_LAST4 0
-cglobal coeff_last4, 1,3
-    pxor mm2, mm2
-    LAST_MASK 4, r1d, r0
-    xor  r1d, 0xff
-    shr  r1d, 4
-    BSR  eax, r1d, 0x1f
-    RET
-%endmacro
-
-INIT_MMX mmx2
-COEFF_LAST4
-INIT_MMX lzcnt
-COEFF_LAST4
-
-%macro COEFF_LAST8 0
-cglobal coeff_last8, 1,3
-    pxor m2, m2
-    LAST_MASK 8, r1d, r0
-%if mmsize == 16
-    xor r1d, 0xffff
-    shr r1d, 8
-%else
-    xor r1d, 0xff
-%endif
-    BSR eax, r1d, 0x1f
-    RET
-%endmacro
-
-%if ARCH_X86_64 == 0
-INIT_MMX mmx2
-COEFF_LAST8
-%endif
-INIT_XMM sse2
-COEFF_LAST8
-INIT_XMM lzcnt
-COEFF_LAST8
-
-%else ; !HIGH_BIT_DEPTH
 %macro LAST_MASK 3-4
 %if %1 <= 8
     movq     mm0, [%3+ 0]
@@ -1873,7 +760,6 @@ INIT_MMX mmx2
 COEFF_LAST48
 INIT_MMX lzcnt
 COEFF_LAST48
-%endif ; HIGH_BIT_DEPTH
 
 %macro COEFF_LAST 0
 cglobal coeff_last15, 1,3
@@ -1940,50 +826,12 @@ INIT_XMM lzcnt
 COEFF_LAST
 
 %macro LAST_MASK_AVX2 2
-%if HIGH_BIT_DEPTH
-    mova     m0, [%2+ 0]
-    packssdw m0, [%2+32]
-    mova     m1, [%2+64]
-    packssdw m1, [%2+96]
-    packsswb m0, m1
-    mova     m1, [deinterleave_shufd]
-    vpermd   m0, m1, m0
-%else
     mova     m0, [%2+ 0]
     packsswb m0, [%2+32]
     vpermq   m0, m0, q3120
-%endif
     pcmpeqb  m0, m2
     pmovmskb %1, m0
 %endmacro
-
-%if ARCH_X86_64 == 0
-INIT_YMM avx2
-cglobal coeff_last64, 1,2
-    pxor m2, m2
-    LAST_MASK_AVX2 r1d, r0+SIZEOF_DCTCOEF*32
-    xor r1d, -1
-    jne .secondhalf
-    LAST_MASK_AVX2 r1d, r0+SIZEOF_DCTCOEF* 0
-    not r1d
-    BSR eax, r1d, 0x1f
-    RET
-.secondhalf:
-    BSR eax, r1d, 0x1f
-    add eax, 32
-    RET
-%else
-INIT_YMM avx2
-cglobal coeff_last64, 1,3
-    pxor m2, m2
-    LAST_MASK_AVX2 r1d, r0+SIZEOF_DCTCOEF* 0
-    LAST_MASK_AVX2 r2d, r0+SIZEOF_DCTCOEF*32
-    shl  r2, 32
-    or   r1, r2
-    not  r1
-    BSR rax, r1, 0x3f
-    RET
-%endif
 
 %macro COEFF_LAST_AVX512 2 ; num, w/d
 cglobal coeff_last%1, 1,2
@@ -2007,12 +855,6 @@ cglobal coeff_last64, 1,2
     pxor        xm0, xm0
     vpcmp%1      k0, m0, [r0+0*64], 4
     vpcmp%1      k1, m0, [r0+1*64], 4
-%if HIGH_BIT_DEPTH
-    vpcmp%1      k2, m0, [r0+2*64], 4
-    vpcmp%1      k3, m0, [r0+3*64], 4
-    kunpckwd     k0, k1, k0
-    kunpckwd     k1, k3, k2
-%endif
 %if ARCH_X86_64
     kunpckdq     k0, k1, k0
     kmovq       rax, k0
@@ -2030,16 +872,6 @@ cglobal coeff_last64, 1,2
     RET
 %endmacro
 
-%if HIGH_BIT_DEPTH
-INIT_XMM avx512
-COEFF_LAST_AVX512  4, d
-INIT_YMM avx512
-COEFF_LAST_AVX512  8, d
-INIT_ZMM avx512
-COEFF_LAST_AVX512 15, d
-COEFF_LAST_AVX512 16, d
-COEFF_LAST64_AVX512 d
-%else ; !HIGH_BIT_DEPTH
 INIT_XMM avx512
 COEFF_LAST_AVX512  8, w
 INIT_YMM avx512
@@ -2047,7 +879,6 @@ COEFF_LAST_AVX512 15, w
 COEFF_LAST_AVX512 16, w
 INIT_ZMM avx512
 COEFF_LAST64_AVX512 w
-%endif ; !HIGH_BIT_DEPTH
 
 ;-----------------------------------------------------------------------------
 ; int coeff_level_run( dctcoef *dct, run_level_t *runlevel )
@@ -2095,18 +926,10 @@ cglobal coeff_level_run%1,0,7
     mov [t1+levelrun.last], t4d
 .loop:
     LZCOUNT t3d, t5d, 0x1f
-%if HIGH_BIT_DEPTH
-    mov    t2d, [t0+t4*4]
-%else
     mov    t2w, [t0+t4*2]
-%endif
     inc    t3d
     shl    t5d, t3b
-%if HIGH_BIT_DEPTH
-    mov   [t1+t6*4+levelrun.level], t2d
-%else
     mov   [t1+t6*2+levelrun.level], t2w
-%endif
     inc    t6d
     sub    t4d, t3d
     jge .loop
@@ -2121,20 +944,12 @@ COEFF_LEVELRUN 16
 COEFF_LEVELRUN 4
 COEFF_LEVELRUN 8
 INIT_XMM sse2
-%if HIGH_BIT_DEPTH
-COEFF_LEVELRUN 8
-%endif
 COEFF_LEVELRUN 15
 COEFF_LEVELRUN 16
 INIT_MMX lzcnt
 COEFF_LEVELRUN 4
-%if HIGH_BIT_DEPTH == 0
 COEFF_LEVELRUN 8
-%endif
 INIT_XMM lzcnt
-%if HIGH_BIT_DEPTH
-COEFF_LEVELRUN 8
-%endif
 COEFF_LEVELRUN 15
 COEFF_LEVELRUN 16
 
@@ -2250,7 +1065,6 @@ cglobal coeff_level_run%1,2,4+(%1/9)
     RET
 %endmacro
 
-%if HIGH_BIT_DEPTH==0
 INIT_MMX ssse3
 COEFF_LEVELRUN_LUT 4
 INIT_XMM ssse3
@@ -2263,7 +1077,868 @@ INIT_XMM ssse3, lzcnt
 COEFF_LEVELRUN_LUT 8
 COEFF_LEVELRUN_LUT 15
 COEFF_LEVELRUN_LUT 16
+
+
+;=============================================================================
+; quant
+;=============================================================================
+INIT_YMM avx2
+cglobal quant_4x4, 0, 0
+    vmovdqu        m0, [r0]
+    vpabsw         m1, m0
+    vpaddusw       m1, m1, [r2]
+    vpmulhuw       m1, m1, [r1]
+    vpsignw        m1, m1, m0
+    vmovdqu        [r0], m1
+
+    xor            eax, eax
+    vptest         m1, m1
+    setnz          al
+    RET
+    
+INIT_YMM avx2
+cglobal quant_8x8, 0, 0
+    vmovdqu        m0, [r0]
+    vmovdqu        m1, [r0 + 32]
+    vpabsw         m2, m0
+    vpabsw         m3, m1
+    vpaddusw       m2, m2, [r2]
+    vpaddusw       m3, m3, [r2 + 32]
+    vpmulhuw       m2, m2, [r1]
+    vpmulhuw       m3, m3, [r1 + 32]
+    vpsignw        m2, m2, m0
+    vpsignw        m3, m3, m1
+    vmovdqu        [r0], m2
+    vmovdqu        [r0 + 32], m3
+    vpor           m4, m2, m3
+
+    vmovdqu        m0, [r0 + 64]
+    vmovdqu        m1, [r0 + 96]
+    vpabsw         m2, m0
+    vpabsw         m3, m1
+    vpaddusw       m2, m2, [r2 + 64]
+    vpaddusw       m3, m3, [r2 + 96]
+    vpmulhuw       m2, m2, [r1 + 64]
+    vpmulhuw       m3, m3, [r1 + 96]
+    vpsignw        m2, m2, m0
+    vpsignw        m3, m3, m1
+    vmovdqu        [r0 + 64], m2
+    vmovdqu        [r0 + 96], m3
+    vpor           m5, m2, m3
+
+    vpor           m4, m4, m5
+    xor            eax, eax
+    vptest         m4, m4
+    setnz          al
+    RET
+
+INIT_YMM avx2
+cglobal quant_4x4x4, 0, 0
+    vmovdqu        m0, [r2]            ; bias
+    vmovdqu        m1, [r1]            ; mf
+
+    vmovdqu        m2, [r0]
+    vmovdqu        m3, [r0 + 32]
+    vpabsw         m4, m2
+    vpabsw         m5, m3
+    vpaddusw       m4, m4, m0
+    vpaddusw       m5, m5, m0
+    vpmulhuw       m4, m4, m1
+    vpmulhuw       m5, m5, m1
+    vpsignw        m4, m4, m2
+    vpsignw        m5, m5, m3
+    vmovdqu        [r0], m4
+    vmovdqu        [r0 + 32], m5
+    vpackssdw      m5, m4, m5
+
+    vmovdqu        m2, [r0 + 64]
+    vpabsw         m3, m2
+    vpaddusw       m3, m3, m0
+    vpmulhuw       m3, m3, m1
+    vpsignw        m4, m3, m2
+    vmovdqu        [r0 + 64], m4
+    vmovdqu        m2, [r0 + 96]
+    vpabsw         m3, m2
+    vpaddusw       m3, m3, m0
+    vpmulhuw       m3, m3, m1
+    vpsignw        m3, m3, m2
+    vmovdqu        [r0 + 96], m3
+    vpackssdw      m3, m4, m3
+
+    vpackssdw      m0, m5, m3
+    vpxor          m1, m1, m1
+    vpcmpeqd       m0, m0, m1
+    vmovmskps      eax, m0             ; bit set for zero
+    mov            r0d, eax
+    shr            eax, 4
+    and            eax, r0d            ; zero out high bits, low bits "or" for non-zero
+    xor            eax, 0Fh            ; neg low bits, bit set for non-zero
+    RET
+
 INIT_XMM avx2
-COEFF_LEVELRUN_LUT 15
-COEFF_LEVELRUN_LUT 16
+cglobal quant_2x2_dc, 0, 0
+    vmovd          m0, r1d             ; mf
+    vmovd          m1, r2d             ; bias
+    vpbroadcastw   m0, m0
+    vpbroadcastw   m1, m1
+    vmovq          m2, [r0]
+    vpabsw         m3, m2
+    vpaddusw       m3, m3, m1
+    vpmulhuw       m3, m3, m0
+    vpsignw        m3, m3, m2
+    vmovq          [r0], m3
+    xor            eax, eax
+    vmovq          r0, m3
+    test           r0, r0
+    setnz          al
+    ret
+
+INIT_YMM avx2
+cglobal quant_4x4_dc, 0, 0
+    vmovd          xm0, r1d            ; mf
+    vmovd          xm1, r2d            ; bias
+    vpbroadcastw   m0, xm0
+    vpbroadcastw   m1, xm1
+    vmovdqu        m2, [r0]
+    vpabsw         m3, m2
+    vpaddusw       m3, m3, m1
+    vpmulhuw       m3, m3, m0
+    vpsignw        m3, m3, m2
+    vmovdqu        [r0], m3
+    xor            eax, eax
+    vptest         m3, m3
+    setnz          al
+    RET
+
+
+;=============================================================================
+; dequant
+;=============================================================================
+INIT_YMM avx2
+cglobal dequant_4x4, 0, 0
+    ; 6 bits are enough for qp, replace div with mul
+    imul           r6d, r1d, 43
+    shr            r6d, 8              ; i_qp / 6, mulh >> 2
+    lea            r3d, [r6 + r6 * 4]
+    sub            r1d, r6d
+    sub            r1d, r3d            ; i_mf -> i_qp - 6 * quotient
+    shl            r1d, 4              ; each row has a stride of 16B
+    lea            r2, [dequant4_scale]
+
+    ; mf = scale * 16 = scale << 4, so we can eliminate rshift
+    vmovd          xm1, r6d
+    vbroadcasti128 m0, [r2 + r1]
+    vpsllw         m0, m0, xm1
+    vpmullw        m0, m0, [r0]
+    vmovdqu        [r0], m0
+    RET
+
+INIT_YMM avx2
+cglobal dequant_8x8, 0, 0
+    ; 6 bits are enough for qp, replace div with mul
+    imul           r6d, r1d, 43
+    shr            r6d, 8              ; i_qp / 6, mulh >> 2
+    lea            r3d, [r6 + r6 * 4]
+    sub            r1d, r6d
+    sub            r1d, r3d            ; i_mf -> i_qp - 6 * quotient
+    sub            r6d, 2              ; may shift right
+    jl             .rshift
+
+; lshift
+    shl            r1d, 6              ; each row has a stride of 64B
+    lea            r2, [dequant8_scale]
+    vmovd          xm0, r6d
+    vmovdqu        m1, [r2 + r1]
+    vmovdqu        m2, [r2 + r1 + 32]
+    vpsllw         m1, m1, xm0
+    vpsllw         m2, m2, xm0
+    vpmullw        m3, m1, [r0]
+    vpmullw        m4, m2, [r0 + 32]
+    vpmullw        m1, m1, [r0 + 64]
+    vpmullw        m2, m2, [r0 + 96]
+    vmovdqu        [r0], m3
+    vmovdqu        [r0 + 32], m4
+    vmovdqu        [r0 + 64], m1
+    vmovdqu        [r0 + 96], m2
+    RET
+
+.rshift:
+    shl            r1d, 7              ; each row has a stride of 128B
+    lea            r2, [dequant8_scale_dword]
+    neg            r6d
+    vmovd          xm0, r6d
+    vpcmpeqw       m1, m1, m1
+    vpslld         m1, m1, xm0
+    vpsrad         m1, m1, 1           ; -f
+
+    ; vpmulld is slow, use vpmaddwd with zero-extend instead
+    vpmovzxwd      m4, [r0]
+    vpmovzxwd      m5, [r0 + 16]
+    vpmaddwd       m4, m4, [r2 + r1]
+    vpmaddwd       m5, m5, [r2 + r1 + 32]
+    vpsubd         m4, m4, m1
+    vpsubd         m5, m5, m1
+    vpsrad         m4, m4, xm0
+    vpsrad         m5, m5, xm0
+    vpackssdw      m4, m4, m5
+    vpermq         m4, m4, q3120
+    vmovdqu        [r0], m4
+    vpmovzxwd      m4, [r0 + 32]
+    vpmovzxwd      m5, [r0 + 48]
+    vpmaddwd       m4, m4, [r2 + r1 + 64]
+    vpmaddwd       m5, m5, [r2 + r1 + 96]
+    vpsubd         m4, m4, m1
+    vpsubd         m5, m5, m1
+    vpsrad         m4, m4, xm0
+    vpsrad         m5, m5, xm0
+    vpackssdw      m4, m4, m5
+    vpermq         m4, m4, q3120
+    vmovdqu        [r0 + 32], m4
+    vpmovzxwd      m4, [r0 + 64]
+    vpmovzxwd      m5, [r0 + 80]
+    vpmaddwd       m4, m4, [r2 + r1]
+    vpmaddwd       m5, m5, [r2 + r1 + 32]
+    vpsubd         m4, m4, m1
+    vpsubd         m5, m5, m1
+    vpsrad         m4, m4, xm0
+    vpsrad         m5, m5, xm0
+    vpackssdw      m4, m4, m5
+    vpermq         m4, m4, q3120
+    vmovdqu        [r0 + 64], m4
+    vpmovzxwd      m4, [r0 + 96]
+    vpmovzxwd      m5, [r0 + 112]
+    vpmaddwd       m4, m4, [r2 + r1 + 64]
+    vpmaddwd       m5, m5, [r2 + r1 + 96]
+    vpsubd         m4, m4, m1
+    vpsubd         m5, m5, m1
+    vpsrad         m4, m4, xm0
+    vpsrad         m5, m5, xm0
+    vpackssdw      m4, m4, m5
+    vpermq         m4, m4, q3120
+    vmovdqu        [r0 + 96], m4
+    RET
+
+INIT_YMM avx2
+cglobal dequant_4x4_dc, 0, 0
+    ; 6 bits are enough for qp, replace div with mul
+    imul           r6d, r1d, 43
+    shr            r6d, 8              ; i_qp / 6, mulh >> 2
+    lea            r3d, [r6 + r6 * 4]
+    sub            r1d, r6d
+    sub            r1d, r3d            ; i_mf -> i_qp - 6 * quotient
+    shl            r1d, 4              ; each row has a stride of 16B
+    lea            r2, [dequant4_scale]
+    sub            r6d, 2              ; may shift right
+    jl             .rshift
+
+; lshift
+    vmovd          xm1, r6d
+    vpbroadcastw   m0, [r2 + r1]
+    vpsllw         m0, m0, xm1
+    vpmullw        m0, m0, [r0]
+    vmovdqu        [r0], m0
+    RET
+
+.rshift:
+    neg            r6d
+    vmovd          xm0, r6d
+    vpcmpeqw       m1, m1, m1
+    vpsllw         m1, m1, xm0
+    vpsraw         m1, m1, 1           ; -f
+    vpbroadcastw   m2, [r2 + r1]       ; no overflow for dc
+    vpmullw        m2, m2, [r0]
+    vpsubw         m2, m2, m1
+    vpsraw         m2, m2, xm0
+    vmovdqu        [r0], m2
+    RET
+
+
+;=============================================================================
+; idct_dequant
+;=============================================================================
+INIT_XMM avx2
+cglobal idct_dequant_2x4_dc, 0, 0
+    imul           r6d, r2d, 43
+    shr            r6d, 8              ; i_qp / 6, mulh >> 2
+    lea            r3d, [r6 + r6 * 4]
+    sub            r2d, r6d
+    sub            r2d, r3d            ; i_mf -> i_qp - 6 * quotient
+    lea            r3, [idct_dequant4_scale]
+
+    ; idct last stage
+    vmovq          m0, [r0]
+    vmovq          m1, [r0 + 8]
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    ; idct middle stage
+    vpunpcklqdq    m0, m2, m3          ; a0 a1 a2 a3 a4 a5 a6 a7
+    vshufps        m1, m2, m3, 11h     ; a2 a3 a0 a1 a6 a7 a4 a5
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    vpshufd        m3, m3, 0Ah         ; rearrange for the final result
+    ; idct first stage
+    vpbroadcastq   m4, [r3 + r2 * 8]
+    sub            r6d, 2              ; may shift right
+    jl             .rshift
+
+    vmovd          m5, r6d
+    vpsllw         m4, m4, m5          ; dmf
+    vpmaddwd       m2, m2, m4
+    vpmaddwd       m3, m3, m4
+    jmp            .end
+
+ALIGN 16
+.rshift:
+    vpmaddwd       m2, m2, m4
+    vpmaddwd       m3, m3, m4
+    neg            r6d
+    vmovd          m0, r6d
+    vpcmpeqd       m1, m1, m1
+    vpslld         m1, m1, m0
+    vpsrad         m1, m1, 1
+    vpsubd         m2, m2, m1
+    vpsubd         m3, m3, m1
+    vpsrad         m2, m2, m0
+    vpsrad         m3, m3, m0
+.end:
+    vpextrw        [r1], m2, 0
+    vpextrw        [r1 + 32], m2, 2
+    vpextrw        [r1 + 64], m2, 4
+    vpextrw        [r1 + 96], m2, 6
+    add            r1, 128
+    vpextrw        [r1], m3, 0
+    vpextrw        [r1 + 32], m3, 2
+    vpextrw        [r1 + 64], m3, 4
+    vpextrw        [r1 + 96], m3, 6
+    ret
+
+INIT_XMM avx2
+cglobal idct_dequant_2x4_dconly, 0, 0
+    imul           r6d, r1d, 43
+    shr            r6d, 8              ; i_qp / 6, mulh >> 2
+    lea            r3d, [r6 + r6 * 4]
+    sub            r1d, r6d
+    sub            r1d, r3d            ; i_mf -> i_qp - 6 * quotient
+    lea            r3, [idct_dequant4_scale]
+
+    ; idct last stage
+    vmovq          m0, [r0]
+    vmovq          m1, [r0 + 8]
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    ; idct middle stage
+    vpunpcklqdq    m0, m2, m3          ; a0 a1 a2 a3 a4 a5 a6 a7
+    vshufps        m1, m2, m3, 11h     ; a2 a3 a0 a1 a6 a7 a4 a5
+    vpaddw         m2, m0, m1
+    vpsubw         m3, m0, m1
+    vpshufd        m3, m3, 0Ah         ; rearrange for the final result
+    ; idct first stage
+    vpbroadcastq   m4, [r3 + r1 * 8]
+    sub            r6d, 2              ; may shift right
+    jl             .rshift
+
+    vmovd          m5, r6d
+    vpsllw         m4, m4, m5          ; dmf
+    vpmaddwd       m2, m2, m4
+    vpmaddwd       m3, m3, m4
+    vpackssdw      m2, m2, m3
+    vmovdqu        [r0], m2
+    ret
+
+ALIGN 16
+.rshift:
+    vpmaddwd       m2, m2, m4
+    vpmaddwd       m3, m3, m4
+    neg            r6d
+    vmovd          m0, r6d
+    vpcmpeqd       m1, m1, m1
+    vpslld         m1, m1, m0
+    vpsrad         m1, m1, 1
+    vpsubd         m2, m2, m1
+    vpsubd         m3, m3, m1
+    vpsrad         m2, m2, m0
+    vpsrad         m3, m3, m0
+    vpackssdw      m2, m2, m3
+    vmovdqu        [r0], m2
+    ret
+
+
+;=============================================================================
+; optimize_chroma
+;=============================================================================
+INIT_XMM avx2
+cglobal optimize_chroma_2x2_dc, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], m6
 %endif
+    vpbroadcastq   m0, [r0]            ; dct  0 1 2 3  0 1 2 3
+    vmovd          m1, r1d             ; dequant_mf
+    vpcmpeqb       m2, m2, m2
+    vpslld         m2, m2, 11          ; mask for early skip check
+    vpbroadcastw   m1, m1
+    vpshufd        m3, m0, q0101       ; dct  2 3 0 1  2 3 0 1
+    vpbroadcastd   m4, [pd_1024]       ; 32 << 5
+    vpbroadcastq   m5, [chroma_dc_dct_mask]
+    vpsignw        m3, m3, m5          ; dct  2 3 -0 -1  2 3 -0 -1
+    vpsignw        m1, m1, [chroma_dc_dmf_mask]  ; mf  + + - -  + - - +
+    vpaddw         m3, m0, m3          ; dct  0+2 1+3 -(0-2) -(1-3) ...
+    vpmaddwd       m3, m3, m1          ; (dct[0] dct[1] dct[2] dct[3]) * mf (without + 32)
+    vpaddd         m3, m3, m4          ; dct_orig
+    vpunpcklwd     m0, m0, m0          ; dct 0 0 1 1 2 2 3 3
+    vpsrad         m1, m1, 16          ; mf + - - +
+    xor            r6d, r6d            ; nz = 0
+    vptest         m3, m2
+    jz             .ret                ; early skip
+    mov            r1d, 3              ; coeff = 3
+    vmovdqu        m4, m3
+.outer_loop:
+    movsx          r2d, word [r0 + r1 * 2]  ; dct[coeff]
+    vpshufd        m5, m0, q3333       ; take the highest element
+    vpshufd        m0, m0, q2100       ; move the next element to high dword
+    vpsignd        m5, m1, m5          ; sign * mf, for rounding
+    test           r2d, r2d
+    jz             .loop_end           ; if (level == 0) goto the next coeff
+    mov            r3d, r2d
+    sar            r2d, 31
+    or             r2d, 1
+.inner_loop:
+    vpsubd         m4, m4, m5          ; round and then check inner "if"
+    vpxor          m6, m4, m3
+    vptest         m6, m2
+    jnz            .inner_break
+    sub            r3d, r2d            ; level -= sign
+    mov            [r0 + r1 * 2], r3w
+    jnz            .inner_loop
+    jmp            .loop_end
+.inner_break:
+    vpaddd         m4, m4, m5          ; reverse the last rounding
+    mov            r6d, 1
+.loop_end:
+    dec            r1d
+    jz             .last_coeff
+    vpshufd        m1, m1, q1320       ; mf + - + - / + + - -
+    jmp            .outer_loop
+
+ALIGN 16
+.last_coeff:
+    movsx          r2d, word [r0]
+    vpunpcklqdq    m1, m1, m1          ; mf + + + +
+    vpsignd        m5, m1, m0
+    test           r2d, r2d
+    jz             .ret
+
+    mov            r3d, r2d
+    sar            r2d, 31
+    or             r2d, 1
+.inner_loop2:
+    vpsubd         m4, m4, m5          ; round and then check inner "if"
+    vpxor          m6, m4, m3
+    vptest         m6, m2
+    jnz            .inner_break2
+
+    sub            r3d, r2d            ; level -= sign
+    mov            [r0 + r1 * 2], r3w
+    jnz            .inner_loop2
+    jmp            .ret
+.inner_break2:
+    mov            r6d, 1
+    
+.ret:
+%if WIN64
+    vmovdqu        m6, [rsp + 8]
+%endif
+    ret
+
+
+INIT_YMM avx2
+cglobal optimize_chroma_2x4_dc, 0, 0
+%if WIN64
+    vmovdqu        [rsp + 8], xm6
+    vmovdqu        [rsp + 24], xm7
+    sub            rsp, 40
+    vmovdqu        [rsp], xm8
+    vmovdqu        [rsp + 16], xm9
+%endif
+    vmovq          xm0, [r0]           ; dct  0 1 2 3
+    vmovq          xm1, [r0 + 8]       ; dct  4 5 6 7
+    vinserti128    m5, m0, xm1, 1      ; dct  0 1 2 3 | 4 5 6 7
+    vpunpcklwd     m5, m5, m5
+    vpaddw         xm2, xm0, xm1
+    vpsubw         xm3, xm0, xm1
+    vpunpckldq     xm0, xm2, xm3
+    vpunpckhqdq    xm1, xm0, xm0
+    vpaddw         xm2, xm0, xm1
+    vpsubw         xm3, xm0, xm1
+    vpshufd        xm3, xm3, q0001
+    vinserti128    m0, m2, xm3, 1
+    vpunpckldq     m0, m0, m0
+    vmovd          xm1, r1d            ; dequant_mf
+    vpbroadcastw   m1, xm1
+    vpbroadcastq   m2, [chroma_dc_dmf_2x4_mask]
+    vpsignw        m1, m1, m2          ; mf + + + - ...
+    vpmaddwd       m0, m0, m1
+    vpbroadcastd   m4, [pd_2080]
+    vpaddd         m0, m0, m4          ; dct_orig
+    vpunpcklwd     xm1, xm1, xm1
+    vpsrad         xm1, xm1, 16        ; mf + + + -
+    xor            r6d, r6d            ; nz = 0
+    vpcmpeqb       m2, m2, m2
+    vpslld         m2, m2, 12          ; mask for early skip check
+    vptest         m0, m2
+    jz             .ret                ; early skip
+    mov            r1d, 7              ; coeff = 7
+    vmovdqu        m3, m0
+    lea            r4, [chroma_dc_mf_perm]
+    vpbroadcastd   m6, [pd_7]
+    vpsrld         m7, m6, 2           ; pd_1
+.outer_loop:
+    movsx          r2d, word [r0 + r1 * 2]  ; dct[coeff]
+    vpermd         m4, m6, m5          ; take the highest element
+    mov            r5d, r1d
+    shl            r5d, 5
+    vmovdqu        m8, [r4 + r5]
+    vpermd         m8, m8, m1
+    vpsignd        m8, m8, m4          ; sign * mf, for rounding
+    test           r2d, r2d
+    jz             .loop_end           ; if (level == 0) goto the next coeff
+    mov            r3d, r2d
+    sar            r2d, 31
+    or             r2d, 1
+.inner_loop:
+    vpsubd         m3, m3, m8          ; round and then check inner "if"
+    vpxor          m9, m0, m3
+    vptest         m9, m2
+    jnz            .inner_break
+    sub            r3d, r2d            ; level -= sign
+    mov            [r0 + r1 * 2], r3w
+    jnz            .inner_loop
+    jmp            .loop_end
+.inner_break:
+    vpaddd         m3, m3, m8          ; reverse the last rounding
+    mov            r6d, 1
+.loop_end:
+    dec            r1d
+    jl             .ret
+    vpsubd         m6, m6, m7
+    jmp            .outer_loop
+
+ALIGN 16
+.ret:
+%if WIN64
+    vmovdqu        xm8, [rsp]
+    vmovdqu        xm9, [rsp + 16]
+    add            rsp, 40
+    vmovdqu        xm6, [rsp + 8]
+    vmovdqu        xm7, [rsp + 24]
+%endif
+    RET
+
+
+;=============================================================================
+; denoise_dct
+;=============================================================================
+INIT_YMM avx2
+cglobal denoise_dct, 0, 0
+    vpxor          m3, m3
+.loop:
+    vmovdqu        m0, [r0 + r3 * 2 - 32]   ; level
+    vpabsw         m1, m0                   ; level = abs(level)
+    vpsubusw       m2, m1, [r2 + r3 * 2 - 32]  ; level -= offset
+    vpermq         m1, m1, q3120
+    vpsignw        m2, m2, m0
+    vmovdqu        [r0 + r3 * 2 - 32], m2
+    vpunpcklwd     m0, m1, m3
+    vpunpckhwd     m1, m1, m3
+    vpaddd         m0, [r1 + r3 * 4 - 64]
+    vpaddd         m1, [r1 + r3 * 4 - 32]
+    vmovdqu        [r1 + r3 * 4 - 64], m0
+    vmovdqu        [r1 + r3 * 4 - 32], m1
+    sub            r3d, 16
+    jg             .loop
+    RET
+
+
+;=============================================================================
+; decimate_score
+;=============================================================================
+INIT_XMM avx2
+cglobal decimate_score15, 0, 0
+    vmovdqu        m0, [r0]
+    vpacksswb      m0, m0, [r0 + 16]
+    vpcmpeqb       m1, m1, m1
+    vpabsb         m1, m1              ; pb_1
+    vpabsb         m0, m0
+    vptest         m1, m0              ; check > 1
+    jnc            .ret9
+    vpxor          m3, m3, m3
+    vpcmpeqb       m3, m0, m3          ; flag for dct[i] == 0
+    vpmovmskb      r6d, m3
+    xor            r6d, 0FFFFh         ; not ax, dct[i] != 0 ? bit 1 : bit 0
+    jz             .ret
+    shr            r6d, 1              ; need to remove the last bit
+    lea            r2, [decimate_mask_table4]  ; score lut for a byte
+    movzx          r0d, r6b
+    mov            r1d, r6d
+    movzx          r6d, byte [r2 + r0] ; low byte score
+    xor            r1d, r0d            ; check if the high byte is zero, and clear the low byte
+    jz             .ret
+    ; for low byte, leading zeros y = n - 24
+    ; for high byte, trailing zeros x = n - 8
+    lzcnt          r0d, r0d
+    lea            r3, [decimate_table4 - 32]  ; x + y
+    add            r3, r0
+    tzcnt          r0d, r1d
+    shrx           r1d, r1d, r0d
+    shr            r1d, 1
+    movzx          r0d, byte [r3 + r0] ; score for the (10*) in both bytes
+    movzx          r1d, byte [r2 + r1] ; the score of remaining part in high byte
+    add            r6d, r0d
+    add            r6d, r1d 
+.ret:
+    ret
+.ret9:
+    mov            r6d, 9
+    ret
+
+INIT_XMM avx2
+cglobal decimate_score16, 0, 0
+    vmovdqu        m0, [r0]
+    vpacksswb      m0, m0, [r0 + 16]
+    vpcmpeqb       m1, m1, m1
+    vpabsb         m1, m1              ; pb_1
+    vpabsb         m0, m0
+    vptest         m1, m0              ; check > 1
+    jnc            .ret9
+    vpxor          m3, m3, m3
+    vpcmpeqb       m3, m0, m3          ; flag for dct[i] == 0
+    vpmovmskb      r6d, m3
+    xor            r6d, 0FFFFh         ; not ax, dct[i] != 0 ? bit 1 : bit 0
+    jz             .ret
+    lea            r2, [decimate_mask_table4]  ; score lut for a byte
+    movzx          r0d, r6b
+    mov            r1d, r6d
+    movzx          r6d, byte [r2 + r0] ; low byte score
+    xor            r1d, r0d            ; check if the high byte is zero, and clear the low byte
+    jz             .ret
+    ; for low byte, leading zeros y = n - 24
+    ; for high byte, trailing zeros x = n - 8
+    lzcnt          r0d, r0d
+    lea            r3, [decimate_table4 - 32]  ; x + y
+    add            r3, r0
+    tzcnt          r0d, r1d
+    shrx           r1d, r1d, r0d
+    shr            r1d, 1
+    movzx          r0d, byte [r3 + r0] ; score for the (10*) in both bytes
+    movzx          r1d, byte [r2 + r1] ; the score of remaining part in high byte
+    add            r6d, r0d
+    add            r6d, r1d 
+.ret:
+    ret
+.ret9:
+    mov            r6d, 9
+    ret
+
+INIT_YMM avx2
+cglobal decimate_score64, 0, 0
+    vmovdqu        m0, [r0]
+    vpacksswb      m0, m0, [r0 + 32]
+    vmovdqu        m1, [r0 + 64]
+    vpacksswb      m1, [r0 + 96]
+    vpcmpeqb       m4, m4, m4
+    vpabsb         m4, m4              ; pb_1
+    vpabsb         m2, m0
+    vpabsb         m3, m1
+    vpor           m2, m2, m3
+    vptest         m4, m2              ; check > 1
+    jnc            .ret9
+    vpermq         m0, m0, q3120
+    vpermq         m1, m1, q3120
+    vpxor          m4, m4, m4
+    vpcmpeqb       m0, m0, m4
+    vpcmpeqb       m1, m1, m4
+    vpmovmskb      r0d, m0
+    vpmovmskb      r6d, m1
+    not            r0                  ; 1111... | low dword
+    shl            r6, 32              ; high dword(inv) | 0
+    xor            r0, r6              ; high dword | low dword
+    jz             .ret                ; now eax = 0
+    lea            r2, [decimate_table8]
+.loop:
+    tzcnt          r1, r0
+    movzx          r3d, byte [r2 + r1]
+    shr            r0, 1
+    add            r6d, r3d            ; score
+    shrx           r0, r0, r1
+    test           r0, r0
+    jnz            .loop
+.ret:
+    RET
+.ret9:
+    mov            r6d, 9
+    RET
+
+
+;=============================================================================
+; coeff_last
+;=============================================================================
+INIT_XMM avx2
+cglobal coeff_last4, 0, 0
+    lzcnt          r6, [r0]
+    xor            r6d, 3Fh            ; bit index = 63 - lzcnt
+    shr            r6d, 4              ; word index
+    ret
+
+INIT_XMM avx2
+cglobal coeff_last8, 0, 0
+    vpxor          m0, m0, m0
+    vpcmpeqb       m0, m0, [r0]
+    vpmovmskb      r0d, m0
+    xor            r0d, 0FFFFh         ; invert low word
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    shr            r6d, 1              ; word index
+    ret
+
+INIT_XMM avx2
+cglobal coeff_last15, 0, 0
+    vmovdqu        m0, [r0 - 2]
+    vpacksswb      m0, m0, [r0 + 14]
+    vpxor          m1, m1, m1
+    vpcmpeqb       m0, m0, m1
+    vpmovmskb      r0d, m0
+    xor            r0d, 0FFFFh         ; invert low word
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    dec            r6d
+    ret
+
+INIT_XMM avx2
+cglobal coeff_last16, 0, 0
+    vmovdqu        m0, [r0]
+    vpacksswb      m0, m0, [r0 + 16]
+    vpxor          m1, m1, m1
+    vpcmpeqb       m0, m0, m1
+    vpmovmskb      r0d, m0
+    xor            r0d, 0FFFFh         ; invert low word
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    ret
+
+INIT_YMM avx2
+cglobal coeff_last64, 0, 0
+    vpxor          m0, m0, m0
+    vmovdqu        m1, [r0]
+    vpacksswb      m1, m1, [r0 + 32]
+    vpermq         m1, m1, q3120
+    vpcmpeqb       m1, m1, m0
+    vpmovmskb      r1d, m1
+    vmovdqu        m1, [r0 + 64]
+    vpacksswb      m1, m1, [r0 + 96]
+    vpermq         m1, m1, q3120
+    vpcmpeqb       m1, m1, m0
+    vpmovmskb      r0d, m1
+    shl            r0, 32
+    or             r1, r0
+    not            r1
+    lzcnt          r6, r1
+    xor            r6d, 3Fh            ; bit index = 63 - lzcnt
+    RET
+
+
+;=============================================================================
+; coeff_level_run
+;=============================================================================
+INIT_XMM avx2
+cglobal coeff_level_run4, 0, 0
+    vmovq          m0, [r0]
+    vpxor          m1, m1, m1
+    vpacksswb      m2, m0, m1
+    vpcmpeqb       m2, m2, m1
+    vpmovmskb      r0d, m2
+    xor            r0d, 0FFFFh         ; only care of the lowest 4 bits
+    mov            [r1 + 4], r0d       ; runlevel->mask
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    mov            [r1], r6d           ; runlevel->last
+    lea            r6, [coeff_level_shuffle]
+    shl            r0d, 4
+    vpshufb        m0, m0, [r6 + r0]
+    vmovq          [r1 + 16], m0
+    popcnt         r6d, r0d
+    ret
+
+INIT_XMM avx2
+cglobal coeff_level_run8, 0, 0
+    vmovdqu        m0, [r0]
+    vpxor          m1, m1, m1
+    vpacksswb      m2, m0, m1
+    vpcmpeqb       m2, m2, m1
+    vpmovmskb      r0d, m2
+    xor            r0d, 0FFFFh         ; only care of the lowest 8 bits
+    mov            [r1 + 4], r0d       ; runlevel->mask
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    mov            [r1], r6d           ; runlevel->last
+    lea            r6, [coeff_level_shuffle]
+    shl            r0d, 4
+    vpshufb        m0, m0, [r6 + r0]
+    vmovdqu        [r1 + 16], m0
+    popcnt         r6d, r0d
+    ret
+
+INIT_XMM avx2
+cglobal coeff_level_run15, 0, 0
+    vmovdqu        m0, [r0 - 2]
+    vmovdqu        m1, [r0 + 14]
+    vpacksswb      m2, m0, m1
+    vpxor          m3, m3, m3
+    vpcmpeqb       m2, m2, m3
+    vpmovmskb      r0d, m2
+    xor            r0d, 0FFFFh         ; low word
+    shr            r0d, 1
+    mov            [r1 + 4], r0d       ; runlevel->mask
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    mov            [r1], r6d           ; runlevel->last
+    lea            r6, [coeff_level_shuffle]
+    mov            r2d, r0d
+    movzx          r3d, r0b            ; for m0
+    shr            r2d, 8              ; for m1
+    shl            r3d, 4
+    shl            r2d, 4
+    vpalignr       m0, m1, m0, 2
+    vpshufb        m0, m0, [r6 + r3]
+    vpsrldq        m1, m1, 2
+    vpshufb        m1, m1, [r6 + r2]
+    vmovdqu        [r1 + 16], m1
+    popcnt         r3d, r2d            ; only low 16 bits are valid, shl won't affect it in 32 bits
+    vmovdqu        [r1 + r3 * 2 + 16], m0
+    popcnt         r6d, r0d
+    ret
+
+INIT_XMM avx2
+cglobal coeff_level_run16, 0, 0
+    vmovdqu        m0, [r0]
+    vmovdqu        m1, [r0 + 16]
+    vpacksswb      m2, m0, m1
+    vpxor          m3, m3, m3
+    vpcmpeqb       m2, m2, m3
+    vpmovmskb      r0d, m2
+    xor            r0d, 0FFFFh         ; low word
+    mov            [r1 + 4], r0d       ; runlevel->mask
+    lzcnt          r6d, r0d
+    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
+    mov            [r1], r6d           ; runlevel->last
+    lea            r6, [coeff_level_shuffle]
+    mov            r2d, r0d
+    movzx          r3d, r0b            ; for m0
+    shr            r2d, 8              ; for m1
+    shl            r3d, 4
+    shl            r2d, 4
+    vpshufb        m0, m0, [r6 + r3]
+    vpshufb        m1, m1, [r6 + r2]
+    vmovdqu        [r1 + 16], m1
+    popcnt         r3d, r2d            ; only low 16 bits are valid, shl won't affect it in 32 bits
+    vmovdqu        [r1 + r3 * 2 + 16], m0
+    popcnt         r6d, r0d
+    ret

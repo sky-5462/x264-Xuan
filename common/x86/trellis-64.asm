@@ -83,26 +83,12 @@ SECTION .text
 %macro SQUARE 2 ; dst, tmp
     ; could use pmuldq here, to eliminate the abs. but that would involve
     ; templating a sse4 version of all of trellis, for negligible speedup.
-%if cpuflag(ssse3)
     pabsd   m%1, m%1
     pmuludq m%1, m%1
-%elif HIGH_BIT_DEPTH
-    ABSD    m%2, m%1
-    SWAP     %1, %2
-    pmuludq m%1, m%1
-%else
-    pmuludq m%1, m%1
-    pand    m%1, [pq_ffffffff]
-%endif
 %endmacro
 
 %macro LOAD_DUP 2 ; dst, src
-%if cpuflag(ssse3)
     movddup    %1, %2
-%else
-    movd       %1, %2
-    punpcklqdq %1, %1
-%endif
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -231,37 +217,13 @@ cglobal %1, 4,15,9
     mov    r0d, [nodes_curq + node_level_idx(0) + rax*4]
 .writeback_loop:
     movzx   r2, byte [zigzagq + iiq]
-%if cpuflag(ssse3)
     movd    m0, [level_tree + r0*4]
     movzx   r0, word [level_tree + r0*4]
     psrld   m0, 16
     movd    m1, [dctq + r2*SIZEOF_DCTCOEF]
-%if HIGH_BIT_DEPTH
-    psignd  m0, m1
-    movd [dctq + r2*SIZEOF_DCTCOEF], m0
-%else
     psignw  m0, m1
     movd   r4d, m0
     mov  [dctq + r2*SIZEOF_DCTCOEF], r4w
-%endif
-%else
-    mov    r5d, [level_tree + r0*4]
-%if HIGH_BIT_DEPTH
-    mov    r4d, dword [dctq + r2*SIZEOF_DCTCOEF]
-%else
-    movsx  r4d, word [dctq + r2*SIZEOF_DCTCOEF]
-%endif
-    movzx  r0d, r5w
-    sar    r4d, 31
-    shr    r5d, 16
-    xor    r5d, r4d
-    sub    r5d, r4d
-%if HIGH_BIT_DEPTH
-    mov  [dctq + r2*SIZEOF_DCTCOEF], r5d
-%else
-    mov  [dctq + r2*SIZEOF_DCTCOEF], r5w
-%endif
-%endif
     inc    iiq
     jle .writeback_loop
 
@@ -275,10 +237,6 @@ cglobal %1, 4,15,9
     pxor       m0, m0
     mova [r10+ 0], m0
     mova [r10+16], m0
-%if HIGH_BIT_DEPTH
-    mova [r10+32], m0
-    mova [r10+48], m0
-%endif
     jmp .return
 %endif
 %endmacro ; TRELLIS
@@ -289,11 +247,7 @@ cglobal %1, 4,15,9
 .i_loop%1:
     ; if( !quant_coefs[i] )
     mov   r6, quant_coefsm
-%if HIGH_BIT_DEPTH
-    mov   abs_leveld, dword [r6 + iiq*SIZEOF_DCTCOEF]
-%else
     movsx abs_leveld, word [r6 + iiq*SIZEOF_DCTCOEF]
-%endif
 
     ; int sigindex  = num_coefs == 64 ? significant_coeff_flag_offset_8x8[b_interlaced][i] :
     ;                 num_coefs == 8  ? coeff_flag_offset_chroma_422_dc[i] : i;
@@ -332,24 +286,11 @@ cglobal %1, 4,15,9
     movzx   zigzagid, byte [zigzagq+iiq]
     movd    m0, abs_leveld
     mov     r6, orig_coefsm
-%if HIGH_BIT_DEPTH
-    LOAD_DUP m1, [r6 + zigzagiq*SIZEOF_DCTCOEF]
-%else
     LOAD_DUP m1, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]
     psrad    m1, 16     ; sign_coef
-%endif
     punpcklqdq m0, m0 ; quant_coef
-%if cpuflag(ssse3)
     pabsd   m0, m0
     pabsd   m2, m1 ; abs_coef
-%else
-    pxor    m8, m8
-    pcmpgtd m8, m1 ; sign_mask
-    pxor    m0, m8
-    pxor    m2, m1, m8
-    psubd   m0, m8
-    psubd   m2, m8
-%endif
     psubd   m0, [sq_1] ; abs_level
     movd  abs_leveld, m0
 
@@ -426,25 +367,12 @@ cglobal %1, 4,15,9
     ; int psy_weight = dct_weight_tab[zigzag[i]] * h->mb.i_psy_trellis;
     ; ssd1[k] -= psy_weight * psy_value;
     mov     r6, fenc_dctm
-%if HIGH_BIT_DEPTH
-    LOAD_DUP m3, [r6 + zigzagiq*SIZEOF_DCTCOEF]
-%else
     LOAD_DUP m3, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]
     psrad   m3, 16 ; orig_coef
-%endif
-%if cpuflag(ssse3)
     psignd  m4, m1 ; SIGN(unquant_abs_level, sign_coef)
-%else
-    PSIGN d, m4, m8
-%endif
     psubd   m3, m1 ; predicted_coef
     paddd   m4, m3
-%if cpuflag(ssse3)
     pabsd   m4, m4
-%else
-    ABSD    m3, m4
-    SWAP     4, 3
-%endif
     LOAD_DUP m1, [dct_weight1_tab + zigzagiq*4 GLOBAL]
     pmuludq m1, psy_trellis
     pmuludq m4, m1
@@ -485,17 +413,8 @@ cglobal %1, 4,15,9
     movq   r12, m0
     ; for( int j = 0; j < 8; j++ )
     ;     nodes_cur[j].score = TRELLIS_SCORE_MAX;
-%if cpuflag(ssse3)
     mova [nodes_curq + node_score(0)], m7
     mova [nodes_curq + node_score(2)], m7
-%else ; avoid store-forwarding stalls on k8/k10
-%if %1 == 0
-    movq [nodes_curq + node_score(0)], m7
-%endif
-    movq [nodes_curq + node_score(1)], m7
-    movq [nodes_curq + node_score(2)], m7
-    movq [nodes_curq + node_score(3)], m7
-%endif
     mova [nodes_curq + node_score(4)], m7
     mova [nodes_curq + node_score(6)], m7
     je %%.switch_coef1
@@ -563,13 +482,6 @@ cglobal %1, 4,15,9
     add  levels_usedd, (1+%1)*4
 %endmacro
 
-INIT_XMM sse2
-TRELLIS trellis_cabac_4x4, 16, 0, 0
-TRELLIS trellis_cabac_8x8, 64, 0, 0
-TRELLIS trellis_cabac_4x4_psy, 16, 0, 1
-TRELLIS trellis_cabac_8x8_psy, 64, 0, 1
-TRELLIS trellis_cabac_dc, 16, 1, 0
-TRELLIS trellis_cabac_chroma_422_dc, 8, 1, 0
 INIT_XMM ssse3
 TRELLIS trellis_cabac_4x4, 16, 0, 0
 TRELLIS trellis_cabac_8x8, 64, 0, 0

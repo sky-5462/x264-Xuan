@@ -49,20 +49,7 @@ extern const uint16_t x264_chroma_lambda2_offset_tab[MAX_CHROMA_LAMBDA_OFFSET+1]
 extern const uint8_t x264_hpel_ref0[16];
 extern const uint8_t x264_hpel_ref1[16];
 
-extern const uint8_t x264_cqm_jvt4i[16];
-extern const uint8_t x264_cqm_jvt4p[16];
-extern const uint8_t x264_cqm_jvt8i[64];
-extern const uint8_t x264_cqm_jvt8p[64];
 extern const uint8_t x264_cqm_flat16[64];
-extern const uint8_t * const x264_cqm_jvt[8];
-extern const uint8_t x264_cqm_avci50_4ic[16];
-extern const uint8_t x264_cqm_avci50_p_8iy[64];
-extern const uint8_t x264_cqm_avci50_1080i_8iy[64];
-extern const uint8_t x264_cqm_avci100_720p_4ic[16];
-extern const uint8_t x264_cqm_avci100_720p_8iy[64];
-extern const uint8_t x264_cqm_avci100_1080_4ic[16];
-extern const uint8_t x264_cqm_avci100_1080i_8iy[64];
-extern const uint8_t x264_cqm_avci100_1080p_8iy[64];
 
 extern const uint8_t x264_decimate_table4[16];
 extern const uint8_t x264_decimate_table8[64];

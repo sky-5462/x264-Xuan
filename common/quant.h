@@ -35,12 +35,13 @@ typedef struct
     int (*quant_4x4_dc)( dctcoef dct[16], int mf, int bias );
     int (*quant_2x2_dc)( dctcoef dct[4], int mf, int bias );
 
-    void (*dequant_8x8)( dctcoef dct[64], int dequant_mf[6][64], int i_qp );
-    void (*dequant_4x4)( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
-    void (*dequant_4x4_dc)( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
+    // fixed dequant_mf with CQM_FLAT
+    void (*dequant_8x8)( dctcoef dct[64], int i_qp );
+    void (*dequant_4x4)( dctcoef dct[16], int i_qp );
+    void (*dequant_4x4_dc)( dctcoef dct[16], int i_qp );
 
-    void (*idct_dequant_2x4_dc)( dctcoef dct[8], dctcoef dct4x4[8][16], int dequant_mf[6][16], int i_qp );
-    void (*idct_dequant_2x4_dconly)( dctcoef dct[8], int dequant_mf[6][16], int i_qp );
+    void (*idct_dequant_2x4_dc)( dctcoef dct[8], dctcoef dct4x4[8][16], int i_qp );
+    void (*idct_dequant_2x4_dconly)( dctcoef dct[8], int i_qp );
 
     int (*optimize_chroma_2x2_dc)( dctcoef dct[4], int dequant_mf );
     int (*optimize_chroma_2x4_dc)( dctcoef dct[8], int dequant_mf );
@@ -70,6 +71,6 @@ typedef struct
 } x264_quant_function_t;
 
 #define x264_quant_init x264_template(quant_init)
-void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf );
+void x264_quant_init( x264_t *h, x264_quant_function_t *pf );
 
 #endif

@@ -641,8 +641,6 @@ static int validate_parameters( x264_t *h, int b_open )
         && h->param.rc.i_qp_constant == 0 )
     {
         h->mb.b_lossless = 1;
-        h->param.i_cqm_preset = X264_CQM_FLAT;
-        h->param.psz_cqm_file = NULL;
         h->param.rc.i_rc_method = X264_RC_CQP;
         h->param.rc.f_ip_factor = 1;
         h->param.rc.f_pb_factor = 1;
@@ -848,9 +846,6 @@ static int validate_parameters( x264_t *h, int b_open )
     h->param.analyse.i_luma_deadzone[1] = x264_clip3( h->param.analyse.i_luma_deadzone[1], 0, 32 );
 
     h->param.i_cabac_init_idc = x264_clip3( h->param.i_cabac_init_idc, 0, 2 );
-
-    if( h->param.i_cqm_preset < X264_CQM_FLAT || h->param.i_cqm_preset > X264_CQM_CUSTOM )
-        h->param.i_cqm_preset = X264_CQM_FLAT;
 
     if( h->param.analyse.i_me_method < X264_ME_DIA ||
         h->param.analyse.i_me_method > X264_ME_TESA )
@@ -1196,10 +1191,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( validate_parameters( h, 1 ) < 0 )
         goto fail;
 
-    if( h->param.psz_cqm_file )
-        if( x264_cqm_parse_file( h, h->param.psz_cqm_file ) < 0 )
-            goto fail;
-
     if( h->param.rc.psz_stat_out )
         h->param.rc.psz_stat_out = strdup( h->param.rc.psz_stat_out );
     if( h->param.rc.psz_stat_in )
@@ -1226,7 +1217,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     set_aspect_ratio( h, &h->param, 1 );
 
     x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
-    x264_sps_init_scaling_list( h->sps, &h->param );
+    x264_sps_init_scaling_list( h->sps );
     x264_pps_init( h->pps, h->param.i_sps_id, &h->param, h->sps );
 
     x264_validate_levels( h, 1 );
@@ -1303,7 +1294,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_dct_init( &h->dctf );
     x264_zigzag_init( &h->zigzagf );
     x264_mc_init( &h->mc );
-    x264_quant_init( h, h->param.cpu, &h->quantf );
+    x264_quant_init( h, &h->quantf );
     x264_deblock_init( &h->loopf );
     x264_bitstream_init( h->param.cpu, &h->bsf );
     if( h->param.b_cabac )

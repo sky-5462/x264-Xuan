@@ -49,7 +49,6 @@ static const char * const opts_suggest[] =
     "--b-pyramid",
     "--colormatrix",
     "--colorprim",
-    "--cqm",
     "--demuxer",
     "--direct",
     "--frame-packing",
@@ -86,16 +85,6 @@ static const char * const opts_nosuggest[] =
     "--chroma-qp-offset",
     "--chromaloc",
     "--cplxblur",
-    "--cqm4",
-    "--cqm4i",
-    "--cqm4ic",
-    "--cqm4iy",
-    "--cqm4p",
-    "--cqm4pc",
-    "--cqm4py",
-    "--cqm8",
-    "--cqm8i",
-    "--cqm8p",
     "--crf",
     "--crf-max",
     "--crop-rect",
@@ -149,7 +138,6 @@ static const char * const opts_nosuggest[] =
 /* Options requiring a filename. */
 static const char * const opts_filename[] =
 {
-    "--cqmfile",
     "--dump-yuv",
     "--index",
     "--output", "-o",
@@ -279,8 +267,6 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
         suggest_list( x264_colmatrix_names );
     OPT( "--colorprim" )
         suggest_list( x264_colorprim_names );
-    OPT( "--cqm" )
-        suggest_list( x264_cqm_names );
     OPT( "--demuxer" )
         suggest_list( x264_demuxer_names );
     OPT( "--direct" )
