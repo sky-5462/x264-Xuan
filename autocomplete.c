@@ -153,8 +153,6 @@ static const char * const opts_standalone[] =
 {
     "--8x8dct",
     "--aud",
-    "--bluray-compat",
-    "--cabac",
     "--constrained-intra",
     "--dts-compress",
     "--fast-pskip",
@@ -164,7 +162,6 @@ static const char * const opts_standalone[] =
     "--mixed-refs",
     "--no-8x8dct",
     "--no-asm",
-    "--no-cabac",
     "--no-chroma-me",
     "--no-dct-decimate",
     "--no-deblock",

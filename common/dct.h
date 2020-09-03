@@ -64,7 +64,6 @@ typedef struct
     int  (*sub_8x8)  ( dctcoef level[64], const pixel *p_src, pixel *p_dst );
     int  (*sub_4x4)  ( dctcoef level[16], const pixel *p_src, pixel *p_dst );
     int  (*sub_4x4ac)( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc );
-    void (*interleave_8x8_cavlc)( dctcoef *dst, dctcoef *src, uint8_t *nnz );
 
 } x264_zigzag_function_t;
 

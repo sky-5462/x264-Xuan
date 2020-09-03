@@ -345,16 +345,12 @@ typedef struct x264_param_t
     int         i_bframe_adaptive;
     int         i_bframe_bias;
     int         i_bframe_pyramid;   /* Keep some B-frames as references: 0=off, 1=strict hierarchical, 2=normal */
-    int         b_bluray_compat;
     int         i_avcintra_class;
     int         i_avcintra_flavor;
 
     int         b_deblocking_filter;
     int         i_deblocking_filter_alphac0;    /* [-6, 6] -6 light filter, 6 strong */
     int         i_deblocking_filter_beta;       /* [-6, 6]  idem */
-
-    int         b_cabac;
-    int         i_cabac_init_idc;
 
     int         b_interlaced;
     int         b_constrained_intra;

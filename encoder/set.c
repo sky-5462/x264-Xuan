@@ -82,12 +82,10 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->i_profile_idc  = PROFILE_HIGH422;
     else if( param->analyse.b_transform_8x8 || sps->i_chroma_format_idc == CHROMA_400 )
         sps->i_profile_idc  = PROFILE_HIGH;
-    else if( param->b_cabac || param->i_bframe > 0 || param->b_interlaced || param->b_fake_interlaced || param->analyse.i_weighted_pred > 0 )
-        sps->i_profile_idc  = PROFILE_MAIN;
     else
-        sps->i_profile_idc  = PROFILE_BASELINE;
+        sps->i_profile_idc  = PROFILE_MAIN;
 
-    sps->b_constraint_set0  = sps->i_profile_idc == PROFILE_BASELINE;
+    sps->b_constraint_set0  = 0;
     /* x264 doesn't support the features that are in Baseline and not in Main,
      * namely arbitrary_slice_order and slice_groups. */
     sps->b_constraint_set1  = sps->i_profile_idc <= PROFILE_MAIN;
@@ -96,7 +94,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->b_constraint_set3  = 0;
 
     sps->i_level_idc = param->i_level_idc;
-    if( param->i_level_idc == 9 && ( sps->i_profile_idc == PROFILE_BASELINE || sps->i_profile_idc == PROFILE_MAIN ) )
+    if( param->i_level_idc == 9 && sps->i_profile_idc == PROFILE_MAIN )
     {
         sps->b_constraint_set3 = 1; /* level 1b with Baseline or Main profile is signalled via constraint_set3 */
         sps->i_level_idc      = 11;
@@ -407,7 +405,6 @@ void x264_pps_init( x264_pps_t *pps, int i_id, x264_param_t *param, x264_sps_t *
 {
     pps->i_id = i_id;
     pps->i_sps_id = sps->i_id;
-    pps->b_cabac = param->b_cabac;
 
     pps->b_pic_order = !param->i_avcintra_class && param->b_interlaced;
     pps->i_num_slice_groups = 1;
@@ -435,7 +432,7 @@ void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
     bs_write_ue( s, pps->i_id );
     bs_write_ue( s, pps->i_sps_id );
 
-    bs_write1( s, pps->b_cabac );
+    bs_write1( s, 1 );
     bs_write1( s, pps->b_pic_order );
     bs_write_ue( s, pps->i_num_slice_groups - 1 );
 

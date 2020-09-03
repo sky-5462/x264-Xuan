@@ -53,7 +53,7 @@ typedef struct
 
 /* init the contexts given i_slice_type, the quantif and the model */
 #define x264_cabac_context_init x264_template(cabac_context_init)
-void x264_cabac_context_init( x264_t *h, x264_cabac_t *cb, int i_slice_type, int i_qp, int i_model );
+void x264_cabac_context_init( x264_t *h, x264_cabac_t *cb, int i_slice_type, int i_qp );
 
 #define x264_cabac_encode_init_core x264_template(cabac_encode_init_core)
 void x264_cabac_encode_init_core( x264_cabac_t *cb );

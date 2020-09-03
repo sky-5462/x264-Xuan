@@ -151,8 +151,6 @@ typedef struct
     int i_id;
     int i_sps_id;
 
-    int b_cabac;
-
     int b_pic_order;
     int i_num_slice_groups;
 

@@ -107,8 +107,6 @@ typedef uint16_t udctcoef;
 #define x264_log x264_template(log)
 void x264_log( x264_t *h, int i_level, const char *psz_fmt, ... );
 
-#define x264_cavlc_init x264_template(cavlc_init)
-void x264_cavlc_init( x264_t *h );
 #define x264_cabac_init x264_template(cabac_init)
 void x264_cabac_init( x264_t *h );
 
@@ -169,8 +167,6 @@ typedef struct
         int i_difference_of_pic_nums;
         int i_poc;
     } mmco[X264_REF_MAX];
-
-    int i_cabac_init_idc;
 
     int i_qp;
     int i_qp_delta;
@@ -527,7 +523,6 @@ struct x264_t
         int b_reencode_mb;
         int ip_offset; /* Used by PIR to offset the quantizer of intra-refresh blocks. */
         int b_deblock_rdo;
-        int b_overflow; /* If CAVLC had a level code overflow during bitstream writing. */
 
         struct
         {

@@ -27,15 +27,15 @@
 
 #include "common.h"
 
-static uint8_t cabac_contexts[4][QP_MAX_SPEC+1][1024];
+static uint8_t cabac_contexts[2][QP_MAX_SPEC+1][1024];
 
 void x264_cabac_init( x264_t *h )
 {
     int ctx_count = CHROMA444 ? 1024 : 460;
-    for( int i = 0; i < 4; i++ )
+    for( int i = 0; i < 2; i++ )
     {
         const int8_t (*cabac_context_init)[1024][2] = i == 0 ? &x264_cabac_context_init_I
-                                                             : &x264_cabac_context_init_PB[i-1];
+                                                             : &x264_cabac_context_init_PB;
         for( int qp = 0; qp <= QP_MAX_SPEC; qp++ )
             for( int j = 0; j < ctx_count; j++ )
             {
@@ -45,9 +45,9 @@ void x264_cabac_init( x264_t *h )
     }
 }
 
-void x264_cabac_context_init( x264_t *h, x264_cabac_t *cb, int i_slice_type, int i_qp, int i_model )
+void x264_cabac_context_init( x264_t *h, x264_cabac_t *cb, int i_slice_type, int i_qp )
 {
-    memcpy( cb->state, cabac_contexts[i_slice_type == SLICE_TYPE_I ? 0 : i_model + 1][i_qp], CHROMA444 ? 1024 : 460 );
+    memcpy( cb->state, cabac_contexts[i_slice_type == SLICE_TYPE_I ? 0 : 1][i_qp], CHROMA444 ? 1024 : 460 );
 }
 
 void x264_cabac_encode_init_core( x264_cabac_t *cb )

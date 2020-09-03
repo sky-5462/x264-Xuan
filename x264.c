@@ -456,10 +456,6 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --profile <string>      Force the limits of an H.264 profile\n"
         "                                  Overrides all settings.\n" );
     H2(
-        "                                  - baseline:\n"
-        "                                    --no-8x8dct --bframes 0 --no-cabac\n"
-        "                                    --weightp 0\n"
-        "                                    No lossless.\n"
         "                                  - main:\n"
         "                                    --no-8x8dct\n"
         "                                    No lossless.\n"
@@ -475,7 +471,7 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  Overridden by user settings.\n" );
     H2( "                                  - ultrafast:\n"
         "                                    --no-8x8dct --aq-mode 0 --b-adapt 0\n"
-        "                                    --bframes 0 --no-cabac --no-deblock\n"
+        "                                    --bframes 0 --no-deblock\n"
         "                                    --no-mbtree --me dia --no-mixed-refs\n"
         "                                    --partitions none --rc-lookahead 0 --ref 1\n"
         "                                    --scenecut 0 --subme 0 --trellis 0\n"
@@ -540,7 +536,7 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - ssim (psy tuning):\n"
         "                                    --aq-mode 2 --no-psy\n"
         "                                  - fastdecode:\n"
-        "                                    --no-cabac --no-deblock --no-weightb\n"
+        "                                    --no-deblock --no-weightb\n"
         "                                    --weightp 0\n"
         "                                  - zerolatency:\n"
         "                                    --bframes 0 --force-cfr --no-mbtree\n"
@@ -574,7 +570,6 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - strict: Strictly hierarchical pyramid\n"
         "                                  - normal: Non-strict (not Blu-ray compatible)\n",
         strtable_lookup( x264_b_pyramid_names, defaults->i_bframe_pyramid ) );
-    H1( "      --no-cabac              Disable CABAC\n" );
     H1( "  -r, --ref <integer>         Number of reference frames [%d]\n", defaults->i_frame_reference );
     H1( "      --no-deblock            Disable loop filter\n" );
     H1( "  -f, --deblock <alpha:beta>  Loop filter parameters [%d:%d]\n",
@@ -771,7 +766,6 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --seek <integer>        First frame to encode\n" );
     H0( "      --frames <integer>      Maximum number of frames to encode\n" );
     H0( "      --level <string>        Specify level (as defined by Annex A)\n" );
-    H1( "      --bluray-compat         Enable compatibility hacks for Blu-ray support\n" );
     H1( "      --avcintra-class <integer> Use compatibility hacks for AVC-Intra class\n"
         "                                  - %s\n", stringify_names( buf, x264_avcintra_class_names ) );
     H1( "      --avcintra-flavor <string> AVC-Intra flavor [\"%s\"]\n"
@@ -870,7 +864,6 @@ static struct option long_options[] =
     { "no-b-adapt",        no_argument, NULL, 0 },
     { "b-bias",      required_argument, NULL, 0 },
     { "b-pyramid",   required_argument, NULL, 0 },
-    { "bluray-compat",     no_argument, NULL, 0 },
     { "avcintra-class", required_argument, NULL, 0 },
     { "avcintra-flavor", required_argument, NULL, 0 },
     { "min-keyint",  required_argument, NULL, 'i' },
@@ -883,8 +876,6 @@ static struct option long_options[] =
     { "filter",      required_argument, NULL, 0 },
     { "deblock",     required_argument, NULL, 'f' },
     { "constrained-intra", no_argument, NULL, 0 },
-    { "cabac",             no_argument, NULL, 0 },
-    { "no-cabac",          no_argument, NULL, 0 },
     { "qp",          required_argument, NULL, 'q' },
     { "qpmin",       required_argument, NULL, 0 },
     { "qpmax",       required_argument, NULL, 0 },

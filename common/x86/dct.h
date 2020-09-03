@@ -79,7 +79,5 @@ int  x264_zigzag_sub_4x4_frame_avx2    ( int16_t level[16], const uint8_t *src, 
 int  x264_zigzag_sub_8x8_frame_avx2    ( int16_t level[64], const uint8_t *src, uint8_t *dst );
 #define x264_zigzag_sub_4x4ac_frame_avx2 x264_template(zigzag_sub_4x4ac_frame_avx2)
 int  x264_zigzag_sub_4x4ac_frame_avx2  ( int16_t level[16], const uint8_t *src, uint8_t *dst, int16_t *dc );
-#define x264_zigzag_interleave_8x8_cavlc_avx2 x264_template(zigzag_interleave_8x8_cavlc_avx2)
-void x264_zigzag_interleave_8x8_cavlc_avx2  ( int16_t *dst, int16_t *src, uint8_t *nnz );
 
 #endif

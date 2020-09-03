@@ -1432,51 +1432,6 @@ cglobal dct2x4dc, 0, 0
 
 
 ;=============================================================================
-; INTERLEAVE_8X8_CAVLC
-;=============================================================================
-INIT_YMM avx2
-cglobal zigzag_interleave_8x8_cavlc, 0, 0
-    vmovdqu        m0, [r1]
-    vmovdqu        m1, [r1 + 32]
-    vmovdqu        m2, [r1 + 64]
-    vmovdqu        m3, [r1 + 96]
-    vmovdqu        m5, [deinterleave_shufd]
-    vpunpckhwd     m4, m0, m1
-    vpunpcklwd     m0, m0, m1
-    vpunpckhwd     m1, m2, m3
-    vpunpcklwd     m2, m2, m3
-    vpunpckhwd     m3, m0, m4
-    vpunpcklwd     m0, m0, m4
-    vpunpckhwd     m4, m2, m1
-    vpunpcklwd     m2, m2, m1
-    vpermd         m0, m5, m0
-    vpermd         m3, m5, m3
-    vpermd         m2, m5, m2
-    vpermd         m4, m5, m4
-    vmovdqu        [r0], xm0
-    vmovdqu        [r0 + 16], xm2
-    vextracti128   [r0 + 32], m0, 1
-    vextracti128   [r0 + 48], m2, 1
-    vmovdqu        [r0 + 64], xm3
-    vmovdqu        [r0 + 80], xm4
-    vextracti128   [r0 + 96], m3, 1
-    vextracti128   [r0 + 112], m4, 1
-    vpacksswb      m0, m0, m2                    ; nnz0, nnz1
-    vpacksswb      m3, m3, m4                    ; nnz2, nnz3
-    vpacksswb      m0, m0, m3                    ; {nnz0,nnz2}, {nnz1,nnz3}
-    vpermq         m0, m0, 0D8h                  ; {nnz0,nnz1}, {nnz2,nnz3}
-    vpxor          m5, m5, m5
-    vpcmpeqq       m0, m0, m5
-    vpmovmskb      r0d, m0
-    not            r0d
-    and            r0d, 01010101h
-    mov            [r2], r0w
-    shr            r0d, 16
-    mov            [r2 + 8], r0w
-    RET
-
-
-;=============================================================================
 ; SCAN
 ;=============================================================================
 ;  0  2  3  9 10 20 21 35

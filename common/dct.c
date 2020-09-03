@@ -55,7 +55,6 @@ void x264_dct_init( x264_dct_function_t *dctf )
 
 void x264_zigzag_init( x264_zigzag_function_t *pf_progressive )
 {
-    pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx2;
     pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx2;
     pf_progressive->sub_4x4 = x264_zigzag_sub_4x4_frame_avx2;

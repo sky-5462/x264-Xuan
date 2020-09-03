@@ -1124,33 +1124,9 @@ static int check_dct( int cpu_ref, int cpu_new )
         call_a2( zigzag_asm[interlace].name, t2, pbuf2, pbuf4, &dc_a ); \
     }
 
-#define TEST_INTERLEAVE( name, t1, t2, dct, size ) \
-    if( zigzag_asm[interlace].name != zigzag_ref[interlace].name ) \
-    { \
-        for( int j = 0; j < 100; j++ ) \
-        { \
-            set_func_name( "zigzag_"#name"_%s", interlace?"field":"frame" ); \
-            used_asm = 1; \
-            memcpy(dct, buf1, size*sizeof(dctcoef)); \
-            for( int i = 0; i < size; i++ ) \
-                dct[i] = rand()&0x1F ? 0 : dct[i]; \
-            memcpy(buf3, buf4, 10); \
-            call_c( zigzag_c[interlace].name, t1, dct, buf3 ); \
-            call_a( zigzag_asm[interlace].name, t2, dct, buf4 ); \
-            if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( buf3, buf4, 10 ) ) \
-            { \
-                ok = 0; printf("%d: %d %d %d %d\n%d %d %d %d\n\n",memcmp( t1, t2, size*sizeof(dctcoef) ),buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9]);break;\
-            } \
-        } \
-    }
-
     x264_zigzag_init( 0, &zigzag_c[0], &zigzag_c[1] );
     x264_zigzag_init( cpu_ref, &zigzag_ref[0], &zigzag_ref[1] );
     x264_zigzag_init( cpu_new, &zigzag_asm[0], &zigzag_asm[1] );
-
-    ok = 1; used_asm = 0;
-    TEST_INTERLEAVE( interleave_8x8_cavlc, level1, level2, dct8[0], 64 );
-    report( "zigzag_interleave :" );
 
     for( interlace = 0; interlace <= 1; interlace++ )
     {

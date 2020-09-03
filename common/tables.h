@@ -60,7 +60,7 @@ extern const uint32_t x264_dct4_weight2_tab[16];
 extern const uint32_t x264_dct8_weight2_tab[64];
 
 extern const int8_t   x264_cabac_context_init_I[1024][2];
-extern const int8_t   x264_cabac_context_init_PB[3][1024][2];
+extern const int8_t   x264_cabac_context_init_PB[1024][2];
 extern const uint8_t  x264_cabac_range_lps[64][4];
 extern const uint8_t  x264_cabac_transition[128][2];
 extern const uint8_t  x264_cabac_renorm_shift[64];

@@ -939,7 +939,6 @@ int x264_ratecontrol_new( x264_t *h )
             CMP_OPT_FIRST_PASS( "bframes", h->param.i_bframe );
             CMP_OPT_FIRST_PASS( "b_pyramid", h->param.i_bframe_pyramid );
             CMP_OPT_FIRST_PASS( "intra_refresh", h->param.b_intra_refresh );
-            CMP_OPT_FIRST_PASS( "bluray_compat", h->param.b_bluray_compat );
             CMP_OPT_FIRST_PASS( "mbtree", h->param.rc.b_mb_tree );
 
             if( (p = strstr( opts, "interlaced=" )) )
@@ -1457,9 +1456,6 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
             l++;
 
         int mincr = l->mincr;
-
-        if( h->param.b_bluray_compat )
-            mincr = 4;
 
         /* Profiles above High don't require minCR, so just set the maximum to a large value. */
         if( h->sps->i_profile_idc > PROFILE_HIGH )
