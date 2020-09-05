@@ -52,9 +52,6 @@ SECTION_RODATA 64
 
 cextern coeff_last4_mmx2
 cextern coeff_last4_lzcnt
-%if HIGH_BIT_DEPTH
-cextern coeff_last4_avx512
-%endif
 cextern coeff_last15_sse2
 cextern coeff_last15_lzcnt
 cextern coeff_last15_avx512
@@ -69,11 +66,7 @@ cextern coeff_last64_avx512
 COEFF_LAST_TABLE sse2,   mmx2,   sse2,   sse2
 COEFF_LAST_TABLE lzcnt,  lzcnt,  lzcnt,  lzcnt
 COEFF_LAST_TABLE avx2,   lzcnt,  avx2,   lzcnt
-%if HIGH_BIT_DEPTH
-COEFF_LAST_TABLE avx512, avx512, avx512, avx512
-%else
 COEFF_LAST_TABLE avx512, lzcnt,  avx512, avx512
-%endif
 %endif
 
 coeff_abs_level1_ctx:       db 1, 2, 3, 4, 0, 0, 0, 0
@@ -354,19 +347,11 @@ CABAC bmi2
 %endmacro
 
 %macro LOAD_DCTCOEF 1
-%if HIGH_BIT_DEPTH
-    mov     %1, [dct+r6*4]
-%else
     movzx   %1, word [dct+r6*2]
-%endif
 %endmacro
 
 %macro ABS_DCTCOEFS 2
-%if HIGH_BIT_DEPTH
-    %define %%abs ABSD
-%else
-    %define %%abs ABSW
-%endif
+%define %%abs ABSW
 %if mmsize == %2*SIZEOF_DCTCOEF
     %%abs   m0, [%1], m1
     mova [rsp], m0
@@ -551,11 +536,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_sse2
 INIT_XMM ssse3,lzcnt
 CABAC_RESIDUAL_RD 0, coeff_last_lzcnt
 CABAC_RESIDUAL_RD 1, coeff_last_lzcnt
-%if HIGH_BIT_DEPTH
-INIT_ZMM avx512
-%else
 INIT_YMM avx512
-%endif
 CABAC_RESIDUAL_RD 0, coeff_last_avx512
 INIT_ZMM avx512
 CABAC_RESIDUAL_RD 1, coeff_last_avx512
@@ -582,11 +563,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_avx512
 ; %4 = name
 %macro SIGMAP_LOOP 3-4
 .sigmap_%4loop:
-%if HIGH_BIT_DEPTH
-    mov      %2, [dct+r10*4]
-%else
     movsx    %2, word [dct+r10*2]
-%endif
 %if %1
     movzx   r1d, byte [sigoff_8x8 + r10]
     add     r1d, sigoffd
@@ -617,11 +594,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_avx512
     inc    r10d
     cmp    r10d, %3
     jne .sigmap_%4loop              ; if( ++i == count_m1 )
-%if HIGH_BIT_DEPTH
-    mov      %2, [dct+r10*4]
-%else
     movsx    %2, word [dct+r10*2]
-%endif
     inc coeffidxd
     mov [coeffs+coeffidxq*4], %2    ; coeffs[++coeff_idx] = l[i]
     jmp .sigmap_%4end
@@ -766,3 +739,141 @@ CABAC_RESIDUAL coeff_last_avx2
 INIT_XMM avx512
 CABAC_RESIDUAL coeff_last_avx512
 %endif
+
+
+
+
+
+
+
+;=============================================================================
+; cabac_encode
+;=============================================================================
+INIT_XMM avx2
+cglobal cabac_encode_decision, 0, 0
+%if WIN64
+    push           r7
+%endif
+    movzx          r3d, byte [r0 + r1 + cb.state]
+    mov            r4d, [r0 + cb.range]
+    mov            r5d, r3d                      ; i_state
+    shr            r3d, 1                        ; i_state >> 1
+    mov            r6d, r4d                      ; i_range
+    sar            r4d, 6                        ; i_range >> 6
+    lea            r7, [cabac_range_lps - 4]
+    lea            r3d, [r4 + r3 * 4]            ; index for i_range_lps
+    movzx          r3d, byte [r7 + r3]           ; i_range_lps
+    sub            r6d, r3d                      ; i_range -= i_range_lps
+
+    mov            r4d, [r0 + cb.low]            ; i_low
+    mov            r7d, r5d                      ; i_state
+    and            r5d, 1                        ; i_state & 1
+    cmp            r5d, r2d                      ; b is known to be 0 or 1
+    lea            r5d, [r4 + r6]                ; i_low += i_range
+    cmovnz         r4d, r5d                      ; i_low
+    cmovnz         r6d, r3d                      ; i_range
+
+    lea            r3, [cabac_transition]
+    lea            r7d, [r2 + r7 * 2]
+    movzx          r3d, byte [r3 + r7]
+    mov            [r0 + r1 + cb.state], r3b     ; write back state
+%if WIN64
+    pop            r7
+%endif
+
+    lea            r1, [cabac_renorm_shift]
+    mov            r2d, r6d                      ; i_range
+    sar            r6d, 3
+    movzx          r6d, byte [r1 + r6]           ; shift
+    shlx           r2d, r2d, r6d
+    mov            [r0 + cb.range], r2d          ; write back i_range
+    shlx           r2d, r4d, r6d                 ; i_low
+    mov            r1d, [r0 + cb.queue]
+    add            r1d, r6d                      ; i_queue
+    jge            cabac_putbyte
+
+    mov            [r0 + cb.low], r2d            ; write back i_low
+    mov            [r0 + cb.queue], r1d          ; write back i_queue
+    ret
+
+
+INIT_XMM avx2
+cglobal cabac_encode_bypass, 0, 0
+    mov            r6d, [r0 + cb.low]            ; i_low
+    and            r1d, [r0 + cb.range]
+    lea            r2d, [r1 + r6 * 2]
+    mov            r1d, [r0 + cb.queue]
+    inc            r1d
+    jge            cabac_putbyte
+
+    mov            [r0 + cb.low], r2d            ; write back i_low
+    mov            [r0 + cb.queue], r1d          ; write back i_queue
+    ret
+
+
+; shortcut: the renormalization shift in terminal
+; can only be 0 or 1 and is zero over 99% of the time.
+INIT_XMM avx2
+cglobal cabac_encode_terminal, 0, 0
+    mov            r6d, [r0 + cb.range]          ; i_range
+    sub            r6d, 2
+    test           r6d, 100h
+    jz             .renorm
+    mov            [r0 + cb.range], r6d
+    ret
+
+ALIGN 16
+.renorm:
+    shl            r6d, 1
+    mov            [r0 + cb.range], r6d
+    mov            r1d, [r0 + cb.queue]
+    mov            r2d, [r0 + cb.low]
+    shl            r2d, 1
+    inc            r1d
+    jge            cabac_putbyte
+
+    mov            [r0 + cb.low], r2d            ; write back i_low
+    mov            [r0 + cb.queue], r1d          ; write back i_queue
+    ret
+
+
+; r0: cb
+; r1: queue
+; r2: low
+ALIGN 16
+cabac_putbyte:
+    add            r1d, 10
+    shrx           r3d, r2d, r1d                 ; out
+    bzhi           r2d, r2d, r1d                 ; i_low
+    sub            r1d, 18                       ; i_queue
+    mov            r6d, [r0 + cb.bytes_outstanding]
+    cmp            r3b, 0FFh
+    jnz            .clear_outstanding
+
+    inc            r6d
+    mov            [r0 + cb.bytes_outstanding], r6d
+    jmp            .update_queue_low
+
+ALIGN 16
+.clear_outstanding:
+    mov            r5d, r3d                      ; out
+    sar            r3d, 8                        ; carry
+    mov            r4, [r0 + cb.p]
+    add            [r4 - 1], r3b                 ; cb->p[-1] += carry
+    dec            r3d                           ; carry - 1
+    test           r6d, r6d
+    jle            .end
+.loop:
+    mov            [r4], r3b
+    inc            r4
+    dec            r6d
+    jg             .loop
+.end:
+    mov            [r4], r5b
+    inc            r4
+    mov            [r0 + cb.p], r4
+    mov            [r0 + cb.bytes_outstanding], r6d  ; bytes_outstanding must be 0
+.update_queue_low:
+    mov            [r0 + cb.low], r2d            ; write back i_low
+    mov            [r0 + cb.queue], r1d          ; write back i_queue
+    ret

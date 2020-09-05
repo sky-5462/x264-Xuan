@@ -71,7 +71,7 @@ static inline void cabac_putbyte( x264_cabac_t *cb )
     if( cb->i_queue >= 0 )
     {
         int out = cb->i_low >> (cb->i_queue+10);
-        cb->i_low &= (0x400<<cb->i_queue)-1;
+        cb->i_low = _bzhi_u32(cb->i_low, (cb->i_queue+10));
         cb->i_queue -= 8;
 
         if( (out & 0xff) == 0xff )
@@ -98,41 +98,6 @@ static inline void cabac_putbyte( x264_cabac_t *cb )
     }
 }
 
-static inline void cabac_encode_renorm( x264_cabac_t *cb )
-{
-    int shift = x264_cabac_renorm_shift[cb->i_range>>3];
-    cb->i_range <<= shift;
-    cb->i_low   <<= shift;
-    cb->i_queue  += shift;
-    cabac_putbyte( cb );
-}
-
-/* Making custom versions of this function, even in asm, for the cases where
- * b is known to be 0 or 1, proved to be somewhat useful on x86_32 with GCC 3.4
- * but nearly useless with GCC 4.3 and worse than useless on x86_64. */
-void x264_cabac_encode_decision_c( x264_cabac_t *cb, int i_ctx, int b )
-{
-    int i_state = cb->state[i_ctx];
-    int i_range_lps = x264_cabac_range_lps[i_state>>1][(cb->i_range>>6)-4];
-    cb->i_range -= i_range_lps;
-    if( b != (i_state & 1) )
-    {
-        cb->i_low += cb->i_range;
-        cb->i_range = i_range_lps;
-    }
-    cb->state[i_ctx] = x264_cabac_transition[i_state][b];
-    cabac_encode_renorm( cb );
-}
-
-/* Note: b is negated for this function */
-void x264_cabac_encode_bypass_c( x264_cabac_t *cb, int b )
-{
-    cb->i_low <<= 1;
-    cb->i_low += b & cb->i_range;
-    cb->i_queue += 1;
-    cabac_putbyte( cb );
-}
-
 static const int bypass_lut[16] =
 {
     -1,      0x2,     0x14,     0x68,     0x1d0,     0x7a0,     0x1f40,     0x7e80,
@@ -154,12 +119,6 @@ void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val )
         cabac_putbyte( cb );
         i = 8;
     } while( k > 0 );
-}
-
-void x264_cabac_encode_terminal_c( x264_cabac_t *cb )
-{
-    cb->i_range -= 2;
-    cabac_encode_renorm( cb );
 }
 
 void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb )

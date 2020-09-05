@@ -2527,7 +2527,7 @@ static int check_intra( int cpu_ref, int cpu_new )
 static void run_cabac_decision_##cpu( x264_t *h, uint8_t *dst )\
 {\
     x264_cabac_t cb;\
-    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26, 0 );\
+    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26 );\
     x264_cabac_encode_init( &cb, dst, dst+0xff0 );\
     for( int i = 0; i < 0x1000; i++ )\
         x264_cabac_encode_decision_##cpu( &cb, buf1[i]>>1, buf1[i]&1 );\
@@ -2535,7 +2535,7 @@ static void run_cabac_decision_##cpu( x264_t *h, uint8_t *dst )\
 static void run_cabac_bypass_##cpu( x264_t *h, uint8_t *dst )\
 {\
     x264_cabac_t cb;\
-    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26, 0 );\
+    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26 );\
     x264_cabac_encode_init( &cb, dst, dst+0xff0 );\
     for( int i = 0; i < 0x1000; i++ )\
         x264_cabac_encode_bypass_##cpu( &cb, buf1[i]&1 );\
@@ -2543,21 +2543,13 @@ static void run_cabac_bypass_##cpu( x264_t *h, uint8_t *dst )\
 static void run_cabac_terminal_##cpu( x264_t *h, uint8_t *dst )\
 {\
     x264_cabac_t cb;\
-    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26, 0 );\
+    x264_cabac_context_init( h, &cb, SLICE_TYPE_P, 26 );\
     x264_cabac_encode_init( &cb, dst, dst+0xff0 );\
     for( int i = 0; i < 0x1000; i++ )\
         x264_cabac_encode_terminal_##cpu( &cb );\
 }
 DECL_CABAC(c)
-#if HAVE_MMX
 DECL_CABAC(asm)
-#elif HAVE_AARCH64
-DECL_CABAC(asm)
-#else
-#define run_cabac_decision_asm run_cabac_decision_c
-#define run_cabac_bypass_asm run_cabac_bypass_c
-#define run_cabac_terminal_asm run_cabac_terminal_c
-#endif
 
 extern const uint8_t x264_count_cat_m1[14];
 
@@ -2611,8 +2603,8 @@ static int check_cabac( int cpu_ref, int cpu_new )
                         }\
                     }\
                     x264_cabac_t cb[2];\
-                    x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26, 0 );\
-                    x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26, 0 );\
+                    x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26 );\
+                    x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26 );\
                     if( !rd ) memcpy( bitstream[1], bitstream[0], 0x400 );\
                     call_c1( x264_##name##_c, &h, GET_CB( 0 ), ctx_block_cat, dct[0]+ac );\
                     call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, GET_CB( 1 ) );\
