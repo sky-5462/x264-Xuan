@@ -108,7 +108,7 @@ typedef uint16_t udctcoef;
 void x264_log( x264_t *h, int i_level, const char *psz_fmt, ... );
 
 #define x264_cabac_init x264_template(cabac_init)
-void x264_cabac_init( x264_t *h );
+void x264_cabac_init();
 
 static ALWAYS_INLINE pixel x264_clip_pixel( int x )
 {

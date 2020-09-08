@@ -210,73 +210,6 @@ REALIGN_STACK void x264_picture_init( x264_picture_t *pic )
 }
 
 /****************************************************************************
- * x264_picture_alloc:
- ****************************************************************************/
-REALIGN_STACK int x264_picture_alloc( x264_picture_t *pic, int i_csp, int i_width, int i_height )
-{
-    typedef struct
-    {
-        int planes;
-        int width_fix8[3];
-        int height_fix8[3];
-    } x264_csp_tab_t;
-
-    static const x264_csp_tab_t csp_tab[] =
-    {
-        [X264_CSP_I400] = { 1, { 256*1 },               { 256*1 }               },
-        [X264_CSP_I420] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256/2, 256/2 } },
-        [X264_CSP_YV12] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256/2, 256/2 } },
-        [X264_CSP_NV12] = { 2, { 256*1, 256*1 },        { 256*1, 256/2 },       },
-        [X264_CSP_NV21] = { 2, { 256*1, 256*1 },        { 256*1, 256/2 },       },
-        [X264_CSP_I422] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256*1, 256*1 } },
-        [X264_CSP_YV16] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256*1, 256*1 } },
-        [X264_CSP_NV16] = { 2, { 256*1, 256*1 },        { 256*1, 256*1 },       },
-        [X264_CSP_YUYV] = { 1, { 256*2 },               { 256*1 },              },
-        [X264_CSP_UYVY] = { 1, { 256*2 },               { 256*1 },              },
-        [X264_CSP_I444] = { 3, { 256*1, 256*1, 256*1 }, { 256*1, 256*1, 256*1 } },
-        [X264_CSP_YV24] = { 3, { 256*1, 256*1, 256*1 }, { 256*1, 256*1, 256*1 } },
-        [X264_CSP_BGR]  = { 1, { 256*3 },               { 256*1 },              },
-        [X264_CSP_BGRA] = { 1, { 256*4 },               { 256*1 },              },
-        [X264_CSP_RGB]  = { 1, { 256*3 },               { 256*1 },              },
-    };
-
-    int csp = i_csp & X264_CSP_MASK;
-    if( csp <= X264_CSP_NONE || csp >= X264_CSP_MAX || csp == X264_CSP_V210 )
-        return -1;
-    x264_picture_init( pic );
-    pic->img.i_csp = i_csp;
-    pic->img.i_plane = csp_tab[csp].planes;
-    int depth_factor = i_csp & X264_CSP_HIGH_DEPTH ? 2 : 1;
-    int64_t plane_offset[3] = {0};
-    int64_t frame_size = 0;
-    for( int i = 0; i < pic->img.i_plane; i++ )
-    {
-        int stride = (((int64_t)i_width * csp_tab[csp].width_fix8[i]) >> 8) * depth_factor;
-        int64_t plane_size = (((int64_t)i_height * csp_tab[csp].height_fix8[i]) >> 8) * stride;
-        pic->img.i_stride[i] = stride;
-        plane_offset[i] = frame_size;
-        frame_size += plane_size;
-    }
-    pic->img.plane[0] = x264_malloc( frame_size );
-    if( !pic->img.plane[0] )
-        return -1;
-    for( int i = 1; i < pic->img.i_plane; i++ )
-        pic->img.plane[i] = pic->img.plane[0] + plane_offset[i];
-    return 0;
-}
-
-/****************************************************************************
- * x264_picture_clean:
- ****************************************************************************/
-REALIGN_STACK void x264_picture_clean( x264_picture_t *pic )
-{
-    x264_free( pic->img.plane[0] );
-
-    /* just to be safe */
-    memset( pic, 0, sizeof( x264_picture_t ) );
-}
-
-/****************************************************************************
  * x264_param_default:
  ****************************************************************************/
 REALIGN_STACK void x264_param_default( x264_param_t *param )
@@ -641,18 +574,10 @@ REALIGN_STACK void x264_param_apply_fastfirstpass( x264_param_t *param )
 
 static int profile_string_to_int( const char *str )
 {
-    if( !strcasecmp( str, "baseline" ) )
-        return PROFILE_BASELINE;
     if( !strcasecmp( str, "main" ) )
         return PROFILE_MAIN;
     if( !strcasecmp( str, "high" ) )
         return PROFILE_HIGH;
-    if( !strcasecmp( str, "high10" ) )
-        return PROFILE_HIGH10;
-    if( !strcasecmp( str, "high422" ) )
-        return PROFILE_HIGH422;
-    if( !strcasecmp( str, "high444" ) )
-        return PROFILE_HIGH444_PREDICTIVE;
     return -1;
 }
 
@@ -661,38 +586,16 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
     if( !profile )
         return 0;
 
-    const int qp_bd_offset = 0;
-    // const int qp_bd_offset = 6 * (param->i_bitdepth-8);
     int p = profile_string_to_int( profile );
     if( p < 0 )
     {
         x264_log_internal( X264_LOG_ERROR, "invalid profile: %s\n", profile );
         return -1;
     }
-    if( p < PROFILE_HIGH444_PREDICTIVE && ((param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant <= 0) ||
-        (param->rc.i_rc_method == X264_RC_CRF && (int)(param->rc.f_rf_constant + qp_bd_offset) <= 0)) )
+    if( (param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant <= 0) ||
+        (param->rc.i_rc_method == X264_RC_CRF && (int)(param->rc.f_rf_constant) <= 0) )
     {
         x264_log_internal( X264_LOG_ERROR, "%s profile doesn't support lossless\n", profile );
-        return -1;
-    }
-    if( p < PROFILE_HIGH444_PREDICTIVE && (param->i_csp & X264_CSP_MASK) >= X264_CSP_I444 )
-    {
-        x264_log_internal( X264_LOG_ERROR, "%s profile doesn't support 4:4:4\n", profile );
-        return -1;
-    }
-    if( p < PROFILE_HIGH422 && (param->i_csp & X264_CSP_MASK) >= X264_CSP_I422 )
-    {
-        x264_log_internal( X264_LOG_ERROR, "%s profile doesn't support 4:2:2\n", profile );
-        return -1;
-    }
-    if( p < PROFILE_HIGH10 && param->i_bitdepth > 8 )
-    {
-        x264_log_internal( X264_LOG_ERROR, "%s profile doesn't support a bit depth of %d\n", profile, param->i_bitdepth );
-        return -1;
-    }
-    if( p < PROFILE_HIGH && (param->i_csp & X264_CSP_MASK) == X264_CSP_I400 )
-    {
-        x264_log_internal( X264_LOG_ERROR, "%s profile doesn't support 4:0:0\n", profile );
         return -1;
     }
 
@@ -791,33 +694,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
 #define OPT(STR) else if( !strcmp( name, STR ) )
 #define OPT2(STR0, STR1) else if( !strcmp( name, STR0 ) || !strcmp( name, STR1 ) )
     if( 0 );
-    OPT("asm")
-    {
-        p->cpu = isdigit(value[0]) ? atoi(value) :
-                 !strcasecmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
-        if( b_error )
-        {
-            char *buf = strdup( value );
-            if( buf )
-            {
-                char *tok, UNUSED *saveptr=NULL, *init;
-                b_error = 0;
-                p->cpu = 0;
-                for( init=buf; (tok=strtok_r(init, ",", &saveptr)); init=NULL )
-                {
-                    int i = 0;
-                    while( x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name) )
-                        i++;
-                    p->cpu |= x264_cpu_names[i].flags;
-                    if( !x264_cpu_names[i].flags )
-                        b_error = 1;
-                }
-                free( buf );
-                if( (p->cpu&X264_CPU_SSSE3) && !(p->cpu&X264_CPU_SSE2_IS_SLOW) )
-                    p->cpu |= X264_CPU_SSE2_IS_FAST;
-            }
-        }
-    }
     OPT("threads")
     {
         if( !strcasecmp(value, "auto") )
@@ -949,7 +825,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     }
     OPT("nf")
         p->b_deblocking_filter = !atobool(value);
-    OPT2("filter", "deblock")
+    OPT("deblock")
     {
         if( 2 == sscanf( value, "%d:%d", &p->i_deblocking_filter_alphac0, &p->i_deblocking_filter_beta ) ||
             2 == sscanf( value, "%d,%d", &p->i_deblocking_filter_alphac0, &p->i_deblocking_filter_beta ) )

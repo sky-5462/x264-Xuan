@@ -813,16 +813,6 @@ typedef struct x264_picture_t
  *  allocates its own x264_picture_t as opposed to using x264_picture_alloc. */
 X264_API void x264_picture_init( x264_picture_t *pic );
 
-/* x264_picture_alloc:
- *  alloc data for a picture. You must call x264_picture_clean on it.
- *  returns 0 on success, or -1 on malloc failure or invalid colorspace. */
-X264_API int x264_picture_alloc( x264_picture_t *pic, int i_csp, int i_width, int i_height );
-
-/* x264_picture_clean:
- *  free associated resource for a x264_picture_t allocated with
- *  x264_picture_alloc ONLY */
-X264_API void x264_picture_clean( x264_picture_t *pic );
-
 /****************************************************************************
  * Encoder functions
  ****************************************************************************/

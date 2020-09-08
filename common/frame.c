@@ -45,14 +45,8 @@ static int align_plane_size( int x, int disalign )
 static int frame_internal_csp( int external_csp )
 {
     int csp = external_csp & X264_CSP_MASK;
-    if( csp == X264_CSP_I400 )
-        return X264_CSP_I400;
     if( csp == X264_CSP_I420 )
         return X264_CSP_NV12;
-    if( csp == X264_CSP_I422 )
-        return X264_CSP_NV16;
-    if( csp == X264_CSP_I444 )
-        return X264_CSP_I444;
     return X264_CSP_NONE;
 }
 
@@ -81,38 +75,14 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     i_lines  = h->mb.i_mb_height*16;
     i_stride = align_stride( i_width + 2*PADH, align, disalign );
 
-    if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )
+    luma_plane_count = 1;
+    frame->i_plane = 2;
+    for( int i = 0; i < 2; i++ )
     {
-        luma_plane_count = 1;
-        frame->i_plane = 2;
-        for( int i = 0; i < 2; i++ )
-        {
-            frame->i_width[i] = i_width >> i;
-            frame->i_lines[i] = i_lines >> (i && i_csp == X264_CSP_NV12);
-            frame->i_stride[i] = i_stride;
-        }
+        frame->i_width[i] = i_width >> i;
+        frame->i_lines[i] = i_lines >> (i && i_csp == X264_CSP_NV12);
+        frame->i_stride[i] = i_stride;
     }
-    else if( i_csp == X264_CSP_I444 )
-    {
-        luma_plane_count = 3;
-        frame->i_plane = 3;
-        for( int i = 0; i < 3; i++ )
-        {
-            frame->i_width[i] = i_width;
-            frame->i_lines[i] = i_lines;
-            frame->i_stride[i] = i_stride;
-        }
-    }
-    else if( i_csp == X264_CSP_I400 )
-    {
-        luma_plane_count = 1;
-        frame->i_plane = 1;
-        frame->i_width[0] = i_width;
-        frame->i_lines[0] = i_lines;
-        frame->i_stride[0] = i_stride;
-    }
-    else
-        goto fail;
 
     frame->i_csp = i_csp;
     frame->i_width_lowres = frame->i_width[0]/2;
@@ -374,24 +344,13 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
     get_plane_ptr( h, src, &pix[0], &stride[0], 0, 0, 0 );
     h->mc.plane_copy( dst->plane[0], dst->i_stride[0], (pixel*)pix[0],
                         stride[0]/sizeof(pixel), h->param.i_width, h->param.i_height );
-    if( i_csp == X264_CSP_I420 || i_csp == X264_CSP_I422 )
-    {
-        get_plane_ptr( h, src, &pix[1], &stride[1], 1, 1, v_shift );
-        get_plane_ptr( h, src, &pix[2], &stride[2], 2, 1, v_shift );
-        h->mc.plane_copy_interleave( dst->plane[1], dst->i_stride[1],
-                                        (pixel*)pix[1], stride[1]/sizeof(pixel),
-                                        (pixel*)pix[2], stride[2]/sizeof(pixel),
-                                        h->param.i_width>>1, h->param.i_height>>v_shift );
-    }
-    else if( i_csp == X264_CSP_I444 )
-    {
-        get_plane_ptr( h, src, &pix[1], &stride[1], 1, 0, 0 );
-        get_plane_ptr( h, src, &pix[2], &stride[2], 2, 0, 0 );
-        h->mc.plane_copy( dst->plane[1], dst->i_stride[1], (pixel*)pix[1],
-                            stride[1]/sizeof(pixel), h->param.i_width, h->param.i_height );
-        h->mc.plane_copy( dst->plane[2], dst->i_stride[2], (pixel*)pix[2],
-                            stride[2]/sizeof(pixel), h->param.i_width, h->param.i_height );
-    }
+
+    get_plane_ptr( h, src, &pix[1], &stride[1], 1, 1, v_shift );
+    get_plane_ptr( h, src, &pix[2], &stride[2], 2, 1, v_shift );
+    h->mc.plane_copy_interleave( dst->plane[1], dst->i_stride[1],
+                                    (pixel*)pix[1], stride[1]/sizeof(pixel),
+                                    (pixel*)pix[2], stride[2]/sizeof(pixel),
+                                    h->param.i_width>>1, h->param.i_height>>v_shift );
     return 0;
 }
 
@@ -503,7 +462,7 @@ void x264_frame_expand_border_filtered( x264_t *h, x264_frame_t *frame, int mb_y
     int height = b_end ? (16*(h->mb.i_mb_height - mb_y)) + 16 : 16;
     int padh = PADH - 4;
     int padv = PADV - 8;
-    for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
+    for( int p = 0; p < 1; p++ )
         for( int i = 1; i < 4; i++ )
         {
             int stride = frame->i_stride[p];

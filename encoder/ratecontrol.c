@@ -264,13 +264,7 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
      * sure no reordering goes on. */
     uint32_t var;
     var  = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, 0, 1 );
-    if( CHROMA444 )
-    {
-        var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 0, 0, 1 );
-        var += ac_energy_plane( h, mb_x, mb_y, frame, 2, 0, 0, 1 );
-    }
-    else if( CHROMA_FORMAT )
-        var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 1 );
+    var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 1 );
     x264_emms();
     return var;
 }

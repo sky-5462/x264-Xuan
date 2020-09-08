@@ -42,7 +42,6 @@ static const char * const opts_suggest[] =
 {
     "--alternative-transfer",
     "--aq-mode",
-    "--asm",
     "--avcintra-class",
     "--avcintra-flavor",
     "--b-adapt",
@@ -52,14 +51,12 @@ static const char * const opts_suggest[] =
     "--demuxer",
     "--direct",
     "--frame-packing",
-    "--input-csp",
     "--input-range",
     "--level",
     "--log-level",
     "--me",
     "--muxer",
     "--nal-hrd",
-    "--output-csp",
     "--overscan",
     "--pass", "-p",
     "--preset",
@@ -92,7 +89,6 @@ static const char * const opts_nosuggest[] =
     "--deadzone-intra",
     "--fps",
     "--frames",
-    "--input-depth",
     "--input-res",
     "--ipratio",
     "--keyint", "-I",
@@ -102,7 +98,6 @@ static const char * const opts_nosuggest[] =
     "--mvrange",
     "--mvrange-thread",
     "--nr",
-    "--output-depth",
     "--partitions", "-A",
     "--pbratio",
     "--psy-rd",
@@ -130,7 +125,6 @@ static const char * const opts_nosuggest[] =
     "--vbv-bufsize",
     "--vbv-init",
     "--vbv-maxrate",
-    "--video-filter", "--vf",
     "--zones",
     NULL
 };
@@ -161,7 +155,6 @@ static const char * const opts_standalone[] =
     "--mbtree",
     "--mixed-refs",
     "--no-8x8dct",
-    "--no-asm",
     "--no-chroma-me",
     "--no-dct-decimate",
     "--no-deblock",
@@ -249,9 +242,6 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
         suggest_list( x264_transfer_names );
     OPT( "--aq-mode" )
         suggest_num_range( 0, 3 );
-    OPT( "--asm" )
-        for( const x264_cpu_name_t *cpu = x264_cpu_names; cpu->flags; cpu++ )
-            suggest_lower( cpu->name );
     OPT( "--avcintra-class" )
         suggest_list( x264_avcintra_class_names );
     OPT( "--avcintra-flavor" )
@@ -270,11 +260,6 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
         suggest_list( x264_direct_pred_names );
     OPT( "--frame-packing" )
         suggest_num_range( 0, 7 );
-    OPT( "--input-csp" )
-    {
-        for( int i = X264_CSP_NONE+1; i < X264_CSP_CLI_MAX; i++ )
-            suggest( x264_cli_csps[i].name );
-    }
     OPT( "--input-range" )
         suggest_list( x264_range_names );
     OPT( "--level" )
@@ -287,12 +272,6 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
         suggest_list( x264_muxer_names );
     OPT( "--nal-hrd" )
         suggest_list( x264_nal_hrd_names );
-    OPT( "--output-csp" )
-        suggest_list( x264_output_csp_names );
-    OPT( "--output-depth" )
-    {
-        suggest( "8" );
-    }
     OPT( "--overscan" )
         suggest_list( x264_overscan_names );
     OPT2( "--partitions", "-A" )

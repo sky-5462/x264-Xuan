@@ -84,8 +84,7 @@ int x264_cqm_init( x264_t *h )
     int max_qp_err = -1;
     int max_chroma_qp_err = -1;
     int min_qp_err = QP_MAX+1;
-    int num_8x8_lists = h->sps->i_chroma_format_idc == CHROMA_444 ? 4
-                      : h->param.analyse.b_transform_8x8 ? 2 : 0; /* Checkasm may segfault if optimized out by --chroma-format */
+    int num_8x8_lists = h->param.analyse.b_transform_8x8 ? 2 : 0; /* Checkasm may segfault if optimized out by --chroma-format */
 
 #define CQM_ALLOC( w, count )\
     for( int i = 0; i < count; i++ )\
@@ -205,7 +204,7 @@ int x264_cqm_init( x264_t *h )
     x264_emms();
     CHECKED_MALLOC( h->nr_offset_emergency, sizeof(*h->nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
     for( int q = 0; q < QP_MAX - QP_MAX_SPEC; q++ )
-        for( int cat = 0; cat < 3 + CHROMA444; cat++ )
+        for( int cat = 0; cat < 3; cat++ )
         {
             int dct8x8 = cat&1;
             if( !h->param.analyse.b_transform_8x8 && dct8x8 )
@@ -292,6 +291,6 @@ fail:
 void x264_cqm_delete( x264_t *h )
 {
     CQM_DELETE( 4, 4 );
-    CQM_DELETE( 8, CHROMA444 ? 4 : 2 );
+    CQM_DELETE( 8, 2 );
     x264_free( h->nr_offset_emergency );
 }

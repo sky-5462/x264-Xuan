@@ -158,19 +158,15 @@ const char * const x264_range_names[] = { "auto", "tv", "pc", 0 };
 
 const char * const x264_output_csp_names[] =
 {
-    "i400",
     "i420",
-    "i422",
-    "i444", "rgb",
     0
 };
 
 const char * const x264_valid_profile_names[] =
 {
-    "baseline", "main",
+    "main",
     "high",
-   "high422",
-   "high444", 0
+    0
 };
 
 const char * const x264_demuxer_names[] =
@@ -289,7 +285,7 @@ static void print_version_info( void )
 #else
     printf( "using an unknown compiler\n" );
 #endif
-    printf( "x264 configuration: --chroma-format=all\n" );
+    printf( "x264 configuration: --chroma-format=i420\n" );
     printf( "x264 license: " );
 #if HAVE_GPL
     printf( "GPL version 2 or later\n" );
@@ -460,12 +456,7 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                    --no-8x8dct\n"
         "                                    No lossless.\n"
         "                                  - high:\n"
-        "                                    No lossless.\n"
-        "                                  - high422:\n"
-        "                                    No lossless.\n"
-        "                                    Support for 4:2:0/4:2:2 chroma subsampling.\n"
-        "                                  - high444:\n"
-        "                                    Support for 4:2:0/4:2:2/4:4:4 chroma subsampling.\n" );
+        "                                    No lossless.\n" );
     else H0( "                                  - %s\n", stringify_names( buf, x264_valid_profile_names ) );
     H0( "      --preset <string>       Use a preset to select encoding settings [medium]\n"
         "                                  Overridden by user settings.\n" );
@@ -753,8 +744,8 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - %s\n", x264_demuxer_names[0], stringify_names( buf, x264_demuxer_names ) );
     H1( "      --input-csp <string>    Specify input colorspace format for raw input\n" );
     print_csp_names( longhelp );
-    H1( "      --output-csp <string>   Specify output colorspace [\"%s\"]\n"
-        "                                  - %s\n", "i420", stringify_names( buf, x264_output_csp_names ) );
+    H1( "      --output-csp <string>   Specify output colorspace [\"i420\"]\n"
+        "                                  - %s\n", stringify_names( buf, x264_output_csp_names ) );
     H1( "      --input-depth <integer> Specify input bit depth for raw input\n" );
     H1( "      --output-depth <integer> Specify output bit depth\n" );
     H1( "      --input-range <string>  Specify input color range [\"%s\"]\n"
@@ -835,14 +826,9 @@ typedef enum
     OPT_TIMEBASE,
     OPT_PULLDOWN,
     OPT_LOG_LEVEL,
-    OPT_VIDEO_FILTER,
     OPT_INPUT_FMT,
     OPT_INPUT_RES,
-    OPT_INPUT_CSP,
-    OPT_INPUT_DEPTH,
-    OPT_OUTPUT_DEPTH,
     OPT_DTS_COMPRESSION,
-    OPT_OUTPUT_CSP,
     OPT_INPUT_RANGE,
     OPT_RANGE
 } OptionsOPT;
@@ -873,7 +859,6 @@ static struct option long_options[] =
     { "no-scenecut",       no_argument, NULL, 0 },
     { "nf",                no_argument, NULL, 0 },
     { "no-deblock",        no_argument, NULL, 0 },
-    { "filter",      required_argument, NULL, 0 },
     { "deblock",     required_argument, NULL, 'f' },
     { "constrained-intra", no_argument, NULL, 0 },
     { "qp",          required_argument, NULL, 'q' },
@@ -883,8 +868,6 @@ static struct option long_options[] =
     { "crf",         required_argument, NULL, 0 },
     { "rc-lookahead",required_argument, NULL, 0 },
     { "ref",         required_argument, NULL, 'r' },
-    { "asm",         required_argument, NULL, 0 },
-    { "no-asm",            no_argument, NULL, 0 },
     { "sar",         required_argument, NULL, 0 },
     { "fps",         required_argument, NULL, OPT_FPS },
     { "frames",      required_argument, NULL, OPT_FRAMES },
@@ -979,14 +962,8 @@ static struct option long_options[] =
     { "pulldown",    required_argument, NULL, OPT_PULLDOWN },
     { "frame-packing",     required_argument, NULL, 0 },
     { "alternative-transfer", required_argument, NULL, 0 },
-    { "vf",          required_argument, NULL, OPT_VIDEO_FILTER },
-    { "video-filter", required_argument, NULL, OPT_VIDEO_FILTER },
     { "input-res",   required_argument, NULL, OPT_INPUT_RES },
-    { "input-csp",   required_argument, NULL, OPT_INPUT_CSP },
-    { "input-depth", required_argument, NULL, OPT_INPUT_DEPTH },
-    { "output-depth", required_argument, NULL, OPT_OUTPUT_DEPTH },
     { "dts-compress",      no_argument, NULL, OPT_DTS_COMPRESSION },
-    { "output-csp",  required_argument, NULL, OPT_OUTPUT_CSP },
     { "input-range", required_argument, NULL, OPT_INPUT_RANGE },
     { "stitchable",        no_argument, NULL, 0 },
     { "filler",            no_argument, NULL, 0 },
@@ -1078,20 +1055,6 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
     if( x264_init_vid_filter( "fix_vfr_pts", handle, &filter, info, param, NULL ) ) /* fix vfr pts */
         return -1;
 
-    /* parse filter chain */
-    for( char *p = sequence; p && *p; )
-    {
-        int tok_len = strcspn( p, "/" );
-        int p_len = strlen( p );
-        p[tok_len] = 0;
-        int name_len = strcspn( p, ":" );
-        p[name_len] = 0;
-        name_len += name_len != tok_len;
-        if( x264_init_vid_filter( p, handle, &filter, info, param, p + name_len ) )
-            return -1;
-        p += X264_MIN( tok_len+1, p_len );
-    }
-
     /* force end result resolution */
     if( !param->i_width && !param->i_height )
     {
@@ -1101,16 +1064,8 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
     /* force the output csp to what the user specified (or the default) */
     param->i_csp = info->csp;
     int csp = info->csp & X264_CSP_MASK;
-    if( output_csp == X264_CSP_I400 && csp != X264_CSP_I400 )
-        param->i_csp = X264_CSP_I400;
-    else if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp >= X264_CSP_I422) )
+    if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp >= X264_CSP_I422) )
         param->i_csp = X264_CSP_I420;
-    else if( output_csp == X264_CSP_I422 && (csp < X264_CSP_I422 || csp >= X264_CSP_I444) )
-        param->i_csp = X264_CSP_I422;
-    else if( output_csp == X264_CSP_I444 && (csp < X264_CSP_I444 || csp >= X264_CSP_BGR) )
-        param->i_csp = X264_CSP_I444;
-    else if( output_csp == X264_CSP_RGB && (csp < X264_CSP_BGR || csp > X264_CSP_RGB) )
-        param->i_csp = X264_CSP_RGB;
     param->i_csp |= info->csp & X264_CSP_HIGH_DEPTH;
     /* if the output range is not forced, assign it to the input one now */
     if( param->vui.b_fullrange == RANGE_AUTO )
@@ -1303,32 +1258,14 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
             case OPT_PULLDOWN:
                 FAIL_IF_ERROR( parse_enum_value( optarg, x264_pulldown_names, &opt->i_pulldown ), "Unknown pulldown `%s'\n", optarg );
                 break;
-            case OPT_VIDEO_FILTER:
-                vid_filters = optarg;
-                break;
             case OPT_INPUT_FMT:
                 input_opt.format = optarg;
                 break;
             case OPT_INPUT_RES:
                 input_opt.resolution = optarg;
                 break;
-            case OPT_INPUT_CSP:
-                input_opt.colorspace = optarg;
-                break;
-            case OPT_INPUT_DEPTH:
-                input_opt.bit_depth = atoi( optarg );
-                break;
-            case OPT_OUTPUT_DEPTH:
-                param->i_bitdepth = atoi( optarg );
-                break;
             case OPT_DTS_COMPRESSION:
                 output_opt.use_dts_compress = 1;
-                break;
-            case OPT_OUTPUT_CSP:
-                FAIL_IF_ERROR( parse_enum_value( optarg, x264_output_csp_names, &output_csp ), "Unknown output csp `%s'\n", optarg );
-                // correct the parsed value to the libx264 csp value
-                static const uint8_t output_csp_fix[] = { X264_CSP_I400, X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
-                param->i_csp = output_csp = output_csp_fix[output_csp];
                 break;
             case OPT_INPUT_RANGE:
                 FAIL_IF_ERROR( parse_enum_value( optarg, x264_range_names, &input_opt.input_range ), "Unknown input range `%s'\n", optarg );
@@ -1509,15 +1446,6 @@ generic_option:
     if( info.interlaced )
     {
         x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, but not compiled with interlaced support\n" );
-    }
-    /* if the user never specified the output range and the input is now rgb, default it to pc */
-    int csp = param->i_csp & X264_CSP_MASK;
-    if( csp >= X264_CSP_BGR && csp <= X264_CSP_RGB )
-    {
-        if( input_opt.output_range == RANGE_AUTO )
-            param->vui.b_fullrange = RANGE_PC;
-        /* otherwise fail if they specified tv */
-        FAIL_IF_ERROR( !param->vui.b_fullrange, "RGB must be PC range" );
     }
 
     /* Automatically reduce reference frame count to match the user's target level

@@ -97,11 +97,10 @@ static void frame_dump( x264_t *h )
     int frame_size = FRAME_SIZE( h->param.i_height * h->param.i_width * sizeof(pixel) );
     if( !fseek( f, (int64_t)h->fdec->i_frame * frame_size, SEEK_SET ) )
     {
-        for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
+        for( int p = 0; p < 1; p++ )
             for( int y = 0; y < h->param.i_height; y++ )
                 fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], sizeof(pixel), h->param.i_width, f );
-        if( CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422 )
-        {
+
             int cw = h->param.i_width>>1;
             int ch = h->param.i_height>>CHROMA_V_SHIFT;
             pixel *planeu = x264_malloc( 2 * (cw*ch*sizeof(pixel) + 32) );
@@ -113,7 +112,6 @@ static void frame_dump( x264_t *h )
                 fwrite( planev, 1, cw*ch*sizeof(pixel), f );
                 x264_free( planeu );
             }
-        }
     }
     fclose( f );
 }
@@ -413,30 +411,6 @@ static int validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
-    if( b_open )
-    {
-        int cpuflags = x264_cpu_detect();
-        int fail = 0;
-#ifdef __SSE__
-        if( !(cpuflags & X264_CPU_SSE) )
-        {
-            x264_log( h, X264_LOG_ERROR, "your cpu does not support SSE1, but x264 was compiled with asm\n");
-            fail = 1;
-        }
-#else
-        if( !(cpuflags & X264_CPU_MMX2) )
-        {
-            x264_log( h, X264_LOG_ERROR, "your cpu does not support MMXEXT, but x264 was compiled with asm\n");
-            fail = 1;
-        }
-#endif
-        if( fail )
-        {
-            x264_log( h, X264_LOG_ERROR, "to run x264, recompile without asm (configure --disable-asm)\n");
-            return -1;
-        }
-    }
-
 #define MAX_RESOLUTION 16384
     if( h->param.i_width <= 0 || h->param.i_height <= 0 ||
         h->param.i_width > MAX_RESOLUTION || h->param.i_height > MAX_RESOLUTION )
@@ -446,28 +420,8 @@ static int validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
-    int i_csp = h->param.i_csp & X264_CSP_MASK;
-    if( i_csp <= X264_CSP_NONE || i_csp >= X264_CSP_MAX )
-    {
-        x264_log( h, X264_LOG_ERROR, "invalid CSP (only I400/I420/YV12/NV12/NV21/I422/YV16/NV16/YUYV/UYVY/"
-                                     "I444/YV24/BGR/BGRA/RGB supported)\n" );
-        return -1;
-    }
-
-    int w_mod = 1;
-    int h_mod = 1;
-    if( i_csp == X264_CSP_I400 )
-    {
-        h->param.analyse.i_chroma_qp_offset = 0;
-        h->param.analyse.b_chroma_me = 0;
-        h->param.vui.i_colmatrix = 2; /* undefined */
-    }
-    else if( i_csp < X264_CSP_I444 )
-    {
-        w_mod = 2;
-        if( i_csp < X264_CSP_I422 )
-            h_mod *= 2;
-    }
+    int w_mod = 2;
+    int h_mod = 2;
 
     if( h->param.i_width % w_mod )
     {
@@ -859,9 +813,6 @@ static int validate_parameters( x264_t *h, int b_open )
     h->mb.i_psy_rd = h->param.analyse.i_subpel_refine >= 6 ? FIX8( h->param.analyse.f_psy_rd ) : 0;
     h->mb.i_psy_trellis = h->param.analyse.i_trellis ? FIX8( h->param.analyse.f_psy_trellis / 4 ) : 0;
     h->param.analyse.i_chroma_qp_offset = x264_clip3(h->param.analyse.i_chroma_qp_offset, -32, 32);
-    /* In 4:4:4 mode, chroma gets twice as much resolution, so we can halve its quality. */
-    if( b_open && i_csp >= X264_CSP_I444 && i_csp < X264_CSP_BGR && h->param.analyse.b_psy )
-        h->param.analyse.i_chroma_qp_offset += 6;
     /* Psy RDO increases overall quantizers to improve the quality of luma--this indirectly hurts chroma quality */
     /* so we lower the chroma QP offset to compensate */
     if( b_open && h->mb.i_psy_rd && !h->param.i_avcintra_class )
@@ -1048,26 +999,12 @@ static void mbcmp_init( x264_t *h )
 static void chroma_dsp_init( x264_t *h )
 {
     memcpy( h->luma2chroma_pixel, x264_luma2chroma_pixel[CHROMA_FORMAT], sizeof(h->luma2chroma_pixel) );
-
-    switch( CHROMA_FORMAT )
-    {
-        case CHROMA_420:
-            memcpy( h->predict_chroma, h->predict_8x8c, sizeof(h->predict_chroma) );
-            h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_420;
-            h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_420_intra;
-            h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x8c;
-            h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last4;
-            h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run4;
-            break;
-        case CHROMA_422:
-            memcpy( h->predict_chroma, h->predict_8x16c, sizeof(h->predict_chroma) );
-            h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_422;
-            h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_422_intra;
-            h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x16c;
-            h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last8;
-            h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run8;
-            break;
-    }
+    memcpy( h->predict_chroma, h->predict_8x8c, sizeof(h->predict_chroma) );
+    h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_420;
+    h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_420_intra;
+    h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x8c;
+    h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last4;
+    h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run4;
 }
 
 static void set_aspect_ratio( x264_t *h, x264_param_t *param, int initial )
@@ -1176,8 +1113,8 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->mb.i_mb_height = h->sps->i_mb_height;
     h->mb.i_mb_count = h->mb.i_mb_width * h->mb.i_mb_height;
 
-    h->mb.chroma_h_shift = CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422;
-    h->mb.chroma_v_shift = CHROMA_FORMAT == CHROMA_420;
+    h->mb.chroma_h_shift = 1;
+    h->mb.chroma_v_shift = 1;
 
     /* Init frames. */
     if( h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS && !h->param.rc.b_stat_read )
@@ -1237,57 +1174,13 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_quant_init( h, &h->quantf );
     x264_deblock_init( &h->loopf );
     x264_bitstream_init( h->param.cpu, &h->bsf );
-    x264_cabac_init( h );
+    x264_cabac_init();
 
     mbcmp_init( h );
     chroma_dsp_init( h );
 
-    p = buf + sprintf( buf, "using cpu capabilities:" );
-    for( int i = 0; x264_cpu_names[i].flags; i++ )
-    {
-        if( !strcmp(x264_cpu_names[i].name, "SSE")
-            && h->param.cpu & (X264_CPU_SSE2) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "SSE2")
-            && h->param.cpu & (X264_CPU_SSE2_IS_FAST|X264_CPU_SSE2_IS_SLOW) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "SSE3")
-            && (h->param.cpu & X264_CPU_SSSE3 || !(h->param.cpu & X264_CPU_CACHELINE_64)) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "SSE4.1")
-            && (h->param.cpu & X264_CPU_SSE42) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "LZCNT")
-            && (h->param.cpu & X264_CPU_BMI1) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "BMI1")
-            && (h->param.cpu & X264_CPU_BMI2) )
-            continue;
-        if( !strcmp(x264_cpu_names[i].name, "FMA4")
-            && (h->param.cpu & X264_CPU_FMA3) )
-            continue;
-        if( (h->param.cpu & x264_cpu_names[i].flags) == x264_cpu_names[i].flags
-            && (!i || x264_cpu_names[i].flags != x264_cpu_names[i-1].flags) )
-            p += sprintf( p, " %s", x264_cpu_names[i].name );
-    }
-    if( !h->param.cpu )
-        p += sprintf( p, " none!" );
-    x264_log( h, X264_LOG_INFO, "%s\n", buf );
-
     if( x264_analyse_init_costs( h ) )
         goto fail;
-
-    /* Must be volatile or else GCC will optimize it out. */
-    volatile int temp = 392;
-    if( x264_clz( temp ) != 23 )
-    {
-        x264_log( h, X264_LOG_ERROR, "CLZ test failed: x264 has been miscompiled!\n" );
-#if ARCH_X86 || ARCH_X86_64
-        x264_log( h, X264_LOG_ERROR, "Are you attempting to run an SSE4a/LZCNT-targeted build on a CPU that\n" );
-        x264_log( h, X264_LOG_ERROR, "doesn't support it?\n" );
-#endif
-        goto fail;
-    }
 
     h->out.i_nal = 0;
     h->out.i_bitstream = x264_clip3f(
@@ -2011,22 +1904,20 @@ static void fdec_filter_row( x264_t *h, int mb_y, int pass )
         maxpix_y = X264_MIN( maxpix_y, h->param.i_height );
         if( h->param.analyse.b_psnr )
         {
-            for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
+            for( int p = 0; p < 1; p++ )
                 h->stat.frame.i_ssd[p] += x264_pixel_ssd_wxh( &h->pixf,
                     h->fdec->plane[p] + minpix_y * h->fdec->i_stride[p], h->fdec->i_stride[p],
                     h->fenc->plane[p] + minpix_y * h->fenc->i_stride[p], h->fenc->i_stride[p],
                     h->param.i_width, maxpix_y-minpix_y );
-            if( !CHROMA444 )
-            {
-                uint64_t ssd_u, ssd_v;
-                int v_shift = CHROMA_V_SHIFT;
-                x264_pixel_ssd_nv12( &h->pixf,
-                    h->fdec->plane[1] + (minpix_y>>v_shift) * h->fdec->i_stride[1], h->fdec->i_stride[1],
-                    h->fenc->plane[1] + (minpix_y>>v_shift) * h->fenc->i_stride[1], h->fenc->i_stride[1],
-                    h->param.i_width>>1, (maxpix_y-minpix_y)>>v_shift, &ssd_u, &ssd_v );
-                h->stat.frame.i_ssd[1] += ssd_u;
-                h->stat.frame.i_ssd[2] += ssd_v;
-            }
+
+            uint64_t ssd_u, ssd_v;
+            int v_shift = CHROMA_V_SHIFT;
+            x264_pixel_ssd_nv12( &h->pixf,
+                h->fdec->plane[1] + (minpix_y>>v_shift) * h->fdec->i_stride[1], h->fdec->i_stride[1],
+                h->fenc->plane[1] + (minpix_y>>v_shift) * h->fenc->i_stride[1], h->fenc->i_stride[1],
+                h->param.i_width>>1, (maxpix_y-minpix_y)>>v_shift, &ssd_u, &ssd_v );
+            h->stat.frame.i_ssd[1] += ssd_u;
+            h->stat.frame.i_ssd[2] += ssd_v;
         }
 
         if( h->param.analyse.b_ssim )
@@ -2279,7 +2170,7 @@ static intptr_t slice_write( x264_t *h )
     bs_align_1( &h->out.bs );
 
     /* init cabac */
-    x264_cabac_context_init( h, &h->cabac, h->sh.i_type, x264_clip3( h->sh.i_qp-QP_BD_OFFSET, 0, 51 ) );
+    x264_cabac_context_init( &h->cabac, h->sh.i_type, x264_clip3( h->sh.i_qp-QP_BD_OFFSET, 0, 51 ) );
     x264_cabac_encode_init ( &h->cabac, h->out.bs.p, h->out.bs.p_end );
     last_emu_check = h->cabac.p;
     h->mb.i_last_qp = h->sh.i_qp;
@@ -2432,26 +2323,11 @@ cont:
         {
             if( h->mb.i_cbp_luma | h->mb.i_cbp_chroma )
             {
-                if( CHROMA444 )
-                {
-                    for( int i = 0; i < 4; i++ )
-                        if( h->mb.i_cbp_luma & (1 << i) )
-                            for( int p = 0; p < 3; p++ )
-                            {
-                                int s8 = i*4+p*16;
-                                int nnz8x8 = M16( &h->mb.cache.non_zero_count[x264_scan8[s8]+0] )
-                                           | M16( &h->mb.cache.non_zero_count[x264_scan8[s8]+8] );
-                                h->stat.frame.i_mb_cbp[!b_intra + p*2] += !!nnz8x8;
-                            }
-                }
-                else
-                {
-                    int cbpsum = (h->mb.i_cbp_luma&1) + ((h->mb.i_cbp_luma>>1)&1)
-                               + ((h->mb.i_cbp_luma>>2)&1) + (h->mb.i_cbp_luma>>3);
-                    h->stat.frame.i_mb_cbp[!b_intra + 0] += cbpsum;
-                    h->stat.frame.i_mb_cbp[!b_intra + 2] += !!h->mb.i_cbp_chroma;
-                    h->stat.frame.i_mb_cbp[!b_intra + 4] += h->mb.i_cbp_chroma >> 1;
-                }
+                int cbpsum = (h->mb.i_cbp_luma&1) + ((h->mb.i_cbp_luma>>1)&1)
+                            + ((h->mb.i_cbp_luma>>2)&1) + (h->mb.i_cbp_luma>>3);
+                h->stat.frame.i_mb_cbp[!b_intra + 0] += cbpsum;
+                h->stat.frame.i_mb_cbp[!b_intra + 2] += !!h->mb.i_cbp_chroma;
+                h->stat.frame.i_mb_cbp[!b_intra + 4] += h->mb.i_cbp_chroma >> 1;
             }
             if( h->mb.i_cbp_luma && !b_intra )
             {
@@ -3717,27 +3593,17 @@ void    x264_encoder_close  ( x264_t *h )
         }
 
         buf[0] = 0;
-        if( CHROMA_FORMAT )
-        {
-            int csize = CHROMA444 ? 4 : 1;
-            if( i_mb_count != i_all_intra )
-                sprintf( buf, " inter: %.1f%% %.1f%% %.1f%%",
-                         h->stat.i_mb_cbp[1] * 100.0 / ((i_mb_count - i_all_intra)*4),
-                         h->stat.i_mb_cbp[3] * 100.0 / ((i_mb_count - i_all_intra)*csize),
-                         h->stat.i_mb_cbp[5] * 100.0 / ((i_mb_count - i_all_intra)*csize) );
-            x264_log( h, X264_LOG_INFO, "coded y,%s,%s intra: %.1f%% %.1f%% %.1f%%%s\n",
-                      CHROMA444?"u":"uvDC", CHROMA444?"v":"uvAC",
-                      h->stat.i_mb_cbp[0] * 100.0 / (i_all_intra*4),
-                      h->stat.i_mb_cbp[2] * 100.0 / (i_all_intra*csize),
-                      h->stat.i_mb_cbp[4] * 100.0 / (i_all_intra*csize), buf );
-        }
-        else
-        {
-            if( i_mb_count != i_all_intra )
-                sprintf( buf, " inter: %.1f%%", h->stat.i_mb_cbp[1] * 100.0 / ((i_mb_count - i_all_intra)*4) );
-            x264_log( h, X264_LOG_INFO, "coded y intra: %.1f%%%s\n",
-                      h->stat.i_mb_cbp[0] * 100.0 / (i_all_intra*4), buf );
-        }
+        int csize = 1;
+        if( i_mb_count != i_all_intra )
+            sprintf( buf, " inter: %.1f%% %.1f%% %.1f%%",
+                        h->stat.i_mb_cbp[1] * 100.0 / ((i_mb_count - i_all_intra)*4),
+                        h->stat.i_mb_cbp[3] * 100.0 / ((i_mb_count - i_all_intra)*csize),
+                        h->stat.i_mb_cbp[5] * 100.0 / ((i_mb_count - i_all_intra)*csize) );
+        x264_log( h, X264_LOG_INFO, "coded y,%s,%s intra: %.1f%% %.1f%% %.1f%%%s\n",
+                    "uvDC", "uvAC",
+                    h->stat.i_mb_cbp[0] * 100.0 / (i_all_intra*4),
+                    h->stat.i_mb_cbp[2] * 100.0 / (i_all_intra*csize),
+                    h->stat.i_mb_cbp[4] * 100.0 / (i_all_intra*csize), buf );
 
         int64_t fixed_pred_modes[4][9] = {{0}};
         int64_t sum_pred_modes[4] = {0};
@@ -3776,7 +3642,7 @@ void    x264_encoder_close  ( x264_t *h )
             fixed_pred_modes[3][x264_mb_chroma_pred_mode_fix[i]] += h->stat.i_mb_pred_mode[3][i];
             sum_pred_modes[3] += h->stat.i_mb_pred_mode[3][i];
         }
-        if( sum_pred_modes[3] && !CHROMA444 )
+        if( sum_pred_modes[3] )
             x264_log( h, X264_LOG_INFO, "i8c dc,h,v,p: %2.0f%% %2.0f%% %2.0f%% %2.0f%%\n",
                       fixed_pred_modes[3][0] * 100.0 / sum_pred_modes[3],
                       fixed_pred_modes[3][1] * 100.0 / sum_pred_modes[3],
@@ -3786,8 +3652,7 @@ void    x264_encoder_close  ( x264_t *h )
         if( h->param.analyse.i_weighted_pred >= X264_WEIGHTP_SIMPLE && h->stat.i_frame_count[SLICE_TYPE_P] > 0 )
         {
             buf[0] = 0;
-            if( CHROMA_FORMAT )
-                sprintf( buf, " UV:%.1f%%", h->stat.i_wpred[1] * 100.0 / h->stat.i_frame_count[SLICE_TYPE_P] );
+            sprintf( buf, " UV:%.1f%%", h->stat.i_wpred[1] * 100.0 / h->stat.i_frame_count[SLICE_TYPE_P] );
             x264_log( h, X264_LOG_INFO, "Weighted P-Frames: Y:%.1f%%%s\n",
                       h->stat.i_wpred[0] * 100.0 / h->stat.i_frame_count[SLICE_TYPE_P], buf );
         }
