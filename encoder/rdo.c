@@ -579,8 +579,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     ALIGNED_ARRAY_64( dctcoef, quant_coefs, [64] );
     const uint32_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
-    uint8_t *cabac_state_sig = &h->cabac.state[ x264_significant_coeff_flag_offset[0][ctx_block_cat] ];
-    uint8_t *cabac_state_last = &h->cabac.state[ x264_last_coeff_flag_offset[0][ctx_block_cat] ];
+    uint8_t *cabac_state_sig = &h->cabac.state[ x264_significant_coeff_flag_offset[ctx_block_cat] ];
+    uint8_t *cabac_state_last = &h->cabac.state[ x264_last_coeff_flag_offset[ctx_block_cat] ];
     int levelgt1_ctx = b_chroma && dc ? 8 : 9;
 
     if( dc )
@@ -698,7 +698,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
              * subtracting from one score is equivalent to adding to the rest. */\
             if( !ctx_hi )\
             {\
-                int sigindex = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[0][i] :\
+                int sigindex = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[i] :\
                                b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\
                 uint64_t cost_sig0 = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 0 )\
                                    * (uint64_t)lambda2 >> ( CABAC_SIZE_BITS - LAMBDA_BITS );\
@@ -719,7 +719,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
 \
         if( i < num_coefs-1 || ctx_hi )\
         {\
-            int sigindex  = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[0][i] :\
+            int sigindex  = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[i] :\
                             b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\
             int lastindex = !dc && num_coefs == 64 ? x264_last_coeff_flag_offset_8x8[i] :\
                             b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\

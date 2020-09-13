@@ -52,11 +52,7 @@ typedef struct
     int (*decimate_score16)( dctcoef *dct );
     int (*decimate_score64)( dctcoef *dct );
     int (*coeff_last[14])( dctcoef *dct );
-    int (*coeff_last4)( dctcoef *dct );
-    int (*coeff_last8)( dctcoef *dct );
     int (*coeff_level_run[13])( dctcoef *dct, x264_run_level_t *runlevel );
-    int (*coeff_level_run4)( dctcoef *dct, x264_run_level_t *runlevel );
-    int (*coeff_level_run8)( dctcoef *dct, x264_run_level_t *runlevel );
 
 #define TRELLIS_PARAMS const int *unquant_mf, const uint8_t *zigzag, int lambda2,\
                        int last_nnz, dctcoef *coefs, dctcoef *quant_coefs, dctcoef *dct,\

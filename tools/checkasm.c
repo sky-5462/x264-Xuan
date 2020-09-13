@@ -2328,7 +2328,6 @@ static int check_quant( int cpu_ref, int cpu_new )
 
     ok = 1; used_asm = 0;
     TEST_LAST( coeff_last4              , coeff_last4,   4, 0 );
-    TEST_LAST( coeff_last8              , coeff_last8,   8, 0 );
     TEST_LAST( coeff_last[  DCT_LUMA_AC], coeff_last15, 16, 1 );
     TEST_LAST( coeff_last[ DCT_LUMA_4x4], coeff_last16, 16, 0 );
     TEST_LAST( coeff_last[ DCT_LUMA_8x8], coeff_last64, 64, 0 );
@@ -2366,7 +2365,6 @@ static int check_quant( int cpu_ref, int cpu_new )
 
     ok = 1; used_asm = 0;
     TEST_LEVELRUN( coeff_level_run4              , coeff_level_run4,   4, 0 );
-    TEST_LEVELRUN( coeff_level_run8              , coeff_level_run8,   8, 0 );
     TEST_LEVELRUN( coeff_level_run[  DCT_LUMA_AC], coeff_level_run15, 16, 1 );
     TEST_LEVELRUN( coeff_level_run[ DCT_LUMA_4x4], coeff_level_run16, 16, 0 );
     report( "coeff_level_run :" );

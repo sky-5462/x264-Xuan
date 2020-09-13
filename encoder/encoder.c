@@ -1003,8 +1003,6 @@ static void chroma_dsp_init( x264_t *h )
     h->loopf.deblock_chroma[0] = h->loopf.deblock_h_chroma_420;
     h->loopf.deblock_chroma_intra[0] = h->loopf.deblock_h_chroma_420_intra;
     h->pixf.intra_mbcmp_x3_chroma = h->pixf.intra_mbcmp_x3_8x8c;
-    h->quantf.coeff_last[DCT_CHROMA_DC] = h->quantf.coeff_last4;
-    h->quantf.coeff_level_run[DCT_CHROMA_DC] = h->quantf.coeff_level_run4;
 }
 
 static void set_aspect_ratio( x264_t *h, x264_param_t *param, int initial )

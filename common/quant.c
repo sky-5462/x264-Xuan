@@ -62,15 +62,14 @@ void x264_quant_init( x264_t *h, x264_quant_function_t *pf )
     pf->decimate_score16 = x264_decimate_score16_avx2;
     pf->decimate_score64 = x264_decimate_score64_avx2;
 
-    pf->coeff_last4 = x264_coeff_last4_avx2;
-    pf->coeff_last8 = x264_coeff_last8_avx2;
-    pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_avx2;
+    pf->coeff_last[DCT_CHROMA_DC] = x264_coeff_last4_avx2;
+    pf->coeff_last[DCT_LUMA_AC] = x264_coeff_last15_avx2;
     pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_avx2;
     pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2;
 
-    pf->coeff_level_run4 = x264_coeff_level_run4_avx2;
-    pf->coeff_level_run8 = x264_coeff_level_run8_avx2;
-    pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_avx2;
+    pf->coeff_level_run[DCT_CHROMA_DC] = x264_coeff_level_run4_avx2;
+    pf->coeff_level_run[DCT_LUMA_AC] = x264_coeff_level_run15_avx2;
+    pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_avx2;
 
 
     INIT_TRELLIS( ssse3 );

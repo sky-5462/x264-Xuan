@@ -664,8 +664,8 @@ static const uint8_t coeff_abs_level_transition[2][8] = {
 #if !RDO_SKIP_BS
 static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
-    int ctx_sig = x264_significant_coeff_flag_offset[0][ctx_block_cat];
-    int ctx_last = x264_last_coeff_flag_offset[0][ctx_block_cat];
+    int ctx_sig = x264_significant_coeff_flag_offset[ctx_block_cat];
+    int ctx_last = x264_last_coeff_flag_offset[ctx_block_cat];
     int ctx_level = x264_coeff_abs_level_m1_offset[ctx_block_cat];
     int coeff_idx = -1, node_ctx = 0;
     int last = h->quantf.coeff_last[ctx_block_cat]( l );
@@ -702,8 +702,7 @@ static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t
     int count_m1 = x264_count_cat_m1[ctx_block_cat];
     if( count_m1 == 63 )
     {
-        const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[0];
-        WRITE_SIGMAP( sig_offset[i], x264_last_coeff_flag_offset_8x8[i] )
+        WRITE_SIGMAP( x264_significant_coeff_flag_offset_8x8[i], x264_last_coeff_flag_offset_8x8[i] )
     }
     else
         WRITE_SIGMAP( i, i )
@@ -760,9 +759,9 @@ static ALWAYS_INLINE void cabac_block_residual( x264_t *h, x264_cabac_t *cb, int
  * is nearly no quality penalty for this (~0.001db) and the speed boost (~30%) is worth it. */
 static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8 )
 {
-    const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[0];
-    int ctx_sig = x264_significant_coeff_flag_offset[0][ctx_block_cat];
-    int ctx_last = x264_last_coeff_flag_offset[0][ctx_block_cat];
+    const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8;
+    int ctx_sig = x264_significant_coeff_flag_offset[ctx_block_cat];
+    int ctx_last = x264_last_coeff_flag_offset[ctx_block_cat];
     int ctx_level = x264_coeff_abs_level_m1_offset[ctx_block_cat];
     int last = h->quantf.coeff_last[ctx_block_cat]( l );
     int coeff_abs = abs(l[last]);

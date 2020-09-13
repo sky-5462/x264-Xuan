@@ -1789,25 +1789,14 @@ cglobal coeff_last4, 0, 0
     ret
 
 INIT_XMM avx2
-cglobal coeff_last8, 0, 0
-    vpxor          m0, m0, m0
-    vpcmpeqb       m0, m0, [r0]
-    vpmovmskb      r0d, m0
-    xor            r0d, 0FFFFh         ; invert low word
-    lzcnt          r6d, r0d
-    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
-    shr            r6d, 1              ; word index
-    ret
-
-INIT_XMM avx2
 cglobal coeff_last15, 0, 0
     vmovdqu        m0, [r0 - 2]
     vpacksswb      m0, m0, [r0 + 14]
     vpxor          m1, m1, m1
     vpcmpeqb       m0, m0, m1
-    vpmovmskb      r0d, m0
-    xor            r0d, 0FFFFh         ; invert low word
-    lzcnt          r6d, r0d
+    vpmovmskb      r6d, m0
+    xor            r6d, 0FFFFh         ; invert low word
+    lzcnt          r6d, r6d
     xor            r6d, 1Fh            ; bit index = 31 - lzcnt
     dec            r6d
     ret
@@ -1818,9 +1807,9 @@ cglobal coeff_last16, 0, 0
     vpacksswb      m0, m0, [r0 + 16]
     vpxor          m1, m1, m1
     vpcmpeqb       m0, m0, m1
-    vpmovmskb      r0d, m0
-    xor            r0d, 0FFFFh         ; invert low word
-    lzcnt          r6d, r0d
+    vpmovmskb      r6d, m0
+    xor            r6d, 0FFFFh         ; invert low word
+    lzcnt          r6d, r6d
     xor            r6d, 1Fh            ; bit index = 31 - lzcnt
     ret
 
@@ -1831,16 +1820,16 @@ cglobal coeff_last64, 0, 0
     vpacksswb      m1, m1, [r0 + 32]
     vpermq         m1, m1, q3120
     vpcmpeqb       m1, m1, m0
-    vpmovmskb      r1d, m1
+    vpmovmskb      r6d, m1
     vmovdqu        m1, [r0 + 64]
     vpacksswb      m1, m1, [r0 + 96]
     vpermq         m1, m1, q3120
     vpcmpeqb       m1, m1, m0
-    vpmovmskb      r0d, m1
-    shl            r0, 32
-    or             r1, r0
-    not            r1
-    lzcnt          r6, r1
+    vpmovmskb      r5d, m1
+    shl            r5, 32
+    or             r6, r5
+    not            r6
+    lzcnt          r6, r6
     xor            r6d, 3Fh            ; bit index = 63 - lzcnt
     RET
 
@@ -1864,25 +1853,6 @@ cglobal coeff_level_run4, 0, 0
     shl            r0d, 4
     vpshufb        m0, m0, [r6 + r0]
     vmovq          [r1 + 16], m0
-    popcnt         r6d, r0d
-    ret
-
-INIT_XMM avx2
-cglobal coeff_level_run8, 0, 0
-    vmovdqu        m0, [r0]
-    vpxor          m1, m1, m1
-    vpacksswb      m2, m0, m1
-    vpcmpeqb       m2, m2, m1
-    vpmovmskb      r0d, m2
-    xor            r0d, 0FFFFh         ; only care of the lowest 8 bits
-    mov            [r1 + 4], r0d       ; runlevel->mask
-    lzcnt          r6d, r0d
-    xor            r6d, 1Fh            ; bit index = 31 - lzcnt
-    mov            [r1], r6d           ; runlevel->last
-    lea            r6, [coeff_level_shuffle]
-    shl            r0d, 4
-    vpshufb        m0, m0, [r6 + r0]
-    vmovdqu        [r1 + 16], m0
     popcnt         r6d, r0d
     ret
 
