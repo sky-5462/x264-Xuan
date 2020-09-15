@@ -99,12 +99,11 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
 {
     memset( pf, 0, sizeof(*pf) );
 
+    pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx2;
+    pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_avx2;
+    pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_avx2;
+
     pf->nal_escape = nal_escape_c;
-#if ARCH_X86_64 && !defined( __MACH__ )
-    pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;
-    pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2;
-    pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_sse2;
-#endif
 
     if( cpu&X264_CPU_MMX2 )
         pf->nal_escape = x264_nal_escape_mmx2;
@@ -113,36 +112,10 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
         if( cpu&X264_CPU_SSE2_IS_FAST )
             pf->nal_escape = x264_nal_escape_sse2;
     }
-#if ARCH_X86_64 && !defined( __MACH__ )
-    if( cpu&X264_CPU_LZCNT )
-    {
-        pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_lzcnt;
-        pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_lzcnt;
-        pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_lzcnt;
-    }
-
-    if( cpu&X264_CPU_SSSE3 )
-    {
-        pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_ssse3;
-        pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_ssse3;
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_ssse3_lzcnt;
-            pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_ssse3_lzcnt;
-        }
-    }
 
     if( cpu&X264_CPU_AVX2 )
     {
         pf->nal_escape = x264_nal_escape_avx2;
-        pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx2;
     }
 
-    if( cpu&X264_CPU_AVX512 )
-    {
-        pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx512;
-        pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_avx512;
-        pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_avx512;
-    }
-#endif
 }

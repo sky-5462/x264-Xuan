@@ -57,12 +57,9 @@ typedef struct
 typedef struct
 {
     uint8_t *(*nal_escape)( uint8_t *dst, uint8_t *src, uint8_t *end );
-    void (*cabac_block_residual_internal)( dctcoef *l, int b_interlaced,
-                                           intptr_t ctx_block_cat, x264_cabac_t *cb );
-    void (*cabac_block_residual_rd_internal)( dctcoef *l, int b_interlaced,
-                                              intptr_t ctx_block_cat, x264_cabac_t *cb );
-    void (*cabac_block_residual_8x8_rd_internal)( dctcoef *l, int b_interlaced,
-                                                  intptr_t ctx_block_cat, x264_cabac_t *cb );
+    void (*cabac_block_residual_internal)( dctcoef *l, intptr_t ctx_block_cat, x264_cabac_t *cb );
+    void (*cabac_block_residual_rd_internal)( dctcoef *l, intptr_t ctx_block_cat, x264_cabac_t *cb );
+    void (*cabac_block_residual_8x8_rd_internal)( dctcoef *l, intptr_t ctx_block_cat, x264_cabac_t *cb );
 } x264_bitstream_function_t;
 
 #define x264_bitstream_init x264_template(bitstream_init)
@@ -194,41 +191,11 @@ static inline void bs_align_10( bs_t *s )
 
 /* golomb functions */
 
-static const uint8_t x264_ue_size_tab[256] =
-{
-     1, 1, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 7,
-     9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-    11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
-    11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
-    13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
-    13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
-    13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
-    13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-};
-
 static inline void bs_write_ue_big( bs_t *s, unsigned int val )
 {
-    int size = 0;
-    int tmp = ++val;
-    if( tmp >= 0x10000 )
-    {
-        size = 32;
-        tmp >>= 16;
-    }
-    if( tmp >= 0x100 )
-    {
-        size += 16;
-        tmp >>= 8;
-    }
-    size += x264_ue_size_tab[tmp];
+    unsigned long long lz = _lzcnt_u64(val + 1);
+    lz ^= 0x3F;
+    int size = 2 * lz + 1;
     bs_write( s, size>>1, 0 );
     bs_write( s, (size>>1)+1, val );
 }
@@ -236,7 +203,9 @@ static inline void bs_write_ue_big( bs_t *s, unsigned int val )
 /* Only works on values under 255. */
 static inline void bs_write_ue( bs_t *s, int val )
 {
-    bs_write( s, x264_ue_size_tab[val+1], val+1 );
+    unsigned lz = _lzcnt_u32(val + 1);
+    lz ^= 0x1F;
+    bs_write( s, 2 * lz + 1, val+1 );
 }
 
 static inline void bs_write_se( bs_t *s, int val )
@@ -246,15 +215,9 @@ static inline void bs_write_se( bs_t *s, int val )
     /* 4 instructions on x86, 3 on ARM */
     int tmp = 1 - val*2;
     if( tmp < 0 ) tmp = val*2;
-    val = tmp;
-
-    if( tmp >= 0x100 )
-    {
-        size = 16;
-        tmp >>= 8;
-    }
-    size += x264_ue_size_tab[tmp];
-    bs_write( s, size, val );
+    unsigned lz = _lzcnt_u32(tmp);
+    lz ^= 0x1F;
+    bs_write( s, 2 * lz + 1, tmp );
 }
 
 static inline void bs_write_te( bs_t *s, int x, int val )
@@ -273,33 +236,36 @@ static inline void bs_rbsp_trailing( bs_t *s )
 
 static ALWAYS_INLINE int bs_size_ue( unsigned int val )
 {
-    return x264_ue_size_tab[val+1];
+    unsigned lz = _lzcnt_u32(val + 1);
+    lz ^= 0x1F;
+    return 2 * lz + 1;
 }
 
 static ALWAYS_INLINE int bs_size_ue_big( unsigned int val )
 {
-    if( val < 255 )
-        return x264_ue_size_tab[val+1];
-    else
-        return x264_ue_size_tab[(val+1)>>8] + 16;
+    unsigned lz = _lzcnt_u32(val + 1);
+    lz ^= 0x1F;
+    return 2 * lz + 1;
 }
 
 static ALWAYS_INLINE int bs_size_se( int val )
 {
     int tmp = 1 - val*2;
     if( tmp < 0 ) tmp = val*2;
-    if( tmp < 256 )
-        return x264_ue_size_tab[tmp];
-    else
-        return x264_ue_size_tab[tmp>>8]+16;
+    unsigned lz = _lzcnt_u32(tmp);
+    lz ^= 0x1F;
+    return 2 * lz + 1;
 }
 
 static ALWAYS_INLINE int bs_size_te( int x, int val )
 {
     if( x == 1 )
         return 1;
-    else //if( x > 1 )
-        return x264_ue_size_tab[val+1];
+    else {
+        unsigned lz = _lzcnt_u32(val + 1);
+        lz ^= 0x1F;
+        return 2 * lz + 1;
+    }
 }
 
 #endif

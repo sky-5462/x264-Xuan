@@ -63,7 +63,6 @@ extern const int8_t   x264_cabac_context_init_I[1024][2];
 extern const int8_t   x264_cabac_context_init_PB[1024][2];
 extern const uint8_t  x264_cabac_range_lps[64][4];
 extern const uint8_t  x264_cabac_transition[128][2];
-extern const uint8_t  x264_cabac_renorm_shift[64];
 extern const uint16_t x264_cabac_entropy[128];
 
 extern const uint8_t  x264_significant_coeff_flag_offset_8x8[64];
