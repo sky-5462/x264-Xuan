@@ -25,20 +25,6 @@
  *****************************************************************************/
 
 #include "common.h"
-
-static uint8_t *nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
-{
-    if( src < end ) *dst++ = *src++;
-    if( src < end ) *dst++ = *src++;
-    while( src < end )
-    {
-        if( src[0] <= 0x03 && !dst[-2] && !dst[-1] )
-            *dst++ = 0x03;
-        *dst++ = *src++;
-    }
-    return dst;
-}
-
 #include "x86/bitstream.h"
 
 /****************************************************************************
@@ -95,27 +81,10 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
     x264_emms();
 }
 
-void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
+void x264_bitstream_init( x264_bitstream_function_t *pf )
 {
-    memset( pf, 0, sizeof(*pf) );
-
     pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx2;
     pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_avx2;
     pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_avx2;
-
-    pf->nal_escape = nal_escape_c;
-
-    if( cpu&X264_CPU_MMX2 )
-        pf->nal_escape = x264_nal_escape_mmx2;
-    if( cpu&X264_CPU_SSE2 )
-    {
-        if( cpu&X264_CPU_SSE2_IS_FAST )
-            pf->nal_escape = x264_nal_escape_sse2;
-    }
-
-    if( cpu&X264_CPU_AVX2 )
-    {
-        pf->nal_escape = x264_nal_escape_avx2;
-    }
-
+    pf->nal_escape = x264_nal_escape_avx2;
 }

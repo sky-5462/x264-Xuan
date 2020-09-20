@@ -1171,7 +1171,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_mc_init( &h->mc );
     x264_quant_init( h, &h->quantf );
     x264_deblock_init( &h->loopf );
-    x264_bitstream_init( h->param.cpu, &h->bsf );
+    x264_bitstream_init( &h->bsf );
     x264_cabac_init();
 
     mbcmp_init( h );

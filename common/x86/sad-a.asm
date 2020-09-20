@@ -308,6 +308,10 @@ cglobal pixel_sad_8x16, 0, 0
     vmovd          eax, m1
     ret
 
+
+; the 128-bits part suffers from uop unlamination with VEX encoding, 
+; but most of the time the 256-bits part is used, so 128-bits with 
+; VEX is just OK, and maybe don't need to care about it in the future
 INIT_YMM avx2
 cglobal pixel_sad_16x8, 0, 0
     cmp            r1d, 16
