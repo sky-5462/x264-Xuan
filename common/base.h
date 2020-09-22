@@ -186,6 +186,15 @@ static const uint8_t x264_scan8[16*3 + 3] =
  ****************************************************************************/
 #include "cpu.h"
 #include "tables.h"
+#include <immintrin.h>
+
+#ifndef _mm_loadu_si32
+#define _mm_loadu_si32(x) _mm_cvtsi32_si128(*(int*)(x))
+#endif
+
+#ifndef _mm_storeu_si32
+#define _mm_storeu_si32(p, a) (void)(*(int*)(p) = _mm_cvtsi128_si32((a)))
+#endif
 
 /****************************************************************************
  * Inline functions
@@ -216,40 +225,81 @@ static ALWAYS_INLINE float x264_log2( uint32_t x )
     return x264_log2_lut[(x<<lz>>24)&0x7f] + x264_log2_lz_lut[lz];
 }
 
-static ALWAYS_INLINE int x264_median( int a, int b, int c )
-{
-    int t = (a-b)&((a-b)>>31);
-    a -= t;
-    b += t;
-    b -= (b-c)&((b-c)>>31);
-    b += (a-b)&((a-b)>>31);
-    return b;
-}
-
 static ALWAYS_INLINE void x264_median_mv( int16_t *dst, int16_t *a, int16_t *b, int16_t *c )
 {
-    dst[0] = x264_median( a[0], b[0], c[0] );
-    dst[1] = x264_median( a[1], b[1], c[1] );
+    __m128i a0 = _mm_loadu_si32(a);
+    __m128i b0 = _mm_loadu_si32(b);
+    __m128i c0 = _mm_loadu_si32(c);
+    __m128i abMax = _mm_max_epi16(a0, b0);
+    __m128i abMin = _mm_min_epi16(a0, b0);
+    __m128i median = _mm_min_epi16(abMax, c0);
+    median = _mm_max_epi16(median, abMin);
+    _mm_storeu_si32(dst, median);
 }
 
 static ALWAYS_INLINE int x264_predictor_difference( int16_t (*mvc)[2], intptr_t i_mvc )
 {
-    int sum = 0;
-    for( int i = 0; i < i_mvc-1; i++ )
-    {
-        sum += abs( mvc[i][0] - mvc[i+1][0] )
-             + abs( mvc[i][1] - mvc[i+1][1] );
-    }
-    return sum;
+	__m128i sum = _mm_setzero_si128();
+	uint32_t num = i_mvc - 1;
+	int groupsNum = num / 4;   // 4 items in a group
+	int restItemsNum = num % 4;
+	while (groupsNum > 0) {
+		__m128i a = _mm_loadu_si128((void*)mvc[0]);
+		__m128i b = _mm_loadu_si128((void*)mvc[1]);
+		__m128i diff = _mm_sub_epi16(a, b);
+		__m128i abs = _mm_abs_epi16(diff);
+		sum = _mm_add_epi16(sum, abs);
+		mvc += 4;
+		groupsNum--;
+	}
+
+	// 2 items group
+	if (restItemsNum >= 2) {
+		__m128i a = _mm_loadl_epi64((void*)mvc[0]);
+		__m128i b = _mm_loadl_epi64((void*)mvc[1]);
+		__m128i diff = _mm_sub_epi16(a, b);
+		__m128i abs = _mm_abs_epi16(diff);
+		sum = _mm_add_epi16(sum, abs);
+		mvc += 2;
+		restItemsNum -= 2;
+	}
+
+	// only one
+	if (restItemsNum > 0) {
+		__m128i a = _mm_loadu_si32((void*)mvc[0]);
+		__m128i b = _mm_loadu_si32((void*)mvc[1]);
+		__m128i diff = _mm_sub_epi16(a, b);
+		__m128i abs = _mm_abs_epi16(diff);
+		sum = _mm_add_epi16(sum, abs);
+	}
+	
+	__m128i shuffleTemp = _mm_unpackhi_epi64(sum, sum);
+	sum = _mm_add_epi16(sum, shuffleTemp);
+	shuffleTemp = _mm_shuffle_epi32(sum, 1);
+	sum = _mm_add_epi16(sum, shuffleTemp);
+	shuffleTemp = _mm_shufflelo_epi16(sum, 1);
+	sum = _mm_add_epi16(sum, shuffleTemp);
+	sum = _mm_cvtepu16_epi32(sum);
+	return _mm_cvtsi128_si32(sum);
 }
 
 static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum( uint8_t *mvdleft, uint8_t *mvdtop )
 {
-    int amvd0 = mvdleft[0] + mvdtop[0];
-    int amvd1 = mvdleft[1] + mvdtop[1];
-    amvd0 = (amvd0 > 2) + (amvd0 > 32);
-    amvd1 = (amvd1 > 2) + (amvd1 > 32);
-    return amvd0 + (amvd1<<8);
+	__m128i leftVec = _mm_loadu_si32(mvdleft);
+	__m128i topVec = _mm_loadu_si32(mvdtop);
+	__m128i amvd = _mm_add_epi8(leftVec, topVec);
+	__m128i pd_2 = _mm_set1_epi8(2);
+	__m128i pd_32 = _mm_set1_epi8(32);
+	// cmp uses int8, clip to avoid overflow
+	__m128i clipMask = _mm_set1_epi8(33);
+	amvd = _mm_min_epu8(amvd, clipMask);
+	// cmp generates -1/0, so we subtract the masks
+	__m128i mask2 = _mm_cmpgt_epi8(amvd, pd_2);
+	__m128i mask32 = _mm_cmpgt_epi8(amvd, pd_32);
+	__m128i result = _mm_setzero_si128();
+	result = _mm_sub_epi8(result, mask2);
+	result = _mm_sub_epi8(result, mask32);
+	return _mm_cvtsi128_si32(result);
 }
 
 /****************************************************************************

@@ -140,7 +140,7 @@ static void predict_8x8_dc_128(pixel* src, pixel edge[36]) {
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void x264_predict_16x16_init_mmx( x264_predict_t pf[7] )
+void x264_predict_16x16_init_avx2( x264_predict_t pf[7] )
 {
     pf[I_PRED_16x16_V] = x264_predict_16x16_v_avx2;
     pf[I_PRED_16x16_H] = x264_predict_16x16_h_avx2;
@@ -151,7 +151,7 @@ void x264_predict_16x16_init_mmx( x264_predict_t pf[7] )
     pf[I_PRED_16x16_DC_128]= x264_predict_16x16_dc_128_avx2;
 }
 
-void x264_predict_8x8c_init_mmx( x264_predict_t pf[7] )
+void x264_predict_8x8c_init_avx2( x264_predict_t pf[7] )
 {
     pf[I_PRED_CHROMA_V] = predict_8x8c_v;
     pf[I_PRED_CHROMA_H] = x264_predict_8x8c_h_avx2;
@@ -162,7 +162,7 @@ void x264_predict_8x8c_init_mmx( x264_predict_t pf[7] )
     pf[I_PRED_CHROMA_DC_128]= predict_8x8c_dc_128;
 }
 
-void x264_predict_8x16c_init_mmx( x264_predict_t pf[7] )
+void x264_predict_8x16c_init_avx2( x264_predict_t pf[7] )
 {
     pf[I_PRED_CHROMA_V] = predict_8x16c_v;
     pf[I_PRED_CHROMA_H] = x264_predict_8x16c_h_avx2;
@@ -173,7 +173,7 @@ void x264_predict_8x16c_init_mmx( x264_predict_t pf[7] )
     pf[I_PRED_CHROMA_DC_128 ]= predict_8x16c_dc_128;
 }
 
-void x264_predict_8x8_init_mmx( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_8x8_filter )
+void x264_predict_8x8_init_avx2( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_8x8_filter )
 {
     pf[I_PRED_8x8_V] = predict_8x8_v;
     pf[I_PRED_8x8_H] = x264_predict_8x8_h_avx2;
@@ -190,7 +190,7 @@ void x264_predict_8x8_init_mmx( x264_predict8x8_t pf[12], x264_predict_8x8_filte
     *predict_8x8_filter = x264_predict_8x8_filter_avx2;
 }
 
-void x264_predict_4x4_init_mmx( x264_predict_t pf[12] )
+void x264_predict_4x4_init_avx2( x264_predict_t pf[12] )
 {
     pf[I_PRED_4x4_DC] = x264_predict_4x4_dc_avx2;
     pf[I_PRED_4x4_H] = x264_predict_4x4_h_avx2;

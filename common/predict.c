@@ -67,22 +67,22 @@ void x264_predict_4x4_v_c( pixel *src )
  ****************************************************************************/
 void x264_predict_16x16_init( x264_predict_t pf[7] )
 {
-    x264_predict_16x16_init_mmx( pf );
+    x264_predict_16x16_init_avx2( pf );
 }
 
 void x264_predict_8x8c_init( x264_predict_t pf[7] )
 {
-    x264_predict_8x8c_init_mmx( pf );
+    x264_predict_8x8c_init_avx2( pf );
 }
 
 void x264_predict_8x16c_init( x264_predict_t pf[7] )
 {
-    x264_predict_8x16c_init_mmx( pf );
+    x264_predict_8x16c_init_avx2( pf );
 }
 
 void x264_predict_8x8_init( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
 {
-    x264_predict_8x8_init_mmx( pf, predict_filter );
+    x264_predict_8x8_init_avx2( pf, predict_filter );
 }
 
 void x264_predict_4x4_init( x264_predict_t pf[12] )
@@ -91,6 +91,6 @@ void x264_predict_4x4_init( x264_predict_t pf[12] )
     pf[I_PRED_4x4_DC_LEFT]= predict_4x4_dc_left_c;
     pf[I_PRED_4x4_DC_TOP] = predict_4x4_dc_top_c;
     pf[I_PRED_4x4_DC_128] = predict_4x4_dc_128_c;
-    x264_predict_4x4_init_mmx( pf );
+    x264_predict_4x4_init_avx2( pf );
 }
 

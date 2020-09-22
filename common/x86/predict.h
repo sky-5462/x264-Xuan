@@ -27,16 +27,16 @@
 #ifndef X264_X86_PREDICT_H
 #define X264_X86_PREDICT_H
 
-#define x264_predict_16x16_init_mmx x264_template(predict_16x16_init_mmx)
-void x264_predict_16x16_init_mmx( x264_predict_t pf[7] );
-#define x264_predict_8x16c_init_mmx x264_template(predict_8x16c_init_mmx)
-void x264_predict_8x16c_init_mmx( x264_predict_t pf[7] );
-#define x264_predict_8x8c_init_mmx x264_template(predict_8x8c_init_mmx)
-void x264_predict_8x8c_init_mmx ( x264_predict_t pf[7] );
-#define x264_predict_4x4_init_mmx x264_template(predict_4x4_init_mmx)
-void x264_predict_4x4_init_mmx  ( x264_predict_t pf[12] );
-#define x264_predict_8x8_init_mmx x264_template(predict_8x8_init_mmx)
-void x264_predict_8x8_init_mmx  ( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_8x8_filter );
+#define x264_predict_16x16_init_avx2 x264_template(predict_16x16_init_avx2)
+void x264_predict_16x16_init_avx2( x264_predict_t pf[7] );
+#define x264_predict_8x16c_init_avx2 x264_template(predict_8x16c_init_avx2)
+void x264_predict_8x16c_init_avx2( x264_predict_t pf[7] );
+#define x264_predict_8x8c_init_avx2 x264_template(predict_8x8c_init_avx2)
+void x264_predict_8x8c_init_avx2 ( x264_predict_t pf[7] );
+#define x264_predict_4x4_init_avx2 x264_template(predict_4x4_init_avx2)
+void x264_predict_4x4_init_avx2  ( x264_predict_t pf[12] );
+#define x264_predict_8x8_init_avx2 x264_template(predict_8x8_init_avx2)
+void x264_predict_8x8_init_avx2  ( x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_8x8_filter );
 
 #define x264_predict_4x4_dc_avx2 x264_template(predict_4x4_dc_avx2)
 void x264_predict_4x4_dc_avx2( pixel *src );

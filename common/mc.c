@@ -56,7 +56,7 @@ void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
 
 void x264_mc_init( x264_mc_functions_t *pf )
 {
-    x264_mc_init_mmx( pf );
+    x264_mc_init_avx2( pf );
 }
 
 void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )

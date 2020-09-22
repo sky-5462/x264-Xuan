@@ -257,8 +257,16 @@ void x264_hpel_filter_avx2 ( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_
 
 #undef MC_CLIP_ADD
 #undef MC_CLIP_ADD2
-#if defined _MSC_VER || defined __INTEL_COMPILER  // need to check in icc
 #include <immintrin.h>
+
+#ifndef _mm_loadu_si32
+#define _mm_loadu_si32(x) _mm_cvtsi32_si128(*(int*)(x))
+#endif
+
+#ifndef _mm_storeu_si32
+#define _mm_storeu_si32(p, a) (void)(*(int*)(p) = _mm_cvtsi128_si32((a)))
+#endif
+
 #define MC_CLIP_ADD(s,x)\
 do\
 {\
@@ -276,34 +284,6 @@ do\
 	__m128i result = _mm_adds_epi16(num1, num2);\
 	_mm_storeu_si32(s, result);\
 } while( 0 )
-
-#else  // gcc can't use that intrinsics...
-#define MC_CLIP_ADD(s,x)\
-do\
-{\
-    int temp;\
-    asm("vmovd       %0, %%xmm0     \n"\
-        "vmovd       %2, %%xmm1     \n"\
-        "vpaddsw %%xmm1, %%xmm0, %%xmm0     \n"\
-        "vmovd   %%xmm0, %1         \n"\
-        :"+m"(s), "=&r"(temp)\
-        :"m"(x)\
-    );\
-    s = temp;\
-} while( 0 )
-
-#define MC_CLIP_ADD2(s,x)\
-do\
-{\
-    asm("vmovd       %0, %%xmm0     \n"\
-        "vmovd       %1, %%xmm1     \n"\
-        "vpaddsw %%xmm1, %%xmm0, %%xmm0     \n"\
-        "vmovd   %%xmm0, %0         \n"\
-        :"+m"(M32(s))\
-        :"m"(M32(x))\
-    );\
-} while( 0 )
-#endif
 
 #define x264_mbtree_propagate_cost_avx2 x264_template(mbtree_propagate_cost_avx2)
 void x264_mbtree_propagate_cost_avx2  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
@@ -367,7 +347,7 @@ static void mbtree_propagate_list_avx2(x264_t * h, uint16_t * ref_costs, int16_t
 	}
 }
 
-void x264_mc_init_mmx( x264_mc_functions_t *pf )
+void x264_mc_init_avx2( x264_mc_functions_t *pf )
 {
     pf->avg[PIXEL_2x2] = x264_pixel_avg_2x2_avx2;
     pf->avg[PIXEL_2x4] = x264_pixel_avg_2x4_avx2;

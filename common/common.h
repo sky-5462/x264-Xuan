@@ -720,35 +720,58 @@ typedef struct
 
 static ALWAYS_INLINE int x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
-    int cnt = 0;
-    for( int i = 0; i < i_mvc; i++ )
-    {
-        int mx = (mvc[i][0] + 2) >> 2;
-        int my = (mvc[i][1] + 2) >> 2;
-        uint32_t mv = pack16to32_mask(mx, my);
-        if( !mv || mv == pmv ) continue;
-        dst[cnt][0] = x264_clip3( mx, mv_limit[0][0], mv_limit[1][0] );
-        dst[cnt][1] = x264_clip3( my, mv_limit[0][1], mv_limit[1][1] );
-        cnt++;
-    }
-    return cnt;
+	int cnt = 0;
+	__m128i limitMin = _mm_loadu_si32((void*)mv_limit[0]);
+	__m128i limitMax = _mm_loadu_si32((void*)mv_limit[1]);
+
+	__m128i pmvVec = _mm_cvtsi32_si128(pmv);
+	__m128i zero = _mm_setzero_si128();
+	__m128i pw_2 = _mm_set1_epi16(2);
+	
+	for (int i = 0; i < i_mvc; ++i) {
+		__m128i mv = _mm_loadu_si32((void*)mvc[i]);
+		mv = _mm_add_epi16(mv, pw_2);
+		mv = _mm_srai_epi16(mv, 2);
+		__m128i zeroMask = _mm_cmpeq_epi32(mv, zero);
+		__m128i equalMask = _mm_cmpeq_epi32(mv, pmvVec);
+		__m128i finalMask = _mm_or_si128(zeroMask, equalMask);
+		int mask = _mm_cvtsi128_si32(finalMask);
+		if (mask) continue;
+
+        __m128i median = _mm_max_epi16(mv, limitMin);
+        median = _mm_min_epi16(median, limitMax);
+		_mm_storeu_si32((void*)dst[cnt], median);
+		cnt++;
+	}
+
+	return cnt;
 }
 
 static ALWAYS_INLINE int x264_predictor_clip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
-    int cnt = 0;
-    int qpel_limit[4] = {mv_limit[0][0] << 2, mv_limit[0][1] << 2, mv_limit[1][0] << 2, mv_limit[1][1] << 2};
-    for( int i = 0; i < i_mvc; i++ )
-    {
-        uint32_t mv = M32( mvc[i] );
-        int mx = mvc[i][0];
-        int my = mvc[i][1];
-        if( !mv || mv == pmv ) continue;
-        dst[cnt][0] = x264_clip3( mx, qpel_limit[0], qpel_limit[2] );
-        dst[cnt][1] = x264_clip3( my, qpel_limit[1], qpel_limit[3] );
-        cnt++;
-    }
-    return cnt;
+	int cnt = 0;
+	__m128i qpel_limit = _mm_loadl_epi64((void*)mv_limit);      // 0 1 2 3
+	__m128i limitMin = _mm_slli_epi16(qpel_limit, 2);		    // 0 1
+	__m128i limitMax = _mm_shuffle_epi32(limitMin, 1);          // 2 3
+
+	__m128i pmvVec = _mm_cvtsi32_si128(pmv);
+	__m128i zero = _mm_setzero_si128();
+	
+	for (int i = 0; i < i_mvc; ++i) {
+		__m128i mv = _mm_loadu_si32((void*)mvc[i]);
+		__m128i zeroMask = _mm_cmpeq_epi32(mv, zero);
+		__m128i equalMask = _mm_cmpeq_epi32(mv, pmvVec);
+		__m128i finalMask = _mm_or_si128(zeroMask, equalMask);
+		int mask = _mm_cvtsi128_si32(finalMask);
+		if (mask) continue;
+
+        __m128i median = _mm_max_epi16(mv, limitMin);
+        median = _mm_min_epi16(median, limitMax);
+		_mm_storeu_si32((void*)dst[cnt], median);
+		cnt++;
+	}
+
+	return cnt;
 }
 
 #include "x86/util.h"
