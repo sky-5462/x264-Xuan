@@ -332,48 +332,44 @@ static ALWAYS_INLINE int x264_pthread_fetch_and_add( int *val, int add, x264_pth
 #endif
 }
 
-#define WORD_SIZE sizeof(void*)
-
 #define asm __asm__
 
-#if HAVE_X86_INLINE_ASM
 static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
-    asm("bswap %0":"+r"(x));
+    x =
+        ((x & 0xFF000000u) >> 24u) |
+        ((x & 0x00FF0000u) >>  8u) |
+        ((x & 0x0000FF00u) <<  8u) |
+        ((x & 0x000000FFu) << 24u);
     return x;
 }
-#else
-static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
-{
-    return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
-}
-#endif
-#if HAVE_X86_INLINE_ASM
 static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
 {
-    asm("bswap %0":"+r"(x));
+#if defined(_MSC_VER)
+    return _byteswap_uint64(x);
+#else
+    x =
+        ((x & 0xFF00000000000000u) >> 56u) |
+        ((x & 0x00FF000000000000u) >> 40u) |
+        ((x & 0x0000FF0000000000u) >> 24u) |
+        ((x & 0x000000FF00000000u) >>  8u) |
+        ((x & 0x00000000FF000000u) <<  8u) |      
+        ((x & 0x0000000000FF0000u) << 24u) |
+        ((x & 0x000000000000FF00u) << 40u) |
+        ((x & 0x00000000000000FFu) << 56u);
     return x;
-}
-#else
-static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
-{
-    return endian_fix32(x>>32) + ((uint64_t)endian_fix32(x)<<32);
-}
 #endif
+}
 static ALWAYS_INLINE intptr_t endian_fix( intptr_t x )
 {
-    return WORD_SIZE == 8 ? endian_fix64(x) : endian_fix32(x);
-}
-static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
-{
-    return (x<<8)|(x>>8);
+    return endian_fix64(x);
 }
 
 /* For values with 4 bits or less. */
 static ALWAYS_INLINE int x264_ctz_4bit( uint32_t x )
 {
-    static uint8_t lut[16] = {4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0};
-    return lut[x];
+    x |= 0x10;
+    return _tzcnt_u32(x);
 }
 
 #define x264_clz(x) _lzcnt_u32(x)

@@ -170,8 +170,6 @@ char *x264_slurp_file( const char *filename )
 
     b_error |= fseek( fh, 0, SEEK_END ) < 0;
     b_error |= ( i_size = ftell( fh ) ) <= 0;
-    if( WORD_SIZE == 4 )
-        b_error |= i_size > INT32_MAX;
     b_error |= fseek( fh, 0, SEEK_SET ) < 0;
     if( b_error )
         goto error;

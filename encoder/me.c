@@ -708,17 +708,8 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                     for( int j = i; j < nmvsad; j++ )
                     {
                         uint32_t sad;
-                        if( WORD_SIZE == 8 && sizeof(mvsad_t) == 8 )
-                        {
-                            uint64_t mvsad = M64( &mvsads[i] ) = M64( &mvsads[j] );
-                            sad = mvsad;
-                        }
-                        else
-                        {
-                            sad = mvsads[j].sad;
-                            CP32( mvsads[i].mv, mvsads[j].mv );
-                            mvsads[i].sad = sad;
-                        }
+                        uint64_t mvsad = M64( &mvsads[i] ) = M64( &mvsads[j] );
+                        sad = mvsad;
                         i += (sad - (sad_thresh+1)) >> 31;
                     }
                     nmvsad = i;
@@ -730,10 +721,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                         if( mvsads[i].sad > mvsads[bi].sad )
                             bi = i;
                     nmvsad--;
-                    if( sizeof( mvsad_t ) == sizeof( uint64_t ) )
-                        CP64( &mvsads[bi], &mvsads[nmvsad] );
-                    else
-                        mvsads[bi] = mvsads[nmvsad];
+                    CP64( &mvsads[bi], &mvsads[nmvsad] );
                 }
                 for( int i = 0; i < nmvsad; i++ )
                     COST_MV( mvsads[i].mv[0], mvsads[i].mv[1] );

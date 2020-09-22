@@ -364,7 +364,7 @@ static ALWAYS_INLINE void pixel_memset( pixel *dst, pixel *src, int len, int siz
     len *= size;
 
     /* Align the input pointer if it isn't already */
-    if( (intptr_t)dstp & (WORD_SIZE - 1) )
+    if( (intptr_t)dstp & 7 )
     {
         if( size <= 2 && ((intptr_t)dstp & 3) )
         {
@@ -376,7 +376,7 @@ static ALWAYS_INLINE void pixel_memset( pixel *dst, pixel *src, int len, int siz
                 i += 2;
             }
         }
-        if( WORD_SIZE == 8 && (intptr_t)dstp & 4 )
+        if( (intptr_t)dstp & 4 )
         {
             M32( dstp+i ) = v4;
             i += 4;
@@ -384,12 +384,9 @@ static ALWAYS_INLINE void pixel_memset( pixel *dst, pixel *src, int len, int siz
     }
 
     /* Main copy loop */
-    if( WORD_SIZE == 8 )
-    {
-        uint64_t v8 = v4 + ((uint64_t)v4<<32);
-        for( ; i < len - 7; i+=8 )
-            M64( dstp+i ) = v8;
-    }
+    uint64_t v8 = v4 + ((uint64_t)v4<<32);
+    for( ; i < len - 7; i+=8 )
+        M64( dstp+i ) = v8;
     for( ; i < len - 3; i+=4 )
         M32( dstp+i ) = v4;
 
