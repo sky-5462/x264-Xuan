@@ -216,7 +216,6 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     memset( param, 0, sizeof( x264_param_t ) );
 
     /* CPU autodetect */
-    param->cpu = x264_cpu_detect();
     param->i_threads = X264_THREADS_AUTO;
     param->i_lookahead_threads = X264_THREADS_AUTO;
     param->b_deterministic = 1;

@@ -1521,8 +1521,6 @@ static int encoder_encapsulate_nals( x264_t *h, int start )
         nal_buffer += h->out.nal[i].i_payload;
     }
 
-    x264_emms();
-
     return nal_buffer - (h0->nal_buffer + previous_nal_size);
 }
 
@@ -1921,7 +1919,6 @@ static void fdec_filter_row( x264_t *h, int mb_y, int pass )
         if( h->param.analyse.b_ssim )
         {
             int ssim_cnt;
-            x264_emms();
             /* offset by 2 pixels to avoid alignment of ssim blocks with dct blocks,
              * and overlap by 4 */
             minpix_y += b_start ? 2 : -6;
@@ -3141,8 +3138,6 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
         return 0;
     }
 
-    x264_emms();
-
     /* generate buffering period sei and insert it into place */
     if( h->i_thread_frames > 1 && h->fenc->b_keyframe && h->sps->vui.b_nal_hrd_parameters_present )
     {
@@ -3391,7 +3386,6 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
 
     if( h->param.psz_dump_yuv )
         frame_dump( h );
-    x264_emms();
 
     return frame_size;
 }

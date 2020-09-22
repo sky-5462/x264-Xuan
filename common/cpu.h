@@ -26,28 +26,6 @@
 #ifndef X264_CPU_H
 #define X264_CPU_H
 
-X264_API uint32_t x264_cpu_detect( void );
 X264_API int      x264_cpu_num_processors( void );
-void     x264_cpu_emms( void );
-void     x264_cpu_sfence( void );
-
-/* There is no way to forbid the compiler from using float instructions
- * before the emms so miscompilation could theoretically occur in the
- * unlikely event that the compiler reorders emms and float instructions. */
-#if HAVE_X86_INLINE_ASM
-/* Clobbering memory makes the compiler less likely to reorder code. */
-#define x264_emms() asm volatile( "emms":::"memory","st","st(1)","st(2)", \
-                                  "st(3)","st(4)","st(5)","st(6)","st(7)" )
-#else
-#define x264_emms() x264_cpu_emms()
-#endif
-#define x264_sfence x264_cpu_sfence
-
-typedef struct
-{
-    const char *name;
-    uint32_t flags;
-} x264_cpu_name_t;
-X264_API extern const x264_cpu_name_t x264_cpu_names[];
 
 #endif

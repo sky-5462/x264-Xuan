@@ -87,7 +87,6 @@ SRCASM_X += common/x86/bitstream-a.asm \
 SRCS_X   += common/x86/mc-c.c \
             common/x86/predict-c.c
 
-OBJASM += common/x86/cpu-a.o
 OBJASM += $(SRCASM_X:%.asm=%-8.o) common/x86/sad-a-8.o
 
 OBJCHK += tools/checkasm-a.o

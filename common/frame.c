@@ -57,11 +57,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     int i_mb_count = h->mb.i_mb_count;
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV;
-    int align = 16;
-    if( h->param.cpu&X264_CPU_CACHELINE_64 || h->param.cpu&X264_CPU_AVX512 )
-        align = 64;
-    else if( h->param.cpu&X264_CPU_CACHELINE_32 || h->param.cpu&X264_CPU_AVX )
-        align = 32;
+    int align = 32;    // use 64 for AVX512
     int disalign = 1<<10;
 
     /* ensure frame alignment after PADH is added */

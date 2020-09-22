@@ -91,10 +91,8 @@ static NOINLINE pixel *weight_cost_init_luma( x264_t *h, x264_frame_t *fenc, x26
                 h->mc.mc_luma( p+x, i_stride, ref->lowres, i_stride,
                                mvx+(x<<2), mvy+(y<<2), 8, 8, x264_weight_none );
             }
-        x264_emms();
         return dest;
     }
-    x264_emms();
     return ref->lowres[0];
 }
 
@@ -133,7 +131,6 @@ static NOINLINE void weight_cost_init_chroma( x264_t *h, x264_frame_t *fenc, x26
     else
         h->mc.plane_copy_deinterleave( dstu, i_stride, dstv, i_stride, ref->plane[1], i_stride, cw, ch );
     h->mc.plane_copy_deinterleave( dstu+i_offset, i_stride, dstv+i_offset, i_stride, fenc->plane[1], i_stride, cw, ch );
-    x264_emms();
 }
 
 static int weight_slice_header_cost( x264_t *h, x264_weight_t *w, int b_chroma )
@@ -186,7 +183,6 @@ static NOINLINE unsigned int weight_cost_luma( x264_t *h, x264_frame_t *fenc, pi
                 int cmp = h->pixf.mbcmp[PIXEL_8x8]( &src[pixoff], i_stride, &fenc_plane[pixoff], i_stride );
                 cost += X264_MIN( cmp, fenc->i_intra_cost[i_mb] );
             }
-    x264_emms();
     return cost;
 }
 
@@ -219,7 +215,6 @@ static NOINLINE unsigned int weight_cost_chroma( x264_t *h, x264_frame_t *fenc, 
         for( int y = 0; y < i_lines; y += height, pixoff = y*i_stride )
             for( int x = 0; x < i_width; x += 8, pixoff += 8 )
                 cost += h->pixf.asd8( &ref[pixoff], i_stride, &src[pixoff], i_stride, height );
-    x264_emms();
     return cost;
 }
 
@@ -359,7 +354,6 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
                     break;
             }
         }
-        x264_emms();
 
         /* Use a smaller denominator if possible */
         if( !plane )
@@ -780,7 +774,6 @@ static int slicetype_frame_cost( x264_t *h, x264_mb_analysis_t *a,
         {
             if( h->param.analyse.i_weighted_pred && b == p1 )
             {
-                x264_emms();
                 x264_weights_analyse( h, fenc, frames[p0], 1 );
                 w = fenc->weight[0];
             }
@@ -887,7 +880,6 @@ static int slicetype_frame_cost( x264_t *h, x264_mb_analysis_t *a,
                 fenc->b_intra_calculated = 1;
 
             fenc->i_cost_est[b-p0][p1-b] = i_score;
-            x264_emms();
         }
     }
 
@@ -901,7 +893,6 @@ static int slicetype_frame_cost_recalculate( x264_t *h, x264_frame_t **frames, i
     int i_score = 0;
     int *row_satd = frames[b]->i_row_satds[b-p0][p1-b];
     float *qp_offset = IS_X264_TYPE_B(frames[b]->i_type) ? frames[b]->f_qp_offset_aq : frames[b]->f_qp_offset;
-    x264_emms();
     for( h->mb.i_mb_y = h->mb.i_mb_height - 1; h->mb.i_mb_y >= 0; h->mb.i_mb_y-- )
     {
         row_satd[ h->mb.i_mb_y ] = 0;
@@ -959,7 +950,6 @@ static void macroblock_tree_propagate( x264_t *h, x264_frame_t **frames, float a
     uint16_t *propagate_cost = frames[b]->i_propagate_cost;
     uint16_t *lowres_costs = frames[b]->lowres_costs[b-p0][p1-b];
 
-    x264_emms();
     float fps_factor = CLIP_DURATION(frames[b]->f_duration) / (CLIP_DURATION(average_duration) * 256.0f) * MBTREE_PRECISION;
 
     /* For non-reffed frames the source costs are always zero, so just memset one row and re-use it. */
@@ -994,7 +984,6 @@ static void macroblock_tree( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **fr
     int last_nonb, cur_nonb = 1;
     int bframes = 0;
 
-    x264_emms();
     float total_duration = 0.0;
     for( int j = 0; j <= num_frames; j++ )
         total_duration += frames[j]->f_duration;
@@ -1806,7 +1795,6 @@ void x264_slicetype_decide( x264_t *h )
     if( !h->param.rc.b_stat_read && h->lookahead->next.list[bframes]->i_type == X264_TYPE_P
         && h->param.analyse.i_weighted_pred >= X264_WEIGHTP_SIMPLE )
     {
-        x264_emms();
         x264_weights_analyse( h, h->lookahead->next.list[bframes], h->lookahead->last_nonb, 0 );
     }
 
@@ -1845,7 +1833,6 @@ int x264_rc_analyse_slice( x264_t *h )
 {
     int p0 = 0, p1, b;
     int cost;
-    x264_emms();
 
     if( IS_X264_TYPE_I(h->fenc->i_type) )
         p1 = b = 0;

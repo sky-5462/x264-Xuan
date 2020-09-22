@@ -777,7 +777,6 @@ static int check_pixel( int cpu_ref, int cpu_new )
         float res_c, res_a;
         ALIGNED_16( int sums[5][4] ) = {{0}};
         used_asm = ok = 1;
-        x264_emms();
         res_c = x264_pixel_ssim_wxh( &pixel_c,   pbuf1+2, 32, pbuf2+2, 32, 32, 28, pbuf3, &cnt );
         res_a = x264_pixel_ssim_wxh( &pixel_asm, pbuf1+2, 32, pbuf2+2, 32, 32, 28, pbuf3, &cnt );
         if( fabs( res_c - res_a ) > 1e-6 )
@@ -1694,7 +1693,6 @@ static int check_mc( int cpu_ref, int cpu_new )
     if( mc_a.mbtree_propagate_cost != mc_ref.mbtree_propagate_cost )
     {
         used_asm = 1;
-        x264_emms();
         for( int i = 0; i < 10; i++ )
         {
             float fps_factor = (rand()&65535) / 65535.0f;
@@ -1706,7 +1704,6 @@ static int check_mc( int cpu_ref, int cpu_new )
             uint16_t *inter = intra+128;
             uint16_t *qscale = inter+128;
             uint16_t *rnd = (uint16_t*)buf2;
-            x264_emms();
             for( int j = 0; j < 100; j++ )
             {
                 intra[j]  = *rnd++ & 0x7fff;
@@ -1717,7 +1714,6 @@ static int check_mc( int cpu_ref, int cpu_new )
             call_c( mc_c.mbtree_propagate_cost, dstc, prop, intra, inter, qscale, &fps_factor, 100 );
             call_a( mc_a.mbtree_propagate_cost, dsta, prop, intra, inter, qscale, &fps_factor, 100 );
             // I don't care about exact rounding, this is just how close the floating-point implementation happens to be
-            x264_emms();
             for( int j = 0; j < 100 && ok; j++ )
             {
                 ok &= abs( dstc[j]-dsta[j] ) <= 1 || fabs( (double)dstc[j]/dsta[j]-1 ) < 1e-4;

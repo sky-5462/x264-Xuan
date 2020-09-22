@@ -292,7 +292,6 @@ typedef struct x264_zone_t
 typedef struct x264_param_t
 {
     /* CPU flags */
-    unsigned int cpu;
     int         i_threads;           /* encode multiple frames in parallel */
     int         i_lookahead_threads; /* multiple threads for lookahead analysis */
     int         b_sliced_threads;  /* Whether to use slice-based threading. */

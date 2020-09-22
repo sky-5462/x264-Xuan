@@ -265,7 +265,6 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
     uint32_t var;
     var  = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, 0, 1 );
     var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 1 );
-    x264_emms();
     return var;
 }
 
@@ -707,8 +706,6 @@ void x264_ratecontrol_init_reconfigurable( x264_t *h, int b_init )
 int x264_ratecontrol_new( x264_t *h )
 {
     x264_ratecontrol_t *rc;
-
-    x264_emms();
 
     CHECKED_MALLOCZERO( h->rc, h->param.i_threads * sizeof(x264_ratecontrol_t) );
     rc = h->rc;
@@ -1391,8 +1388,6 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
     x264_zone_t *zone = get_zone( h, h->fenc->i_frame );
     float q;
 
-    x264_emms();
-
     if( h->param.rc.b_stat_read )
     {
         int frame = h->fenc->i_frame;
@@ -1550,7 +1545,6 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
     if( h->mb.i_mb_x != h->mb.i_mb_width - 1 )
         return 0;
 
-    x264_emms();
     rc->qpa_rc += rc->qpm * h->mb.i_mb_width;
 
     if( !rc->b_vbv )
@@ -1691,13 +1685,11 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
 
 int x264_ratecontrol_qp( x264_t *h )
 {
-    x264_emms();
     return x264_clip3( h->rc->qpm + 0.5f, h->param.rc.i_qp_min, h->param.rc.i_qp_max );
 }
 
 int x264_ratecontrol_mb_qp( x264_t *h )
 {
-    x264_emms();
     float qp = h->rc->qpm;
     if( h->param.rc.i_aq_mode )
     {
@@ -1774,8 +1766,6 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
 {
     x264_ratecontrol_t *rc = h->rc;
     const int *mbs = h->stat.frame.i_mb_count;
-
-    x264_emms();
 
     h->stat.frame.i_mb_count_skip = mbs[P_SKIP] + mbs[B_SKIP];
     h->stat.frame.i_mb_count_i = mbs[I_16x16] + mbs[I_8x8] + mbs[I_4x4];
@@ -2602,7 +2592,6 @@ void x264_threads_distribute_ratecontrol( x264_t *h )
 {
     int row;
     x264_ratecontrol_t *rc = h->rc;
-    x264_emms();
     float qscale = qp2qscale( rc->qpm );
 
     /* Initialize row predictors */
@@ -2655,7 +2644,6 @@ void x264_threads_distribute_ratecontrol( x264_t *h )
 void x264_threads_merge_ratecontrol( x264_t *h )
 {
     x264_ratecontrol_t *rc = h->rc;
-    x264_emms();
 
     for( int i = 0; i < h->param.i_threads; i++ )
     {

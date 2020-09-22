@@ -201,7 +201,6 @@ int x264_cqm_init( x264_t *h )
     }
 
     /* Emergency mode denoising. */
-    x264_emms();
     CHECKED_MALLOC( h->nr_offset_emergency, sizeof(*h->nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
     for( int q = 0; q < QP_MAX - QP_MAX_SPEC; q++ )
         for( int cat = 0; cat < 3; cat++ )

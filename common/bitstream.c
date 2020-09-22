@@ -78,7 +78,6 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
 
     nal->i_payload = size;
     nal->p_payload = orig_dst;
-    x264_emms();
 }
 
 void x264_bitstream_init( x264_bitstream_function_t *pf )
