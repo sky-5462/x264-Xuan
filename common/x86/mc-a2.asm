@@ -32,28 +32,12 @@
 
 SECTION_RODATA 64
 
-%if HIGH_BIT_DEPTH
-v210_shuf_avx512: db  0, 0,34, 1,35,34, 4, 4,38, 5,39,38, 8, 8,42, 9, ; luma, chroma
-                  db 43,42,12,12,46,13,47,46,16,16,50,17,51,50,20,20,
-                  db 54,21,55,54,24,24,58,25,59,58,28,28,62,29,63,62
-v210_mask:        dd 0x3ff003ff, 0xc00ffc00, 0x3ff003ff, 0xc00ffc00
-v210_luma_shuf:   db  1, 2, 4, 5, 6, 7, 9,10,12,13,14,15,12,13,14,15
-v210_chroma_shuf: db  0, 1, 2, 3, 5, 6, 8, 9,10,11,13,14,10,11,13,14
-; vpermd indices {0,1,2,4,5,7,_,_} merged in the 3 lsb of each dword to save a register
-v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
-           dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
-copy_swap_shuf:       SHUFFLE_MASK_W 1,0,3,2,5,4,7,6
-deinterleave_shuf:    SHUFFLE_MASK_W 0,2,4,6,1,3,5,7
-deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
-deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
-%else
 deinterleave_rgb_shuf: db  0, 3, 6, 9, 0, 3, 6, 9, 1, 4, 7,10, 2, 5, 8,11
                        db  0, 4, 8,12, 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14
 copy_swap_shuf:        db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
 deinterleave_shuf:     db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
-%endif ; !HIGH_BIT_DEPTH
 
 pw_1024: times 16 dw 1024
 filt_mul20: times 32 db 20
@@ -177,9 +161,7 @@ cextern deinterleave_shufd
     psraw    %2, %4
 %endif
 %endif
-%if HIGH_BIT_DEPTH == 0
     packuswb %1, %2
-%endif
 %endmacro
 
 ;The hpel_filter routines use non-temporal writes for output.
@@ -191,165 +173,7 @@ cextern deinterleave_shufd
 ;%define movntps movaps
 ;%define sfence
 
-%if HIGH_BIT_DEPTH
-;-----------------------------------------------------------------------------
-; void hpel_filter_v( uint16_t *dst, uint16_t *src, int16_t *buf, intptr_t stride, intptr_t width );
-;-----------------------------------------------------------------------------
-%macro HPEL_FILTER 0
-cglobal hpel_filter_v, 5,6,11
-    FIX_STRIDES r3, r4
-    lea        r5, [r1+r3]
-    sub        r1, r3
-    sub        r1, r3
-%if num_mmregs > 8
-    mova       m8, [pad10]
-    mova       m9, [pad20]
-    mova      m10, [pad30]
-    %define s10 m8
-    %define s20 m9
-    %define s30 m10
-%else
-    %define s10 [pad10]
-    %define s20 [pad20]
-    %define s30 [pad30]
-%endif
-    add        r0, r4
-    add        r2, r4
-    neg        r4
-    mova       m7, [pw_pixel_max]
-    pxor       m0, m0
-.loop:
-    mova       m1, [r1]
-    mova       m2, [r1+r3]
-    mova       m3, [r1+r3*2]
-    mova       m4, [r1+mmsize]
-    mova       m5, [r1+r3+mmsize]
-    mova       m6, [r1+r3*2+mmsize]
-    paddw      m1, [r5+r3*2]
-    paddw      m2, [r5+r3]
-    paddw      m3, [r5]
-    paddw      m4, [r5+r3*2+mmsize]
-    paddw      m5, [r5+r3+mmsize]
-    paddw      m6, [r5+mmsize]
-    add        r1, 2*mmsize
-    add        r5, 2*mmsize
-    FILT_V2    m1, m2, m3, m4, m5, m6
-    mova       m6, [pw_16]
-    psubw      m1, s20
-    psubw      m4, s20
-    mova      [r2+r4], m1
-    mova      [r2+r4+mmsize], m4
-    paddw      m1, s30
-    paddw      m4, s30
-    FILT_PACK  m1, m4, m6, 5, s10
-    CLIPW      m1, m0, m7
-    CLIPW      m4, m0, m7
-    mova      [r0+r4], m1
-    mova      [r0+r4+mmsize], m4
-    add        r4, 2*mmsize
-    jl .loop
-    RET
 
-;-----------------------------------------------------------------------------
-; void hpel_filter_c( uint16_t *dst, int16_t *buf, intptr_t width );
-;-----------------------------------------------------------------------------
-cglobal hpel_filter_c, 3,3,10
-    add        r2, r2
-    add        r0, r2
-    add        r1, r2
-    neg        r2
-    mova       m0, [tap1]
-    mova       m7, [tap3]
-%if num_mmregs > 8
-    mova       m8, [tap2]
-    mova       m9, [depad]
-    %define s1 m8
-    %define s2 m9
-%else
-    %define s1 [tap2]
-    %define s2 [depad]
-%endif
-.loop:
-    movu       m1, [r1+r2-4]
-    movu       m2, [r1+r2-2]
-    mova       m3, [r1+r2+0]
-    movu       m4, [r1+r2+2]
-    movu       m5, [r1+r2+4]
-    movu       m6, [r1+r2+6]
-    pmaddwd    m1, m0
-    pmaddwd    m2, m0
-    pmaddwd    m3, s1
-    pmaddwd    m4, s1
-    pmaddwd    m5, m7
-    pmaddwd    m6, m7
-    paddd      m1, s2
-    paddd      m2, s2
-    paddd      m3, m5
-    paddd      m4, m6
-    paddd      m1, m3
-    paddd      m2, m4
-    psrad      m1, 10
-    psrad      m2, 10
-    pslld      m2, 16
-    pand       m1, [pd_ffff]
-    por        m1, m2
-    CLIPW      m1, [pb_0], [pw_pixel_max]
-    mova  [r0+r2], m1
-    add        r2, mmsize
-    jl .loop
-    RET
-
-;-----------------------------------------------------------------------------
-; void hpel_filter_h( uint16_t *dst, uint16_t *src, intptr_t width );
-;-----------------------------------------------------------------------------
-cglobal hpel_filter_h, 3,4,8
-    %define src r1+r2
-    add        r2, r2
-    add        r0, r2
-    add        r1, r2
-    neg        r2
-    mova       m0, [pw_pixel_max]
-.loop:
-    movu       m1, [src-4]
-    movu       m2, [src-2]
-    mova       m3, [src+0]
-    movu       m6, [src+2]
-    movu       m4, [src+4]
-    movu       m5, [src+6]
-    paddw      m3, m6 ; c0
-    paddw      m2, m4 ; b0
-    paddw      m1, m5 ; a0
-%if mmsize == 16
-    movu       m4, [src-4+mmsize]
-    movu       m5, [src-2+mmsize]
-%endif
-    movu       m7, [src+4+mmsize]
-    movu       m6, [src+6+mmsize]
-    paddw      m5, m7 ; b1
-    paddw      m4, m6 ; a1
-    movu       m7, [src+2+mmsize]
-    mova       m6, [src+0+mmsize]
-    paddw      m6, m7 ; c1
-    FILT_H2    m1, m2, m3, m4, m5, m6
-    mova       m7, [pw_1]
-    pxor       m2, m2
-    FILT_PACK  m1, m4, m7, 1
-    CLIPW      m1, m2, m0
-    CLIPW      m4, m2, m0
-    mova      [r0+r2], m1
-    mova      [r0+r2+mmsize], m4
-    add        r2, mmsize*2
-    jl .loop
-    RET
-%endmacro ; HPEL_FILTER
-
-INIT_MMX mmx2
-HPEL_FILTER
-INIT_XMM sse2
-HPEL_FILTER
-%endif ; HIGH_BIT_DEPTH
-
-%if HIGH_BIT_DEPTH == 0
 %macro HPEL_V 1
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_v( uint8_t *dst, uint8_t *src, int16_t *buf, intptr_t stride, intptr_t width );
@@ -926,7 +750,6 @@ HPEL
 %undef movntq
 %undef movntps
 %undef sfence
-%endif ; !HIGH_BIT_DEPTH
 
 %macro PREFETCHNT_ITER 2 ; src, bytes/iteration
     %assign %%i 4*(%2) ; prefetch 4 iterations ahead. is this optimal?
@@ -953,9 +776,7 @@ cglobal plane_copy_swap_core, 6,7
 cglobal plane_copy_core, 6,7
 %endif
     FIX_STRIDES r1, r3
-%if %1 && HIGH_BIT_DEPTH
-    shl   r4d, 2
-%elif %1 || HIGH_BIT_DEPTH
+%if %1
     add   r4d, r4d
 %else
     movsxdifnidn r4, r4d
@@ -1025,17 +846,7 @@ cglobal plane_copy_swap, 6,7
 cglobal plane_copy, 6,7
 %endif
     movsxdifnidn r4, r4d
-%if %1 && HIGH_BIT_DEPTH
-    %define %%mload vmovdqu32
-    lea         r2, [r2+4*r4-64]
-    lea         r0, [r0+4*r4-64]
-    neg         r4
-    mov        r6d, r4d
-    shl         r4, 2
-    or         r6d, 0xffff0010
-    shrx       r6d, r6d, r6d ; (1 << (w & 15)) - 1
-    kmovw       k1, r6d
-%elif %1 || HIGH_BIT_DEPTH
+%if %1
     %define %%mload vmovdqu16
     lea         r2, [r2+2*r4-64]
     lea         r0, [r0+2*r4-64]
@@ -1155,18 +966,6 @@ PLANE_COPY_AVX512 0
 PLANE_COPY_AVX512 1
 
 %macro INTERLEAVE 4-5 ; dst, srcu, srcv, is_aligned, nt_hint
-%if HIGH_BIT_DEPTH
-%assign x 0
-%rep 16/mmsize
-    mov%4     m0, [%2+(x/2)*mmsize]
-    mov%4     m1, [%3+(x/2)*mmsize]
-    punpckhwd m2, m0, m1
-    punpcklwd m0, m1
-    mov%5a    [%1+(x+0)*mmsize], m0
-    mov%5a    [%1+(x+1)*mmsize], m2
-    %assign x (x+2)
-%endrep
-%else
     movq   m0, [%2]
 %if mmsize==16
 %ifidn %4, a
@@ -1183,7 +982,6 @@ PLANE_COPY_AVX512 1
     mov%5a [%1+0], m0
     mov%5a [%1+8], m2
 %endif
-%endif ; HIGH_BIT_DEPTH
 %endmacro
 
 %macro DEINTERLEAVE 6 ; dsta, dstb, src, dsta==dstb+8, shuffle constant, is aligned
@@ -1197,17 +995,7 @@ PLANE_COPY_AVX512 1
     mov%6  [%1], xm0
     vextracti128 [%2], m0, 1
 %endif
-%elif HIGH_BIT_DEPTH
-    mov%6    m1, [%3+mmsize]
-    psrld    m2, m0, 16
-    psrld    m3, m1, 16
-    pand     m0, %5
-    pand     m1, %5
-    packssdw m0, m1
-    packssdw m2, m3
-    mov%6  [%1], m0
-    mov%6  [%2], m2
-%else ; !HIGH_BIT_DEPTH
+%else
 %if cpuflag(ssse3)
     pshufb m0, %5
 %else
@@ -1222,7 +1010,7 @@ PLANE_COPY_AVX512 1
     movq   [%1], m0
     movhps [%2], m0
 %endif
-%endif ; HIGH_BIT_DEPTH
+%endif
 %endmacro
 
 %macro PLANE_INTERLEAVE 0
@@ -1234,12 +1022,6 @@ PLANE_COPY_AVX512 1
 ; assumes i_dst and w are multiples of 16, and i_dst>2*w
 cglobal plane_copy_interleave_core, 6,9
     mov   r6d, r6m
-%if HIGH_BIT_DEPTH
-    FIX_STRIDES r1, r3, r5, r6d
-    movifnidn r1mp, r1
-    movifnidn r3mp, r3
-    mov  r6m, r6d
-%endif
     lea    r0, [r0+r6*2]
     add    r2,  r6
     add    r4,  r6
@@ -1312,13 +1094,11 @@ cglobal store_interleave_chroma, 5,5
 %macro DEINTERLEAVE_START 0
 %if mmsize == 32
     vbroadcasti128 m4, [deinterleave_shuf]
-%elif HIGH_BIT_DEPTH
-    mova   m4, [pd_ffff]
 %elif cpuflag(ssse3)
     mova   m4, [deinterleave_shuf]
 %else
     mova   m4, [pw_00ff]
-%endif ; HIGH_BIT_DEPTH
+%endif
 %endmacro
 
 %macro PLANE_DEINTERLEAVE 0
@@ -1337,11 +1117,7 @@ cglobal plane_copy_deinterleave, 6,7
 %define %%w r6m
 %define %%h dword r7m
 %endif
-%if HIGH_BIT_DEPTH
-%assign %%n 16
-%else
 %assign %%n mmsize/2
-%endif
     DEINTERLEAVE_START
     mov    r6d, r6m
     FIX_STRIDES r1, r3, r5, r6d
@@ -1646,20 +1422,6 @@ LOAD_DEINTERLEAVE_CHROMA
 INIT_YMM avx2
 PLANE_DEINTERLEAVE
 
-%if HIGH_BIT_DEPTH
-INIT_XMM ssse3
-PLANE_DEINTERLEAVE_V210
-INIT_XMM avx
-PLANE_INTERLEAVE
-PLANE_DEINTERLEAVE
-LOAD_DEINTERLEAVE_CHROMA
-PLANE_DEINTERLEAVE_V210
-INIT_YMM avx2
-LOAD_DEINTERLEAVE_CHROMA
-PLANE_DEINTERLEAVE_V210
-INIT_ZMM avx512
-PLANE_DEINTERLEAVE_V210
-%else
 INIT_XMM sse2
 PLANE_DEINTERLEAVE_RGB
 INIT_XMM ssse3
@@ -1672,7 +1434,6 @@ PLANE_DEINTERLEAVE_RGB
 INIT_ZMM avx512
 LOAD_DEINTERLEAVE_CHROMA_FDEC_AVX512
 LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
-%endif
 
 ; These functions are not general-use; not only do they require aligned input, but memcpy
 ; requires size to be a multiple of 16 and memzero requires size to be a multiple of 128.
@@ -1754,7 +1515,6 @@ cglobal memcpy_aligned, 3,4
 .ret:
     RET
 
-%if HIGH_BIT_DEPTH == 0
 ;-----------------------------------------------------------------------------
 ; void integral_init4h( uint16_t *sum, uint8_t *pix, intptr_t stride )
 ;-----------------------------------------------------------------------------
@@ -1827,7 +1587,6 @@ INIT_XMM avx
 INTEGRAL_INIT8H
 INIT_YMM avx2
 INTEGRAL_INIT8H
-%endif ; !HIGH_BIT_DEPTH
 
 %macro INTEGRAL_INIT_8V 0
 ;-----------------------------------------------------------------------------
@@ -2111,11 +1870,6 @@ cglobal integral_init4v, 3,5
 ;-----------------------------------------------------------------------------
 %macro FRAME_INIT_LOWRES 0
 cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH, 12 otherwise
-%if HIGH_BIT_DEPTH
-    shl   dword r6m, 1
-    FIX_STRIDES r5
-    shl   dword r7m, 1
-%endif
 %if mmsize >= 16
     add   dword r7m, mmsize-1
     and   dword r7m, ~(mmsize-1)
@@ -2145,38 +1899,6 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     shl      r6d, 1
     PUSH      r6
     %define src_gap [rsp]
-%if HIGH_BIT_DEPTH
-%if cpuflag(xop)
-    mova      m6, [deinterleave_shuf32a]
-    mova      m7, [deinterleave_shuf32b]
-%else
-    pcmpeqw   m7, m7
-    psrld     m7, 16
-%endif
-.vloop:
-    mov      r6d, r7m
-%ifnidn cpuname, mmx2
-    mova      m0, [r0]
-    mova      m1, [r0+r5]
-    pavgw     m0, m1
-    pavgw     m1, [r0+r5*2]
-%endif
-.hloop:
-    sub       r0, mmsize*2
-    sub       r1, mmsize
-    sub       r2, mmsize
-    sub       r3, mmsize
-    sub       r4, mmsize
-%ifidn cpuname, mmx2
-    FILT8xU r1, r2, 0
-    FILT8xU r3, r4, r5
-%else
-    FILT8xA m0, r1, r2, 0
-    FILT8xA m1, r3, r4, r5
-%endif
-    sub      r6d, mmsize
-    jg .hloop
-%else ; !HIGH_BIT_DEPTH
 %if cpuflag(avx2)
     vbroadcasti128 m7, [deinterleave_shuf]
 %elif cpuflag(xop)
@@ -2233,7 +1955,6 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
 %endif
     sub      r6d, mmsize
     jg .hloop
-%endif ; HIGH_BIT_DEPTH
 .skip:
     mov       r6, dst_gap
     sub       r0, src_gap
@@ -2262,10 +1983,8 @@ INIT_XMM avx
 FRAME_INIT_LOWRES
 INIT_XMM xop
 FRAME_INIT_LOWRES
-%if HIGH_BIT_DEPTH==0
 INIT_YMM avx2
 FRAME_INIT_LOWRES
-%endif
 
 ;-----------------------------------------------------------------------------
 ; void mbtree_propagate_cost( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,

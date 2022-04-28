@@ -715,9 +715,7 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
         pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_mmx2;
         pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_mmx2;
 #endif
-#if !HIGH_BIT_DEPTH
         pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_mmx2;
-#endif
         if( cpu&X264_CPU_SSE2 )
         {
             pf->deblock_strength = x264_deblock_strength_sse2;
@@ -734,9 +732,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
                 pf->deblock_chroma[1] = x264_deblock_v_chroma_sse2;
                 pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_sse2;
                 pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_sse2;
-#if HIGH_BIT_DEPTH
-                pf->deblock_chroma_420_intra_mbaff= x264_deblock_h_chroma_intra_mbaff_sse2;
-#endif
             }
         }
         if( cpu&X264_CPU_SSSE3 )
@@ -756,10 +751,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
                 pf->deblock_chroma[1] = x264_deblock_v_chroma_avx;
                 pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_avx;
                 pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_avx;
-#if HIGH_BIT_DEPTH
-                pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_avx;
-                pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_avx;
-#endif
             }
         }
         if( cpu&X264_CPU_AVX2 )
@@ -773,7 +764,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
     }
 #endif
 
-#if !HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
     {
@@ -815,7 +805,6 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
         pf->deblock_strength = x264_deblock_strength_msa;
     }
 #endif
-#endif // !HIGH_BIT_DEPTH
 
     /* These functions are equivalent, so don't duplicate them. */
     pf->deblock_chroma_422_mbaff = pf->deblock_h_chroma_420;

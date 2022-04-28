@@ -193,15 +193,10 @@ const char * const x264_output_csp_names[] =
 const char * const x264_valid_profile_names[] =
 {
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if HAVE_BITDEPTH8
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "baseline", "main",
 #endif
     "high",
-#endif
-#if HAVE_BITDEPTH10
-   "high10",
-#endif
 #endif
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
    "high422",
@@ -541,15 +536,7 @@ static void help( x264_param_t *defaults, int longhelp )
 #else
         "no",
 #endif
-#if HAVE_BITDEPTH8 && HAVE_BITDEPTH10
-        "8/10"
-#elif HAVE_BITDEPTH8
         "8"
-#elif HAVE_BITDEPTH10
-        "10"
-#else
-        "none"
-#endif
       );
     H0( "Example usage:\n" );
     H0( "\n" );
@@ -575,7 +562,6 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  Overrides all settings.\n" );
     H2(
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if HAVE_BITDEPTH8
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
@@ -588,12 +574,6 @@ static void help( x264_param_t *defaults, int longhelp )
 #endif
         "                                  - high:\n"
         "                                    No lossless.\n"
-#endif
-#if HAVE_BITDEPTH10
-        "                                  - high10:\n"
-        "                                    No lossless.\n"
-        "                                    Support for bit depth 8-10.\n"
-#endif
 #endif
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
         "                                  - high422:\n"
@@ -1682,10 +1662,8 @@ generic_option:
     /* init threaded input while the information about the input video is unaltered by filtering */
 #if HAVE_THREAD
     const cli_input_t *thread_input;
-    if( HAVE_BITDEPTH8 && param->i_bitdepth == 8 )
+    if( param->i_bitdepth == 8 )
         thread_input = &thread_8_input;
-    else if( HAVE_BITDEPTH10 && param->i_bitdepth == 10 )
-        thread_input = &thread_10_input;
     else
         thread_input = NULL;
 

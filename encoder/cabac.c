@@ -938,6 +938,7 @@ static ALWAYS_INLINE void macroblock_write_cabac_internal( x264_t *h, x264_cabac
 
 #if !RDO_SKIP_BS
     i_mb_pos_tex = x264_cabac_pos( cb );
+    i_mb_pos_tex = x264_cabac_pos( cb );
     h->stat.frame.i_mv_bits += i_mb_pos_tex - i_mb_pos_start;
 
     if( i_mb_type == I_PCM )
@@ -947,12 +948,12 @@ static ALWAYS_INLINE void macroblock_write_cabac_internal( x264_t *h, x264_cabac
 
         for( int p = 0; p < plane_count; p++ )
             for( int i = 0; i < 256; i++ )
-                bs_write( &s, BIT_DEPTH, h->mb.pic.p_fenc[p][i] );
+                bs_write( &s, 8, h->mb.pic.p_fenc[p][i] );
         if( chroma )
             for( int ch = 1; ch < 3; ch++ )
                 for( int i = 0; i < 16>>CHROMA_V_SHIFT; i++ )
                     for( int j = 0; j < 8; j++ )
-                        bs_write( &s, BIT_DEPTH, h->mb.pic.p_fenc[ch][i*FENC_STRIDE+j] );
+                        bs_write( &s, 8, h->mb.pic.p_fenc[ch][i*FENC_STRIDE+j] );
 
         bs_flush( &s );
         cb->p = s.p;

@@ -35,7 +35,7 @@ const pw_16,       times 16 dw 16
 const pw_32,       times 16 dw 32
 const pw_512,      times 16 dw 512
 const pw_00ff,     times 16 dw 0x00ff
-const pw_pixel_max,times 16 dw ((1 << BIT_DEPTH)-1)
+const pw_pixel_max,times 16 dw 255
 const pw_0to15,    dw 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 const pd_1,        times 8 dd 1
 const pd_0123,     dd 0,1,2,3

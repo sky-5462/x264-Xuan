@@ -910,7 +910,6 @@ void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
     x264_predict_16x16_init_aarch64( cpu, pf );
 #endif
 
-#if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
@@ -922,7 +921,6 @@ void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
         pf[I_PRED_16x16_DC_TOP ]= x264_intra_predict_dc_top_16x16_msa;
         pf[I_PRED_16x16_DC_128 ]= x264_intra_predict_dc_128_16x16_msa;
     }
-#endif
 #endif
 }
 
@@ -953,13 +951,11 @@ void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
     x264_predict_8x8c_init_aarch64( cpu, pf );
 #endif
 
-#if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
         pf[I_PRED_CHROMA_P ]     = x264_intra_predict_plane_8x8_msa;
     }
-#endif
 #endif
 }
 
@@ -1014,13 +1010,11 @@ void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_
     x264_predict_8x8_init_aarch64( cpu, pf, predict_filter );
 #endif
 
-#if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
         pf[I_PRED_8x8_DDL]    = x264_intra_predict_ddl_8x8_msa;
     }
-#endif
 #endif
 }
 

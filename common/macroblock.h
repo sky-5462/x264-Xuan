@@ -409,13 +409,8 @@ static ALWAYS_INLINE uint64_t pack32to64( uint32_t a, uint32_t b )
 #endif
 }
 
-#if HIGH_BIT_DEPTH
-#   define pack_pixel_1to2 pack16to32
-#   define pack_pixel_2to4 pack32to64
-#else
-#   define pack_pixel_1to2 pack8to16
-#   define pack_pixel_2to4 pack16to32
-#endif
+#define pack_pixel_1to2 pack8to16
+#define pack_pixel_2to4 pack16to32
 
 static ALWAYS_INLINE int x264_mb_predict_intra4x4_mode( x264_t *h, int idx )
 {

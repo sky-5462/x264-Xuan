@@ -86,10 +86,6 @@ SECTION .text
 %if cpuflag(ssse3)
     pabsd   m%1, m%1
     pmuludq m%1, m%1
-%elif HIGH_BIT_DEPTH
-    ABSD    m%2, m%1
-    SWAP     %1, %2
-    pmuludq m%1, m%1
 %else
     pmuludq m%1, m%1
     pand    m%1, [pq_ffffffff]
@@ -236,31 +232,18 @@ cglobal %1, 4,15,9
     movzx   r0, word [level_tree + r0*4]
     psrld   m0, 16
     movd    m1, [dctq + r2*SIZEOF_DCTCOEF]
-%if HIGH_BIT_DEPTH
-    psignd  m0, m1
-    movd [dctq + r2*SIZEOF_DCTCOEF], m0
-%else
     psignw  m0, m1
     movd   r4d, m0
     mov  [dctq + r2*SIZEOF_DCTCOEF], r4w
-%endif
 %else
     mov    r5d, [level_tree + r0*4]
-%if HIGH_BIT_DEPTH
-    mov    r4d, dword [dctq + r2*SIZEOF_DCTCOEF]
-%else
     movsx  r4d, word [dctq + r2*SIZEOF_DCTCOEF]
-%endif
     movzx  r0d, r5w
     sar    r4d, 31
     shr    r5d, 16
     xor    r5d, r4d
     sub    r5d, r4d
-%if HIGH_BIT_DEPTH
-    mov  [dctq + r2*SIZEOF_DCTCOEF], r5d
-%else
     mov  [dctq + r2*SIZEOF_DCTCOEF], r5w
-%endif
 %endif
     inc    iiq
     jle .writeback_loop
@@ -275,10 +258,6 @@ cglobal %1, 4,15,9
     pxor       m0, m0
     mova [r10+ 0], m0
     mova [r10+16], m0
-%if HIGH_BIT_DEPTH
-    mova [r10+32], m0
-    mova [r10+48], m0
-%endif
     jmp .return
 %endif
 %endmacro ; TRELLIS
@@ -289,11 +268,7 @@ cglobal %1, 4,15,9
 .i_loop%1:
     ; if( !quant_coefs[i] )
     mov   r6, quant_coefsm
-%if HIGH_BIT_DEPTH
-    mov   abs_leveld, dword [r6 + iiq*SIZEOF_DCTCOEF]
-%else
     movsx abs_leveld, word [r6 + iiq*SIZEOF_DCTCOEF]
-%endif
 
     ; int sigindex  = num_coefs == 64 ? significant_coeff_flag_offset_8x8[b_interlaced][i] :
     ;                 num_coefs == 8  ? coeff_flag_offset_chroma_422_dc[i] : i;
@@ -332,12 +307,8 @@ cglobal %1, 4,15,9
     movzx   zigzagid, byte [zigzagq+iiq]
     movd    m0, abs_leveld
     mov     r6, orig_coefsm
-%if HIGH_BIT_DEPTH
-    LOAD_DUP m1, [r6 + zigzagiq*SIZEOF_DCTCOEF]
-%else
     LOAD_DUP m1, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]
     psrad    m1, 16     ; sign_coef
-%endif
     punpcklqdq m0, m0 ; quant_coef
 %if cpuflag(ssse3)
     pabsd   m0, m0
@@ -426,12 +397,8 @@ cglobal %1, 4,15,9
     ; int psy_weight = dct_weight_tab[zigzag[i]] * h->mb.i_psy_trellis;
     ; ssd1[k] -= psy_weight * psy_value;
     mov     r6, fenc_dctm
-%if HIGH_BIT_DEPTH
-    LOAD_DUP m3, [r6 + zigzagiq*SIZEOF_DCTCOEF]
-%else
     LOAD_DUP m3, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]
     psrad   m3, 16 ; orig_coef
-%endif
 %if cpuflag(ssse3)
     psignd  m4, m1 ; SIGN(unquant_abs_level, sign_coef)
 %else

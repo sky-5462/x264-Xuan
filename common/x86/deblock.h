@@ -125,10 +125,6 @@ void x264_deblock_h_chroma_intra_mbaff_mmx2( pixel *pix, intptr_t stride, int al
 
 #define x264_deblock_v_luma_mmx2 x264_template(deblock_v_luma_mmx2)
 #define x264_deblock_v_luma_intra_mmx2 x264_template(deblock_v_luma_intra_mmx2)
-#if HIGH_BIT_DEPTH
-void x264_deblock_v_luma_mmx2( pixel *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
-void x264_deblock_v_luma_intra_mmx2( pixel *pix, intptr_t stride, int alpha, int beta );
-#else
 // FIXME this wrapper has a significant cpu cost
 static ALWAYS_INLINE void x264_deblock_v_luma_mmx2( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 {
@@ -140,7 +136,6 @@ static ALWAYS_INLINE void x264_deblock_v_luma_intra_mmx2( uint8_t *pix, intptr_t
     x264_deblock_v8_luma_intra_mmx2( pix,   stride, alpha, beta );
     x264_deblock_v8_luma_intra_mmx2( pix+8, stride, alpha, beta );
 }
-#endif // HIGH_BIT_DEPTH
 #endif
 
 #endif

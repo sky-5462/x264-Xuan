@@ -92,30 +92,6 @@ cextern deinterleave_shufd
     RET
 %endmacro
 
-%if HIGH_BIT_DEPTH
-
-%macro BIWEIGHT_MMX 2
-    movh      m0, %1
-    movh      m1, %2
-    punpcklwd m0, m1
-    pmaddwd   m0, m3
-    paddd     m0, m4
-    psrad     m0, 6
-%endmacro
-
-%macro BIWEIGHT_START_MMX 0
-    movzx  t6d, word r6m
-    mov    t7d, 64
-    sub    t7d, t6d
-    shl    t7d, 16
-    add    t6d, t7d
-    movd    m3, t6d
-    SPLATD  m3, m3
-    mova    m4, [pd_32]
-    pxor    m5, m5
-%endmacro
-
-%else ;!HIGH_BIT_DEPTH
 %macro BIWEIGHT_MMX 2
     movh      m0, %1
     movh      m1, %2
@@ -136,7 +112,6 @@ cextern deinterleave_shufd
     mova    m4, [pw_32] ; rounding
     pxor    m5, m5
 %endmacro
-%endif ;HIGH_BIT_DEPTH
 
 %macro BIWEIGHT_SSSE3 2
     movh      m0, %1
@@ -168,23 +143,6 @@ cextern deinterleave_shufd
 %endif
 %endmacro
 
-%if HIGH_BIT_DEPTH
-%macro BIWEIGHT_ROW 4
-    BIWEIGHT   [%2], [%3]
-%if %4==mmsize/4
-    packssdw     m0, m0
-    CLIPW        m0, m5, m7
-    movh       [%1], m0
-%else
-    SWAP 0, 6
-    BIWEIGHT   [%2+mmsize/2], [%3+mmsize/2]
-    packssdw     m6, m0
-    CLIPW        m6, m5, m7
-    mova       [%1], m6
-%endif
-%endmacro
-
-%else ;!HIGH_BIT_DEPTH
 %macro BIWEIGHT_ROW 4
     BIWEIGHT [%2], [%3]
 %if %4==mmsize/2
@@ -198,7 +156,6 @@ cextern deinterleave_shufd
 %endif
 %endmacro
 
-%endif ;HIGH_BIT_DEPTH
 
 ;-----------------------------------------------------------------------------
 ; int pixel_avg_weight_w16( pixel *dst, intptr_t, pixel *src1, intptr_t, pixel *src2, intptr_t, int i_weight )
@@ -207,20 +164,12 @@ cextern deinterleave_shufd
 cglobal pixel_avg_weight_w%1
     BIWEIGHT_START
     AVG_START %2
-%if HIGH_BIT_DEPTH
-    mova    m7, [pw_pixel_max]
-%endif
 .height_loop:
 %if mmsize==16 && %1==mmsize/(2*SIZEOF_PIXEL)
     BIWEIGHT [t2], [t4]
     SWAP 0, 6
     BIWEIGHT [t2+SIZEOF_PIXEL*t3], [t4+SIZEOF_PIXEL*t5]
-%if HIGH_BIT_DEPTH
-    packssdw m6, m0
-    CLIPW    m6, m5, m7
-%else ;!HIGH_BIT_DEPTH
     packuswb m6, m0
-%endif ;HIGH_BIT_DEPTH
     movlps   [t0], m6
     movhps   [t0+SIZEOF_PIXEL*t1], m6
 %else
@@ -240,12 +189,6 @@ INIT_MMX mmx2
 AVG_WEIGHT 4
 AVG_WEIGHT 8
 AVG_WEIGHT 16
-%if HIGH_BIT_DEPTH
-INIT_XMM sse2
-AVG_WEIGHT 4,  8
-AVG_WEIGHT 8,  8
-AVG_WEIGHT 16, 8
-%else ;!HIGH_BIT_DEPTH
 INIT_XMM sse2
 AVG_WEIGHT 8,  7
 AVG_WEIGHT 16, 7
@@ -335,58 +278,10 @@ cglobal pixel_avg_weight_w16
     vextracti32x4 [t0], m0, 2
     vextracti32x4 [t0+t1], m0, 3
     AVG_END 4
-%endif ;HIGH_BIT_DEPTH
 
 ;=============================================================================
 ; P frame explicit weighted prediction
 ;=============================================================================
-
-%if HIGH_BIT_DEPTH
-; width
-%macro WEIGHT_START 1
-    mova        m0, [r4+ 0]         ; 1<<denom
-    mova        m3, [r4+16]
-    movd        m2, [r4+32]         ; denom
-    mova        m4, [pw_pixel_max]
-    paddw       m2, [sq_1]          ; denom+1
-%endmacro
-
-; src1, src2
-%macro WEIGHT 2
-    movh        m5, [%1]
-    movh        m6, [%2]
-    punpcklwd   m5, m0
-    punpcklwd   m6, m0
-    pmaddwd     m5, m3
-    pmaddwd     m6, m3
-    psrad       m5, m2
-    psrad       m6, m2
-    packssdw    m5, m6
-%endmacro
-
-; src, dst, width
-%macro WEIGHT_TWO_ROW 4
-    %assign x 0
-%rep (%3+mmsize/2-1)/(mmsize/2)
-%if %3-x/2 <= 4 && mmsize == 16
-    WEIGHT      %1+x, %1+r3+x
-    CLIPW         m5, [pb_0], m4
-    movh      [%2+x], m5
-    movhps [%2+r1+x], m5
-%else
-    WEIGHT      %1+x, %1+x+mmsize/2
-    SWAP           5,  7
-    WEIGHT   %1+r3+x, %1+r3+x+mmsize/2
-    CLIPW         m5, [pb_0], m4
-    CLIPW         m7, [pb_0], m4
-    mova      [%2+x], m7
-    mova   [%2+r1+x], m5
-%endif
-    %assign x x+mmsize
-%endrep
-%endmacro
-
-%else ; !HIGH_BIT_DEPTH
 
 %macro WEIGHT_START 1
 %if cpuflag(avx2)
@@ -540,7 +435,6 @@ cglobal pixel_avg_weight_w16
 %endrep
 %endmacro
 
-%endif ; HIGH_BIT_DEPTH
 
 ;-----------------------------------------------------------------------------
 ;void mc_weight_wX( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride, weight_t *weight, int h )
@@ -550,7 +444,7 @@ cglobal pixel_avg_weight_w16
 cglobal mc_weight_w%1, 6,6,8
     FIX_STRIDES r1, r3
     WEIGHT_START %1
-%if cpuflag(ssse3) && HIGH_BIT_DEPTH == 0
+%if cpuflag(ssse3)
     ; we can merge the shift step into the scale factor
     ; if (m3<<7) doesn't overflow an int16_t
     cmp byte [r4+1], 0
@@ -563,7 +457,7 @@ cglobal mc_weight_w%1, 6,6,8
     sub r5d, 2
     jg .loop
     RET
-%if cpuflag(ssse3) && HIGH_BIT_DEPTH == 0
+%if cpuflag(ssse3)
 .fast:
     psllw m3, 7
 .fastloop:
@@ -586,9 +480,6 @@ INIT_XMM sse2
 WEIGHTER  8
 WEIGHTER 16
 WEIGHTER 20
-%if HIGH_BIT_DEPTH
-WEIGHTER 12
-%else
 INIT_MMX ssse3
 WEIGHTER  4
 INIT_XMM ssse3
@@ -599,22 +490,12 @@ INIT_YMM avx2
 WEIGHTER 8
 WEIGHTER 16
 WEIGHTER 20
-%endif
 
 %macro OFFSET_OP 7
     mov%6        m0, [%1]
     mov%6        m1, [%2]
-%if HIGH_BIT_DEPTH
-    p%5usw       m0, m2
-    p%5usw       m1, m2
-%ifidn %5,add
-    pminsw       m0, m3
-    pminsw       m1, m3
-%endif
-%else
     p%5usb       m0, m2
     p%5usb       m1, m2
-%endif
     mov%7      [%3], m0
     mov%7      [%4], m1
 %endmacro
@@ -626,11 +507,7 @@ WEIGHTER 20
     OFFSET_OP (%1+x), (%1+x+r3), (%2+x), (%2+x+r1), %4, u, a
     %assign x (x+mmsize)
 %else
-%if HIGH_BIT_DEPTH
-    OFFSET_OP (%1+x), (%1+x+r3), (%2+x), (%2+x+r1), %4, h, h
-%else
     OFFSET_OP (%1+x), (%1+x+r3), (%2+x), (%2+x+r1), %4, d, d
-%endif
     %exitrep
 %endif
 %if x >= %3*SIZEOF_PIXEL
@@ -646,11 +523,6 @@ WEIGHTER 20
 cglobal mc_offset%2_w%1, 6,6
     FIX_STRIDES r1, r3
     mova m2, [r4]
-%if HIGH_BIT_DEPTH
-%ifidn %2,add
-    mova m3, [pw_pixel_max]
-%endif
-%endif
 .loop:
     OFFSET_TWO_ROW r2, r0, %1, %2
     lea  r0, [r0+r1*2]
@@ -674,10 +546,6 @@ INIT_XMM sse2
 OFFSETPN 12
 OFFSETPN 16
 OFFSETPN 20
-%if HIGH_BIT_DEPTH
-INIT_XMM sse2
-OFFSETPN  8
-%endif
 
 
 ;=============================================================================
@@ -717,55 +585,14 @@ cglobal pixel_avg_w%1
 %rep (%1*SIZEOF_PIXEL+mmsize-1)/mmsize
     %2     m0, [t2+x]
     %2     m1, [t2+x+SIZEOF_PIXEL*t3]
-%if HIGH_BIT_DEPTH
-    pavgw  m0, [t4+x]
-    pavgw  m1, [t4+x+SIZEOF_PIXEL*t5]
-%else ;!HIGH_BIT_DEPTH
     pavgb  m0, [t4+x]
     pavgb  m1, [t4+x+SIZEOF_PIXEL*t5]
-%endif
     %3     [t0+x], m0
     %3     [t0+x+SIZEOF_PIXEL*t1], m1
 %assign x x+mmsize
 %endrep
     AVG_END
 %endmacro
-
-%if HIGH_BIT_DEPTH
-
-INIT_MMX mmx2
-AVG_FUNC 4, movq, movq
-AVGH 4, 16
-AVGH 4, 8
-AVGH 4, 4
-AVGH 4, 2
-
-AVG_FUNC 8, movq, movq
-AVGH 8, 16
-AVGH 8,  8
-AVGH 8,  4
-
-AVG_FUNC 16, movq, movq
-AVGH 16, 16
-AVGH 16,  8
-
-INIT_XMM sse2
-AVG_FUNC 4, movq, movq
-AVGH  4, 16
-AVGH  4, 8
-AVGH  4, 4
-AVGH  4, 2
-
-AVG_FUNC 8, movdqu, movdqa
-AVGH  8, 16
-AVGH  8,  8
-AVGH  8,  4
-
-AVG_FUNC 16, movdqu, movdqa
-AVGH  16, 16
-AVGH  16,  8
-
-%else ;!HIGH_BIT_DEPTH
 
 INIT_MMX mmx2
 AVG_FUNC 4, movd, movd
@@ -812,7 +639,6 @@ AVGH  8, 16
 AVGH  8,  8
 AVGH  8,  4
 
-%endif ;HIGH_BIT_DEPTH
 
 
 
@@ -820,206 +646,6 @@ AVGH  8,  4
 ; pixel avg2
 ;=============================================================================
 
-%if HIGH_BIT_DEPTH
-;-----------------------------------------------------------------------------
-; void pixel_avg2_wN( uint16_t *dst,  intptr_t dst_stride,
-;                     uint16_t *src1, intptr_t src_stride,
-;                     uint16_t *src2, int height );
-;-----------------------------------------------------------------------------
-%macro AVG2_W_ONE 1
-cglobal pixel_avg2_w%1, 6,7,4
-    sub     r4, r2
-    lea     r6, [r4+r3*2]
-.height_loop:
-    movu    m0, [r2]
-    movu    m1, [r2+r3*2]
-%if cpuflag(avx) || mmsize == 8
-    pavgw   m0, [r2+r4]
-    pavgw   m1, [r2+r6]
-%else
-    movu    m2, [r2+r4]
-    movu    m3, [r2+r6]
-    pavgw   m0, m2
-    pavgw   m1, m3
-%endif
-    mova   [r0], m0
-    mova   [r0+r1*2], m1
-    lea     r2, [r2+r3*4]
-    lea     r0, [r0+r1*4]
-    sub    r5d, 2
-    jg .height_loop
-    RET
-%endmacro
-
-%macro AVG2_W_TWO 3
-cglobal pixel_avg2_w%1, 6,7,8
-    sub     r4, r2
-    lea     r6, [r4+r3*2]
-.height_loop:
-    movu    m0, [r2]
-    %2      m1, [r2+mmsize]
-    movu    m2, [r2+r3*2]
-    %2      m3, [r2+r3*2+mmsize]
-%if mmsize == 8
-    pavgw   m0, [r2+r4]
-    pavgw   m1, [r2+r4+mmsize]
-    pavgw   m2, [r2+r6]
-    pavgw   m3, [r2+r6+mmsize]
-%else
-    movu    m4, [r2+r4]
-    %2      m5, [r2+r4+mmsize]
-    movu    m6, [r2+r6]
-    %2      m7, [r2+r6+mmsize]
-    pavgw   m0, m4
-    pavgw   m1, m5
-    pavgw   m2, m6
-    pavgw   m3, m7
-%endif
-    mova   [r0], m0
-    %3     [r0+mmsize], m1
-    mova   [r0+r1*2], m2
-    %3     [r0+r1*2+mmsize], m3
-    lea     r2, [r2+r3*4]
-    lea     r0, [r0+r1*4]
-    sub    r5d, 2
-    jg .height_loop
-    RET
-%endmacro
-
-INIT_MMX mmx2
-AVG2_W_ONE  4
-AVG2_W_TWO  8, movu, mova
-INIT_XMM sse2
-AVG2_W_ONE  8
-AVG2_W_TWO 10, movd, movd
-AVG2_W_TWO 16, movu, mova
-INIT_YMM avx2
-AVG2_W_ONE 16
-
-INIT_MMX
-cglobal pixel_avg2_w10_mmx2, 6,7
-    sub     r4, r2
-    lea     r6, [r4+r3*2]
-.height_loop:
-    movu    m0, [r2+ 0]
-    movu    m1, [r2+ 8]
-    movh    m2, [r2+16]
-    movu    m3, [r2+r3*2+ 0]
-    movu    m4, [r2+r3*2+ 8]
-    movh    m5, [r2+r3*2+16]
-    pavgw   m0, [r2+r4+ 0]
-    pavgw   m1, [r2+r4+ 8]
-    pavgw   m2, [r2+r4+16]
-    pavgw   m3, [r2+r6+ 0]
-    pavgw   m4, [r2+r6+ 8]
-    pavgw   m5, [r2+r6+16]
-    mova   [r0+ 0], m0
-    mova   [r0+ 8], m1
-    movh   [r0+16], m2
-    mova   [r0+r1*2+ 0], m3
-    mova   [r0+r1*2+ 8], m4
-    movh   [r0+r1*2+16], m5
-    lea     r2, [r2+r3*2*2]
-    lea     r0, [r0+r1*2*2]
-    sub    r5d, 2
-    jg .height_loop
-    RET
-
-cglobal pixel_avg2_w16_mmx2, 6,7
-    sub     r4, r2
-    lea     r6, [r4+r3*2]
-.height_loop:
-    movu    m0, [r2+ 0]
-    movu    m1, [r2+ 8]
-    movu    m2, [r2+16]
-    movu    m3, [r2+24]
-    movu    m4, [r2+r3*2+ 0]
-    movu    m5, [r2+r3*2+ 8]
-    movu    m6, [r2+r3*2+16]
-    movu    m7, [r2+r3*2+24]
-    pavgw   m0, [r2+r4+ 0]
-    pavgw   m1, [r2+r4+ 8]
-    pavgw   m2, [r2+r4+16]
-    pavgw   m3, [r2+r4+24]
-    pavgw   m4, [r2+r6+ 0]
-    pavgw   m5, [r2+r6+ 8]
-    pavgw   m6, [r2+r6+16]
-    pavgw   m7, [r2+r6+24]
-    mova   [r0+ 0], m0
-    mova   [r0+ 8], m1
-    mova   [r0+16], m2
-    mova   [r0+24], m3
-    mova   [r0+r1*2+ 0], m4
-    mova   [r0+r1*2+ 8], m5
-    mova   [r0+r1*2+16], m6
-    mova   [r0+r1*2+24], m7
-    lea     r2, [r2+r3*2*2]
-    lea     r0, [r0+r1*2*2]
-    sub    r5d, 2
-    jg .height_loop
-    RET
-
-cglobal pixel_avg2_w18_mmx2, 6,7
-    sub     r4, r2
-.height_loop:
-    movu    m0, [r2+ 0]
-    movu    m1, [r2+ 8]
-    movu    m2, [r2+16]
-    movu    m3, [r2+24]
-    movh    m4, [r2+32]
-    pavgw   m0, [r2+r4+ 0]
-    pavgw   m1, [r2+r4+ 8]
-    pavgw   m2, [r2+r4+16]
-    pavgw   m3, [r2+r4+24]
-    pavgw   m4, [r2+r4+32]
-    mova   [r0+ 0], m0
-    mova   [r0+ 8], m1
-    mova   [r0+16], m2
-    mova   [r0+24], m3
-    movh   [r0+32], m4
-    lea     r2, [r2+r3*2]
-    lea     r0, [r0+r1*2]
-    dec    r5d
-    jg .height_loop
-    RET
-
-%macro PIXEL_AVG_W18 0
-cglobal pixel_avg2_w18, 6,7
-    sub     r4, r2
-.height_loop:
-    movu    m0, [r2+ 0]
-    movd   xm2, [r2+32]
-%if mmsize == 32
-    pavgw   m0, [r2+r4+ 0]
-    movd   xm1, [r2+r4+32]
-    pavgw  xm2, xm1
-%else
-    movu    m1, [r2+16]
-    movu    m3, [r2+r4+ 0]
-    movu    m4, [r2+r4+16]
-    movd    m5, [r2+r4+32]
-    pavgw   m0, m3
-    pavgw   m1, m4
-    pavgw   m2, m5
-    mova   [r0+16], m1
-%endif
-    mova   [r0+ 0], m0
-    movd   [r0+32], xm2
-    lea     r2, [r2+r3*2]
-    lea     r0, [r0+r1*2]
-    dec    r5d
-    jg .height_loop
-    RET
-%endmacro
-
-INIT_XMM sse2
-PIXEL_AVG_W18
-INIT_YMM avx2
-PIXEL_AVG_W18
-
-%endif ; HIGH_BIT_DEPTH
-
-%if HIGH_BIT_DEPTH == 0
 ;-----------------------------------------------------------------------------
 ; void pixel_avg2_w4( uint8_t *dst,  intptr_t dst_stride,
 ;                     uint8_t *src1, intptr_t src_stride,
@@ -1347,7 +973,6 @@ AVG16_CACHELINE_LOOP_SSSE3 j, k
 %assign j j+1
 %assign k k+1
 %endrep
-%endif ; !HIGH_BIT_DEPTH
 
 ;=============================================================================
 ; pixel copy
@@ -1399,10 +1024,8 @@ cglobal mc_copy_w4_mmx, 4,6
     lea     r5, [r3*3]
     lea     r4, [r1*3]
     je .end
-%if HIGH_BIT_DEPTH == 0
     %define mova movd
     %define movu movd
-%endif
     COPY1   r4, r5
     lea     r2, [r2+r3*4]
     lea     r0, [r0+r1*4]
@@ -1435,12 +1058,6 @@ MC_COPY  8
 MC_COPY 16
 INIT_XMM aligned, sse
 MC_COPY 16
-%if HIGH_BIT_DEPTH
-INIT_YMM avx
-MC_COPY 16
-INIT_YMM aligned, avx
-MC_COPY 16
-%endif
 
 ;=============================================================================
 ; prefetch
@@ -1588,22 +1205,6 @@ cglobal prefetch_ref, 3,3
     add       r3,  t0            ; src += (dx>>3) + (dy>>3) * src_stride
 %endmacro
 
-%if HIGH_BIT_DEPTH
-%macro UNPACK_UNALIGNED 4
-    movu       %1, [%4+0]
-    movu       %2, [%4+4]
-    punpckhwd  %3, %1, %2
-    punpcklwd  %1, %2
-%if mmsize == 8
-    mova       %2, %1
-    punpcklwd  %1, %3
-    punpckhwd  %2, %3
-%else
-    shufps     %2, %1, %3, q3131
-    shufps     %1, %3, q2020
-%endif
-%endmacro
-%else ; !HIGH_BIT_DEPTH
 %macro UNPACK_UNALIGNED 3
 %if mmsize == 8
     punpcklwd  %1, %3
@@ -1612,7 +1213,6 @@ cglobal prefetch_ref, 3,3
     punpcklwd  %1, %2
 %endif
 %endmacro
-%endif ; HIGH_BIT_DEPTH
 
 ;-----------------------------------------------------------------------------
 ; void mc_chroma( uint8_t *dstu, uint8_t *dstv, intptr_t dst_stride,
@@ -1667,33 +1267,23 @@ cglobal mc_chroma
     pshufd     m5, m5, q1111
     jg .width8
 %endif
-%if HIGH_BIT_DEPTH
-    add        r2, r2
-    UNPACK_UNALIGNED m0, m1, m2, r3
-%else
     movu       m0, [r3]
     UNPACK_UNALIGNED m0, m1, [r3+2]
     mova       m1, m0
     pand       m0, [pw_00ff]
     psrlw      m1, 8
-%endif ; HIGH_BIT_DEPTH
     pmaddwd    m0, m7
     pmaddwd    m1, m7
     packssdw   m0, m1
     SWAP        3, 0
 ALIGN 4
 .loop2:
-%if HIGH_BIT_DEPTH
-    UNPACK_UNALIGNED m0, m1, m2, r3+r4
-    pmullw     m3, m6
-%else ; !HIGH_BIT_DEPTH
     movu       m0, [r3+r4]
     UNPACK_UNALIGNED m0, m1, [r3+r4+2]
     pmullw     m3, m6
     mova       m1, m0
     pand       m0, [pw_00ff]
     psrlw      m1, 8
-%endif ; HIGH_BIT_DEPTH
     pmaddwd    m0, m7
     pmaddwd    m1, m7
     mova       m2, [pw_32]
@@ -1703,15 +1293,6 @@ ALIGN 4
     pmullw     m0, m5
     paddw      m0, m2
     psrlw      m0, 6
-%if HIGH_BIT_DEPTH
-    movh     [r0], m0
-%if mmsize == 8
-    psrlq      m0, 32
-    movh     [r1], m0
-%else
-    movhps   [r1], m0
-%endif
-%else ; !HIGH_BIT_DEPTH
     packuswb   m0, m0
     movd     [r0], m0
 %if mmsize==8
@@ -1720,7 +1301,6 @@ ALIGN 4
     psrldq     m0, 4
 %endif
     movd     [r1], m0
-%endif ; HIGH_BIT_DEPTH
     add        r3, r4
     add        r0, r2
     add        r1, r2
@@ -1757,10 +1337,6 @@ ALIGN 4
 %endif
     FIX_STRIDES r2
 .loopx:
-%if HIGH_BIT_DEPTH
-    UNPACK_UNALIGNED m0, m2, m4, r3
-    UNPACK_UNALIGNED m1, m3, m5, r3+mmsize
-%else
     movu       m0, [r3]
     movu       m1, [r3+mmsize/2]
     UNPACK_UNALIGNED m0, m2, [r3+2]
@@ -1769,7 +1345,6 @@ ALIGN 4
     psrlw      m3, m1, 8
     pand       m0, [pw_00ff]
     pand       m1, [pw_00ff]
-%endif
     pmaddwd    m0, m7
     pmaddwd    m2, m7
     pmaddwd    m1, m7
@@ -1781,16 +1356,6 @@ ALIGN 4
     add        r3, r4
 ALIGN 4
 .loop4:
-%if HIGH_BIT_DEPTH
-    UNPACK_UNALIGNED m0, m1, m2, r3
-    pmaddwd    m0, m7
-    pmaddwd    m1, m7
-    packssdw   m0, m1
-    UNPACK_UNALIGNED m1, m2, m3, r3+mmsize
-    pmaddwd    m1, m7
-    pmaddwd    m2, m7
-    packssdw   m1, m2
-%else ; !HIGH_BIT_DEPTH
     movu       m0, [r3]
     movu       m1, [r3+mmsize/2]
     UNPACK_UNALIGNED m0, m2, [r3+2]
@@ -1805,7 +1370,6 @@ ALIGN 4
     pmaddwd    m3, m7
     packssdw   m0, m2
     packssdw   m1, m3
-%endif ; HIGH_BIT_DEPTH
     pmullw     m4, m6
     pmullw     m5, m6
     mova       m2, [pw_32]
@@ -1819,19 +1383,6 @@ ALIGN 4
     paddw      m1, m3
     psrlw      m0, 6
     psrlw      m1, 6
-%if HIGH_BIT_DEPTH
-    movh     [r0], m0
-    movh     [r0+mmsize/2], m1
-%if mmsize==8
-    psrlq      m0, 32
-    psrlq      m1, 32
-    movh     [r1], m0
-    movh     [r1+mmsize/2], m1
-%else
-    movhps   [r1], m0
-    movhps   [r1+mmsize/2], m1
-%endif
-%else ; !HIGH_BIT_DEPTH
     packuswb   m0, m1
 %if mmsize==8
     pshufw     m1, m0, q0020
@@ -1843,7 +1394,6 @@ ALIGN 4
     movq     [r0], m0
     movhps   [r1], m0
 %endif
-%endif ; HIGH_BIT_DEPTH
     add        r3, r4
     add        r0, r2
     add        r1, r2
@@ -1888,9 +1438,6 @@ ALIGN 4
     movd       m5, r5d
     mov       r6d, 2*SIZEOF_PIXEL
 .mc1d:
-%if HIGH_BIT_DEPTH && mmsize == 16
-    WIN64_SPILL_XMM 8
-%endif
     mova       m4, [pw_8]
     SPLATW     m5, m5
     psubw      m4, m5
@@ -1907,28 +1454,6 @@ ALIGN 4
     shr       r5d, 1
 %endif
 .loop1d_w4:
-%if HIGH_BIT_DEPTH
-%if mmsize == 8
-    movq       m0, [r3+0]
-    movq       m2, [r3+8]
-    movq       m1, [r3+r6+0]
-    movq       m3, [r3+r6+8]
-%else
-    movu       m0, [r3]
-    movu       m1, [r3+r6]
-    add        r3, r8
-    movu       m2, [r3]
-    movu       m3, [r3+r6]
-%endif
-    SBUTTERFLY wd, 0, 2, 6
-    SBUTTERFLY wd, 1, 3, 7
-    SBUTTERFLY wd, 0, 2, 6
-    SBUTTERFLY wd, 1, 3, 7
-%if mmsize == 16
-    SBUTTERFLY wd, 0, 2, 6
-    SBUTTERFLY wd, 1, 3, 7
-%endif
-%else ; !HIGH_BIT_DEPTH
     movq       m0, [r3]
     movq       m1, [r3+r6]
 %if mmsize!=8
@@ -1940,7 +1465,6 @@ ALIGN 4
     psrlw      m3, m1, 8
     pand       m0, [pw_00ff]
     pand       m1, [pw_00ff]
-%endif ; HIGH_BIT_DEPTH
     pmullw     m0, m4
     pmullw     m1, m5
     pmullw     m2, m4
@@ -1951,20 +1475,6 @@ ALIGN 4
     paddw      m2, m3
     psrlw      m0, 3
     psrlw      m2, 3
-%if HIGH_BIT_DEPTH
-%if mmsize == 8
-    xchg       r4, r8
-    xchg       r2, r7
-%endif
-    movq     [r0], m0
-    movq     [r1], m2
-%if mmsize == 16
-    add        r0, r7
-    add        r1, r7
-    movhps   [r0], m0
-    movhps   [r1], m2
-%endif
-%else ; !HIGH_BIT_DEPTH
     packuswb   m0, m2
 %if mmsize==8
     xchg       r4, r8
@@ -1983,7 +1493,6 @@ ALIGN 4
     movd     [r0], m0
     movd     [r1], m1
 %endif
-%endif ; HIGH_BIT_DEPTH
     add        r3, r4
     add        r0, r2
     add        r1, r2
@@ -2203,14 +1712,6 @@ cglobal mc_chroma
     RET
 %endmacro
 
-%if HIGH_BIT_DEPTH
-INIT_MMX mmx2
-MC_CHROMA
-INIT_XMM sse2
-MC_CHROMA
-INIT_XMM avx
-MC_CHROMA
-%else ; !HIGH_BIT_DEPTH
 INIT_MMX mmx2
 MC_CHROMA
 INIT_XMM sse2
@@ -2223,4 +1724,3 @@ INIT_XMM avx
 MC_CHROMA_SSSE3 ; No known AVX CPU will trigger CPU_CACHELINE_64
 INIT_YMM avx2
 MC_CHROMA_SSSE3
-%endif ; HIGH_BIT_DEPTH

@@ -520,12 +520,12 @@ void x264_macroblock_write_cavlc( x264_t *h )
 
         for( int p = 0; p < plane_count; p++ )
             for( int i = 0; i < 256; i++ )
-                bs_write( s, BIT_DEPTH, h->mb.pic.p_fenc[p][i] );
+                bs_write( s, 8, h->mb.pic.p_fenc[p][i] );
         if( chroma )
             for( int ch = 1; ch < 3; ch++ )
                 for( int i = 0; i < 16>>CHROMA_V_SHIFT; i++ )
                     for( int j = 0; j < 8; j++ )
-                        bs_write( s, BIT_DEPTH, h->mb.pic.p_fenc[ch][i*FENC_STRIDE+j] );
+                        bs_write( s, 8, h->mb.pic.p_fenc[ch][i*FENC_STRIDE+j] );
 
         bs_init( s, s->p, s->p_end - s->p );
         s->p_start = p_start;

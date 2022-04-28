@@ -116,12 +116,7 @@ SRCS_X   += common/x86/mc-c.c \
             common/x86/predict-c.c
 
 OBJASM += common/x86/cpu-a.o
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.asm=%-8.o) common/x86/sad-a-8.o
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.asm=%-10.o) common/x86/sad16-a-10.o
-endif
 
 OBJCHK += tools/checkasm-a.o
 endif
@@ -149,12 +144,7 @@ SRCS_X   += common/arm/mc-c.c \
             common/arm/predict-c.c
 
 OBJASM += common/arm/cpu-a.o
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.S=%-8.o)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-10.o)
-endif
 
 OBJCHK += tools/checkasm-arm.o
 endif
@@ -174,12 +164,7 @@ SRCS_X   += common/aarch64/asm-offsets.c \
             common/aarch64/predict-c.c
 
 OBJASM +=
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.S=%-8.o)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJASM += $(SRCASM_X:%.S=%-10.o)
-endif
 
 OBJCHK += tools/checkasm-aarch64.o
 endif
@@ -222,18 +207,10 @@ OBJCLI += $(SRCCLI:%.c=%.o)
 OBJSO  += $(SRCSO:%.c=%.o)
 OBJEXAMPLE += $(SRCEXAMPLE:%.c=%.o)
 
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 OBJS      += $(SRCS_X:%.c=%-8.o) $(SRCS_8:%.c=%-8.o)
 OBJCLI    += $(SRCCLI_X:%.c=%-8.o)
 OBJCHK_8  += $(SRCCHK_X:%.c=%-8.o)
 checkasm: checkasm8$(EXE)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-OBJS      += $(SRCS_X:%.c=%-10.o)
-OBJCLI    += $(SRCCLI_X:%.c=%-10.o)
-OBJCHK_10 += $(SRCCHK_X:%.c=%-10.o)
-checkasm: checkasm10$(EXE)
-endif
 
 .PHONY: all default fprofiled clean distclean install install-* uninstall cli lib-* checkasm etags
 
@@ -255,7 +232,6 @@ ifneq ($(EXE),)
 .PHONY: x264 checkasm8 checkasm10 example
 x264: x264$(EXE)
 checkasm8: checkasm8$(EXE)
-checkasm10: checkasm10$(EXE)
 example: example$(EXE)
 endif
 
@@ -264,9 +240,6 @@ x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
 
 checkasm8$(EXE): $(GENERATED) .depend $(OBJCHK) $(OBJCHK_8) $(LIBX264)
 	$(LD)$@ $(OBJCHK) $(OBJCHK_8) $(LIBX264) $(LDFLAGS)
-
-checkasm10$(EXE): $(GENERATED) .depend $(OBJCHK) $(OBJCHK_10) $(LIBX264)
-	$(LD)$@ $(OBJCHK) $(OBJCHK_10) $(LIBX264) $(LDFLAGS)
 
 example$(EXE): $(GENERATED) .depend $(OBJEXAMPLE) $(LIBX264)
 	$(LD)$@ $(OBJEXAMPLE) $(LIBX264) $(LDFLAGS)
@@ -282,9 +255,6 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXA
 %-8.o: %.c
 	$(CC) $(CFLAGS) -c $< $(CC_O) -DHIGH_BIT_DEPTH=0 -DBIT_DEPTH=8
 
-%-10.o: %.c
-	$(CC) $(CFLAGS) -c $< $(CC_O) -DHIGH_BIT_DEPTH=1 -DBIT_DEPTH=10
-
 %.o: %.asm common/x86/x86inc.asm common/x86/x86util.asm
 	$(AS) $(ASFLAGS) -o $@ $<
 	-@ $(if $(STRIP), $(STRIP) -x $@) # delete local/anonymous symbols, so they don't show up in oprofile
@@ -293,20 +263,12 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXA
 	$(AS) $(ASFLAGS) -o $@ $< -DBIT_DEPTH=8 -Dprivate_prefix=x264_8
 	-@ $(if $(STRIP), $(STRIP) -x $@)
 
-%-10.o: %.asm common/x86/x86inc.asm common/x86/x86util.asm
-	$(AS) $(ASFLAGS) -o $@ $< -DBIT_DEPTH=10 -Dprivate_prefix=x264_10
-	-@ $(if $(STRIP), $(STRIP) -x $@)
-
 %.o: %.S
 	$(AS) $(ASFLAGS) -o $@ $<
 	-@ $(if $(STRIP), $(STRIP) -x $@) # delete local/anonymous symbols, so they don't show up in oprofile
 
 %-8.o: %.S
 	$(AS) $(ASFLAGS) -o $@ $< -DHIGH_BIT_DEPTH=0 -DBIT_DEPTH=8
-	-@ $(if $(STRIP), $(STRIP) -x $@)
-
-%-10.o: %.S
-	$(AS) $(ASFLAGS) -o $@ $< -DHIGH_BIT_DEPTH=1 -DBIT_DEPTH=10
 	-@ $(if $(STRIP), $(STRIP) -x $@)
 
 %.dll.o: %.rc x264.h
@@ -320,20 +282,10 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXA
 	@echo 'dependency file generation...'
 ifeq ($(COMPILER),CL)
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO) $(SRCEXAMPLE)), $(SRCPATH)/tools/msvsdepend.sh "$(CC)" "$(CFLAGS)" "$(SRC)" "$(SRC:$(SRCPATH)/%.c=%.o)" 1>> .depend;)
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCS_8) $(SRCCLI_X) $(SRCCHK_X)), $(SRCPATH)/tools/msvsdepend.sh "$(CC)" "$(CFLAGS)" "$(SRC)" "$(SRC:$(SRCPATH)/%.c=%-8.o)" 1>> .depend;)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCCLI_X) $(SRCCHK_X)), $(SRCPATH)/tools/msvsdepend.sh "$(CC)" "$(CFLAGS)" "$(SRC)" "$(SRC:$(SRCPATH)/%.c=%-10.o)" 1>> .depend;)
-endif
 else
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO) $(SRCEXAMPLE)), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%.o) $(DEPMM) 1>> .depend;)
-ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCS_8) $(SRCCLI_X) $(SRCCHK_X)), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%-8.o) $(DEPMM) 1>> .depend;)
-endif
-ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
-	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCCLI_X) $(SRCCHK_X)), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%-10.o) $(DEPMM) 1>> .depend;)
-endif
 endif
 
 config.mak:

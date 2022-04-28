@@ -52,9 +52,6 @@ SECTION_RODATA 64
 
 cextern coeff_last4_mmx2
 cextern coeff_last4_lzcnt
-%if HIGH_BIT_DEPTH
-cextern coeff_last4_avx512
-%endif
 cextern coeff_last15_sse2
 cextern coeff_last15_lzcnt
 cextern coeff_last15_avx512
@@ -69,11 +66,7 @@ cextern coeff_last64_avx512
 COEFF_LAST_TABLE sse2,   mmx2,   sse2,   sse2
 COEFF_LAST_TABLE lzcnt,  lzcnt,  lzcnt,  lzcnt
 COEFF_LAST_TABLE avx2,   lzcnt,  avx2,   lzcnt
-%if HIGH_BIT_DEPTH
-COEFF_LAST_TABLE avx512, avx512, avx512, avx512
-%else
 COEFF_LAST_TABLE avx512, lzcnt,  avx512, avx512
-%endif
 %endif
 
 coeff_abs_level1_ctx:       db 1, 2, 3, 4, 0, 0, 0, 0
@@ -354,19 +347,11 @@ CABAC bmi2
 %endmacro
 
 %macro LOAD_DCTCOEF 1
-%if HIGH_BIT_DEPTH
-    mov     %1, [dct+r6*4]
-%else
     movzx   %1, word [dct+r6*2]
-%endif
 %endmacro
 
 %macro ABS_DCTCOEFS 2
-%if HIGH_BIT_DEPTH
-    %define %%abs ABSD
-%else
     %define %%abs ABSW
-%endif
 %if mmsize == %2*SIZEOF_DCTCOEF
     %%abs   m0, [%1], m1
     mova [rsp], m0
@@ -551,11 +536,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_sse2
 INIT_XMM ssse3,lzcnt
 CABAC_RESIDUAL_RD 0, coeff_last_lzcnt
 CABAC_RESIDUAL_RD 1, coeff_last_lzcnt
-%if HIGH_BIT_DEPTH
-INIT_ZMM avx512
-%else
 INIT_YMM avx512
-%endif
 CABAC_RESIDUAL_RD 0, coeff_last_avx512
 INIT_ZMM avx512
 CABAC_RESIDUAL_RD 1, coeff_last_avx512
@@ -582,11 +563,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_avx512
 ; %4 = name
 %macro SIGMAP_LOOP 3-4
 .sigmap_%4loop:
-%if HIGH_BIT_DEPTH
-    mov      %2, [dct+r10*4]
-%else
     movsx    %2, word [dct+r10*2]
-%endif
 %if %1
     movzx   r1d, byte [sigoff_8x8 + r10]
     add     r1d, sigoffd
@@ -617,11 +594,7 @@ CABAC_RESIDUAL_RD 1, coeff_last_avx512
     inc    r10d
     cmp    r10d, %3
     jne .sigmap_%4loop              ; if( ++i == count_m1 )
-%if HIGH_BIT_DEPTH
-    mov      %2, [dct+r10*4]
-%else
     movsx    %2, word [dct+r10*2]
-%endif
     inc coeffidxd
     mov [coeffs+coeffidxq*4], %2    ; coeffs[++coeff_idx] = l[i]
     jmp .sigmap_%4end

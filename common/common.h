@@ -90,23 +90,12 @@
 #define FRAME_SIZE(s) ((s)+2*CHROMA_SIZE(s))
 #define CHROMA444 (CHROMA_FORMAT == CHROMA_444)
 
-#if HIGH_BIT_DEPTH
-    typedef uint16_t pixel;
-    typedef uint64_t pixel4;
-    typedef int32_t  dctcoef;
-    typedef uint32_t udctcoef;
-
-#   define PIXEL_SPLAT_X4(x) ((x)*0x0001000100010001ULL)
-#   define MPIXEL_X4(src) M64(src)
-#else
-    typedef uint8_t  pixel;
-    typedef uint32_t pixel4;
-    typedef int16_t  dctcoef;
-    typedef uint16_t udctcoef;
-
+typedef uint8_t  pixel;
+typedef uint32_t pixel4;
+typedef int16_t  dctcoef;
+typedef uint16_t udctcoef;
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
 #   define MPIXEL_X4(src) M32(src)
-#endif
 
 #define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
 

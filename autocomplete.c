@@ -351,14 +351,7 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
     OPT( "--output-csp" )
         suggest_list( x264_output_csp_names );
     OPT( "--output-depth" )
-    {
-#if HAVE_BITDEPTH8
         suggest( "8" );
-#endif
-#if HAVE_BITDEPTH10
-        suggest( "10" );
-#endif
-    }
     OPT( "--overscan" )
         suggest_list( x264_overscan_names );
     OPT2( "--partitions", "-A" )
