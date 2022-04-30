@@ -908,8 +908,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         else
             p->i_level_idc = atoi(value);
     }
-    OPT("bluray-compat")
-        p->b_bluray_compat = atobool(value);
+    OPT("bluray-compat") {}
     OPT("avcintra-class")
         p->i_avcintra_class = atoi(value);
     OPT("avcintra-flavor")

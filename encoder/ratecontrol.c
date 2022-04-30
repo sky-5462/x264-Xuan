@@ -1430,9 +1430,6 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
 
         int mincr = l->mincr;
 
-        if( h->param.b_bluray_compat )
-            mincr = 4;
-
         /* Profiles above High don't require minCR, so just set the maximum to a large value. */
         if( h->sps->i_profile_idc > PROFILE_HIGH )
             rc->frame_size_maximum = 1e9;

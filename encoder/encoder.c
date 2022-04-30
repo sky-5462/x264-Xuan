@@ -959,25 +959,6 @@ static int validate_parameters( x264_t *h, int b_open )
     if( h->param.i_slice_count_max > 0 )
         h->param.i_slice_count_max = X264_MAX( h->param.i_slice_count, h->param.i_slice_count_max );
 
-    if( h->param.b_bluray_compat )
-    {
-        h->param.i_bframe_pyramid = X264_MIN( X264_B_PYRAMID_STRICT, h->param.i_bframe_pyramid );
-        h->param.i_bframe = X264_MIN( h->param.i_bframe, 3 );
-        h->param.b_aud = 1;
-        h->param.i_nal_hrd = X264_MAX( h->param.i_nal_hrd, X264_NAL_HRD_VBR );
-        h->param.i_slice_max_size = 0;
-        h->param.i_slice_max_mbs = 0;
-        h->param.b_intra_refresh = 0;
-        h->param.i_frame_reference = X264_MIN( h->param.i_frame_reference, 6 );
-        h->param.i_dpb_size = X264_MIN( h->param.i_dpb_size, 6 );
-        /* Don't use I-frames, because Blu-ray treats them the same as IDR. */
-        h->param.i_keyint_min = 1;
-        /* Due to the proliferation of broken players that don't handle dupes properly. */
-        h->param.analyse.i_weighted_pred = X264_MIN( h->param.analyse.i_weighted_pred, X264_WEIGHTP_SIMPLE );
-        if( h->param.b_fake_interlaced )
-            h->param.b_pic_struct = 1;
-    }
-
     h->param.i_frame_reference = x264_clip3( h->param.i_frame_reference, 1, X264_REF_MAX );
     h->param.i_dpb_size = x264_clip3( h->param.i_dpb_size, 1, X264_REF_MAX );
     if( h->param.i_scenecut_threshold < 0 )
@@ -2198,10 +2179,6 @@ static inline void reference_build_list( x264_t *h, int i_poc )
     h->i_ref[0] = X264_MIN( h->i_ref[0], h->frames.i_max_ref0 );
     h->i_ref[0] = X264_MIN( h->i_ref[0], h->param.i_frame_reference ); // if reconfig() has lowered the limit
 
-    /* For Blu-ray compliance, don't reference frames outside of the minigop. */
-    if( IS_X264_TYPE_B( h->fenc->i_type ) && h->param.b_bluray_compat )
-        h->i_ref[0] = X264_MIN( h->i_ref[0], IS_X264_TYPE_B( h->fref[0][0]->i_type ) + 1 );
-
     /* add duplicates */
     if( h->fenc->i_type == X264_TYPE_P )
     {
@@ -2453,12 +2430,6 @@ static inline void slice_init( x264_t *h, int i_nal_type, int i_global_qp )
         {
             h->sh.b_num_ref_idx_override = 1;
         }
-    }
-
-    if( h->fenc->i_type == X264_TYPE_BREF && h->param.b_bluray_compat && h->sh.i_mmco_command_count )
-    {
-        h->b_sh_backup = 1;
-        h->sh_backup = h->sh;
     }
 
     h->fdec->i_frame_num = h->sh.i_frame_num;

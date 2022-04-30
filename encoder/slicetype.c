@@ -1605,14 +1605,6 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
                 if( h->param.b_open_gop )
                 {
                     last_keyframe = frm->i_frame;
-                    if( h->param.b_bluray_compat )
-                    {
-                        // Use bluray order
-                        int bframes = 0;
-                        while( bframes < j-1 && IS_X264_TYPE_B( frames[j-1-bframes]->i_type ) )
-                            bframes++;
-                        last_keyframe -= bframes;
-                    }
                 }
                 else if( frm->i_forced_type != X264_TYPE_I )
                     frm->i_type = X264_TYPE_IDR;
@@ -1738,8 +1730,6 @@ void x264_slicetype_decide( x264_t *h )
             if( h->param.b_open_gop )
             {
                 h->lookahead->i_last_keyframe = frm->i_frame; // Use display order
-                if( h->param.b_bluray_compat )
-                    h->lookahead->i_last_keyframe -= bframes; // Use bluray order
                 frm->b_keyframe = 1;
             }
             else
