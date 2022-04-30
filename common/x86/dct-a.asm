@@ -1354,111 +1354,6 @@ cglobal zigzag_scan_4x4_frame, 2,2
     RET
 
 ;-----------------------------------------------------------------------------
-; void zigzag_scan_4x4_field( int16_t level[16], int16_t dct[4][4] )
-;-----------------------------------------------------------------------------
-INIT_XMM sse
-cglobal zigzag_scan_4x4_field, 2,2
-    mova       m0, [r1]
-    mova       m1, [r1+16]
-    pshufw    mm0, [r1+4], q3102
-    mova     [r0], m0
-    mova  [r0+16], m1
-    movq   [r0+4], mm0
-    RET
-
-;-----------------------------------------------------------------------------
-; void zigzag_scan_8x8_field( int16_t level[64], int16_t dct[8][8] )
-;-----------------------------------------------------------------------------
-; Output order:
-;  0  1  2  8  9  3  4 10
-; 16 11  5  6  7 12 17 24
-; 18 13 14 15 19 25 32 26
-; 20 21 22 23 27 33 40 34
-; 28 29 30 31 35 41 48 42
-; 36 37 38 39 43 49 50 44
-; 45 46 47 51 56 57 52 53
-; 54 55 58 59 60 61 62 63
-%undef SCAN_8x8
-%macro SCAN_8x8 5
-cglobal zigzag_scan_8x8_field, 2,3,8
-    mova       m0, [r1+ 0*SIZEOF_DCTCOEF]       ; 03 02 01 00
-    mova       m1, [r1+ 4*SIZEOF_DCTCOEF]       ; 07 06 05 04
-    mova       m2, [r1+ 8*SIZEOF_DCTCOEF]       ; 11 10 09 08
-    pshuf%1    m3, m0, q3333                    ; 03 03 03 03
-    movd      r2d, m2                           ; 09 08
-    pshuf%1    m2, m2, q0321                    ; 08 11 10 09
-    punpckl%2  m3, m1                           ; 05 03 04 03
-    pinsr%1    m0, r2d, 3                       ; 08 02 01 00
-    punpckl%2  m4, m2, m3                       ; 04 10 03 09
-    pshuf%1    m4, m4, q2310                    ; 10 04 03 09
-    mova  [r0+ 0*SIZEOF_DCTCOEF], m0            ; 08 02 01 00
-    mova  [r0+ 4*SIZEOF_DCTCOEF], m4            ; 10 04 03 09
-    mova       m3, [r1+12*SIZEOF_DCTCOEF]       ; 15 14 13 12
-    mova       m5, [r1+16*SIZEOF_DCTCOEF]       ; 19 18 17 16
-    punpckl%3  m6, m5                           ; 17 16 XX XX
-    psrl%4     m1, %5                           ; XX 07 06 05
-    punpckh%2  m6, m2                           ; 08 17 11 16
-    punpckl%3  m6, m1                           ; 06 05 11 16
-    mova  [r0+ 8*SIZEOF_DCTCOEF], m6            ; 06 05 11 16
-    psrl%4     m1, %5                           ; XX XX 07 06
-    punpckl%2  m1, m5                           ; 17 07 16 06
-    mova       m0, [r1+20*SIZEOF_DCTCOEF]       ; 23 22 21 20
-    mova       m2, [r1+24*SIZEOF_DCTCOEF]       ; 27 26 25 24
-    punpckh%3  m1, m1                           ; 17 07 17 07
-    punpckl%2  m6, m3, m2                       ; 25 13 24 12
-    pextr%1    r2d, m5, 2
-    mova [r0+24*SIZEOF_DCTCOEF], m0             ; 23 22 21 20
-    punpckl%2  m1, m6                           ; 24 17 12 07
-    mova [r0+12*SIZEOF_DCTCOEF], m1
-    pinsr%1    m3, r2d, 0                       ; 15 14 13 18
-    mova [r0+16*SIZEOF_DCTCOEF], m3             ; 15 14 13 18
-    mova       m7, [r1+28*SIZEOF_DCTCOEF]
-    mova       m0, [r1+32*SIZEOF_DCTCOEF]       ; 35 34 33 32
-    psrl%4     m5, %5*3                         ; XX XX XX 19
-    pshuf%1    m1, m2, q3321                    ; 27 27 26 25
-    punpckl%2  m5, m0                           ; 33 XX 32 19
-    psrl%4     m2, %5*3                         ; XX XX XX 27
-    punpckl%2  m5, m1                           ; 26 32 25 19
-    mova [r0+32*SIZEOF_DCTCOEF], m7
-    mova [r0+20*SIZEOF_DCTCOEF], m5             ; 26 32 25 19
-    mova       m7, [r1+36*SIZEOF_DCTCOEF]
-    mova       m1, [r1+40*SIZEOF_DCTCOEF]       ; 43 42 41 40
-    pshuf%1    m3, m0, q3321                    ; 35 35 34 33
-    punpckl%2  m2, m1                           ; 41 XX 40 27
-    mova [r0+40*SIZEOF_DCTCOEF], m7
-    punpckl%2  m2, m3                           ; 34 40 33 27
-    mova [r0+28*SIZEOF_DCTCOEF], m2
-    mova       m7, [r1+44*SIZEOF_DCTCOEF]       ; 47 46 45 44
-    mova       m2, [r1+48*SIZEOF_DCTCOEF]       ; 51 50 49 48
-    psrl%4     m0, %5*3                         ; XX XX XX 35
-    punpckl%2  m0, m2                           ; 49 XX 48 35
-    pshuf%1    m3, m1, q3321                    ; 43 43 42 41
-    punpckl%2  m0, m3                           ; 42 48 41 35
-    mova [r0+36*SIZEOF_DCTCOEF], m0
-    pextr%1     r2d, m2, 3                      ; 51
-    psrl%4      m1, %5*3                        ; XX XX XX 43
-    punpckl%2   m1, m7                          ; 45 XX 44 43
-    psrl%4      m2, %5                          ; XX 51 50 49
-    punpckl%2   m1, m2                          ; 50 44 49 43
-    pshuf%1     m1, m1, q2310                   ; 44 50 49 43
-    mova [r0+44*SIZEOF_DCTCOEF], m1
-    psrl%4      m7, %5                          ; XX 47 46 45
-    pinsr%1     m7, r2d, 3                      ; 51 47 46 45
-    mova [r0+48*SIZEOF_DCTCOEF], m7
-    mova        m0, [r1+56*SIZEOF_DCTCOEF]      ; 59 58 57 56
-    mova        m1, [r1+52*SIZEOF_DCTCOEF]      ; 55 54 53 52
-    mova        m7, [r1+60*SIZEOF_DCTCOEF]
-    punpckl%3   m2, m0, m1                      ; 53 52 57 56
-    punpckh%3   m1, m0                          ; 59 58 55 54
-    mova [r0+52*SIZEOF_DCTCOEF], m2
-    mova [r0+56*SIZEOF_DCTCOEF], m1
-    mova [r0+60*SIZEOF_DCTCOEF], m7
-    RET
-%endmacro
-INIT_MMX mmx2
-SCAN_8x8 w, wd, dq , q , 16
-
-;-----------------------------------------------------------------------------
 ; void zigzag_sub_4x4_frame( int16_t level[16], const uint8_t *src, uint8_t *dst )
 ;-----------------------------------------------------------------------------
 %macro ZIGZAG_SUB_4x4 2
@@ -1514,61 +1409,11 @@ cglobal zigzag_sub_4x4%1_%2, 3,3,8
 INIT_XMM ssse3
 ZIGZAG_SUB_4x4   , frame
 ZIGZAG_SUB_4x4 ac, frame
-ZIGZAG_SUB_4x4   , field
-ZIGZAG_SUB_4x4 ac, field
 INIT_XMM avx
 ZIGZAG_SUB_4x4   , frame
 ZIGZAG_SUB_4x4 ac, frame
-ZIGZAG_SUB_4x4   , field
-ZIGZAG_SUB_4x4 ac, field
 
 INIT_XMM xop
-cglobal zigzag_scan_8x8_field, 2,3,7
-    lea        r2, [pb_scan8field1]
-    %define off(m) (r2+m-pb_scan8field1)
-    mova       m0, [r1+  0]
-    mova       m1, [r1+ 16]
-    vpperm     m5, m0, m1, [off(pb_scan8field1)]
-    mova [r0+  0], m5
-    vpperm     m0, m0, m1, [off(pb_scan8field2a)]
-    mova       m2, [r1+ 32]
-    mova       m3, [r1+ 48]
-    vpperm     m5, m2, m3, [off(pb_scan8field2b)]
-    por        m5, m0
-    mova [r0+ 16], m5
-    mova       m4, [off(pb_scan8field3b)]
-    vpperm     m1, m1, m2, [off(pb_scan8field3a)]
-    mova       m0, [r1+ 64]
-    vpperm     m5, m3, m0, m4
-    por        m5, m1
-    mova [r0+ 32], m5
-    ; 4b, 5b are the same as pb_scan8field3b.
-    ; 5a is the same as pb_scan8field4a.
-    mova       m5, [off(pb_scan8field4a)]
-    vpperm     m2, m2, m3, m5
-    mova       m1, [r1+ 80]
-    vpperm     m6, m0, m1, m4
-    por        m6, m2
-    mova [r0+ 48], m6
-    vpperm     m3, m3, m0, m5
-    mova       m2, [r1+ 96]
-    vpperm     m5, m1, m2, m4
-    por        m5, m3
-    mova [r0+ 64], m5
-    vpperm     m5, m0, m1, [off(pb_scan8field6)]
-    mova [r0+ 80], m5
-    vpperm     m5, m1, m2, [off(pb_scan8field7)]
-    mov       r2d, [r1+ 98]
-    mov  [r0+ 90], r2d
-    mova [r0+ 96], m5
-    mova       m3, [r1+112]
-    movd [r0+104], m3
-    mov       r2d, [r1+108]
-    mova [r0+112], m3
-    mov  [r0+112], r2d
-    %undef off
-    RET
-
 cglobal zigzag_scan_8x8_frame, 2,3,8
     lea        r2, [pb_scan8frame1]
     %define off(m) (r2+m-pb_scan8frame1)
@@ -1743,13 +1588,6 @@ cglobal zigzag_scan_4x4_frame, 2,2
     mova      [r0], m0
     RET
 
-cglobal zigzag_scan_4x4_field, 2,2
-    mova        m0, [r1]
-    pshuflw   xmm1, [r1+4], q3102
-    mova      [r0], m0
-    movq    [r0+4], xmm1
-    RET
-
 INIT_ZMM avx512
 cglobal zigzag_scan_8x8_frame, 2,2
     psrlw       m0, [scan_frame_avx512], 4
@@ -1762,10 +1600,6 @@ scan8_avx512:
     mova      [r0], m0
     mova   [r0+64], m1
     RET
-
-cglobal zigzag_scan_8x8_field, 2,2
-    mova        m0, [scan_field_avx512]
-    jmp scan8_avx512
 
 cglobal zigzag_interleave_8x8_cavlc, 3,3
     mova       m0, [cavlc_shuf_avx512]

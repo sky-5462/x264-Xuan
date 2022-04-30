@@ -264,22 +264,8 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
      * sure no reordering goes on. */
     uint32_t var;
     x264_prefetch_fenc( h, frame, mb_x, mb_y );
-    if( h->mb.b_adaptive_mbaff )
-    {
-        /* We don't know the super-MB mode we're going to pick yet, so
-         * simply try both and pick the lower of the two. */
-        uint32_t var_interlaced, var_progressive;
-        var_interlaced   = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, 1, 1 );
-        var_progressive  = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, 0, 0 );
-        var_interlaced  += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 1, 1 );
-        var_progressive += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 0 );
-        var = X264_MIN( var_interlaced, var_progressive );
-    }
-    else
-    {
-        var  = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, PARAM_INTERLACED, 1 );
-        var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, PARAM_INTERLACED, 1 );
-    }
+    var  = ac_energy_plane( h, mb_x, mb_y, frame, 0, 0, 0, 1 );
+    var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 1 );
     x264_emms();
     return var;
 }
@@ -1589,13 +1575,9 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
     if( h->sh.i_type != SLICE_TYPE_I && rc->qpm < h->fref[0][0]->f_row_qp[y] )
         update_predictor( &rc->row_pred[1], qscale, h->fdec->i_row_satds[0][0][y], h->fdec->i_row_bits[y] );
 
-    /* update ratecontrol per-mbpair in MBAFF */
-    if( SLICE_MBAFF && !(y&1) )
-        return 0;
-
     /* FIXME: We don't currently support the case where there's a slice
      * boundary in between. */
-    int can_reencode_row = h->sh.i_first_mb <= ((h->mb.i_mb_y - SLICE_MBAFF) * h->mb.i_mb_stride);
+    int can_reencode_row = h->sh.i_first_mb <= ((h->mb.i_mb_y) * h->mb.i_mb_stride);
 
     /* tweak quality based on difference from predicted size */
     float prev_row_qp = h->fdec->f_row_qp[y];
@@ -1690,7 +1672,6 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
             rc->qpa_rc = rc->qpa_rc_prev;
             rc->qpa_aq = rc->qpa_aq_prev;
             h->fdec->i_row_bits[y] = 0;
-            h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
             return -1;
         }
     }
@@ -1707,7 +1688,6 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
             rc->qpa_rc = rc->qpa_rc_prev;
             rc->qpa_aq = rc->qpa_aq_prev;
             h->fdec->i_row_bits[y] = 0;
-            h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
             return -1;
         }
     }
@@ -1847,9 +1827,7 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
         for( int i = 0; i < (use_old_stats ? rc->rce->refs : h->i_ref[0]); i++ )
         {
             int refcount = use_old_stats         ? rc->rce->refcount[i]
-                         : PARAM_INTERLACED      ? h->stat.frame.i_mb_count_ref[0][i*2]
-                                                 + h->stat.frame.i_mb_count_ref[0][i*2+1]
-                         :                         h->stat.frame.i_mb_count_ref[0][i];
+                         : h->stat.frame.i_mb_count_ref[0][i];
             if( fprintf( rc->p_stat_file_out, "%d ", refcount ) < 0 )
                 goto fail;
         }

@@ -498,15 +498,6 @@ void x264_macroblock_write_cavlc( x264_t *h )
     int       i_mb_pos_tex;
 #endif
 
-    if( SLICE_MBAFF
-        && (!(h->mb.i_mb_y & 1) || IS_SKIP(h->mb.type[h->mb.i_mb_xy - h->mb.i_mb_stride])) )
-    {
-        bs_write1( s, MB_INTERLACED );
-#if !RDO_SKIP_BS
-        h->mb.field_decoding_flag = MB_INTERLACED;
-#endif
-    }
-
 #if !RDO_SKIP_BS
     if( i_mb_type == I_PCM )
     {

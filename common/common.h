@@ -67,16 +67,6 @@
 #define FILLER_OVERHEAD (NALU_OVERHEAD+1)
 #define SEI_OVERHEAD (NALU_OVERHEAD - (h->param.b_annexb && !h->param.i_avcintra_class && (h->out.i_nal-1)))
 
-#if HAVE_INTERLACED
-#   define MB_INTERLACED h->mb.b_interlaced
-#   define SLICE_MBAFF h->sh.b_mbaff
-#   define PARAM_INTERLACED h->param.b_interlaced
-#else
-#   define MB_INTERLACED 0
-#   define SLICE_MBAFF 0
-#   define PARAM_INTERLACED 0
-#endif
-
 #define CHROMA_H_SHIFT (1)
 #define CHROMA_V_SHIFT (1)
 
@@ -725,8 +715,6 @@ struct x264_t
     x264_mc_functions_t   mc;
     x264_dct_function_t   dctf;
     x264_zigzag_function_t zigzagf;
-    x264_zigzag_function_t zigzagf_interlaced;
-    x264_zigzag_function_t zigzagf_progressive;
     x264_quant_function_t quantf;
     x264_deblock_function_t loopf;
     x264_bitstream_function_t bsf;

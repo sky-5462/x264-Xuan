@@ -1608,15 +1608,7 @@ generic_option:
 
     if( !b_user_interlaced && info.interlaced )
     {
-#if HAVE_INTERLACED
-        x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, enabling %cff interlaced mode.\n"
-                      "                If you want otherwise, use --no-interlaced or --%cff\n",
-                      info.tff ? 't' : 'b', info.tff ? 'b' : 't' );
-        param->b_interlaced = 1;
-        param->b_tff = !!info.tff;
-#else
         x264_cli_log( "x264", X264_LOG_WARNING, "input appears to be interlaced, but not compiled with interlaced support\n" );
-#endif
     }
     /* if the user never specified the output range and the input is now rgb, default it to pc */
     int csp = param->i_csp & X264_CSP_MASK;

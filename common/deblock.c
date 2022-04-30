@@ -343,41 +343,22 @@ static ALWAYS_INLINE void macroblock_cache_load_neighbours_deblock( x264_t *h, i
 
     h->mb.i_neighbour = 0;
     h->mb.i_mb_xy = mb_y * h->mb.i_mb_stride + mb_x;
-    h->mb.b_interlaced = PARAM_INTERLACED && h->mb.field[h->mb.i_mb_xy];
-    h->mb.i_mb_top_y = mb_y - (1 << MB_INTERLACED);
+    h->mb.b_interlaced = 0;
+    h->mb.i_mb_top_y = mb_y - 1;
     h->mb.i_mb_top_xy = mb_x + h->mb.i_mb_stride*h->mb.i_mb_top_y;
     h->mb.i_mb_left_xy[1] =
     h->mb.i_mb_left_xy[0] = h->mb.i_mb_xy - 1;
-    if( SLICE_MBAFF )
-    {
-        if( mb_y&1 )
-        {
-            if( mb_x && h->mb.field[h->mb.i_mb_xy - 1] != MB_INTERLACED )
-                h->mb.i_mb_left_xy[0] -= h->mb.i_mb_stride;
-        }
-        else
-        {
-            if( h->mb.i_mb_top_xy >= 0 && MB_INTERLACED && !h->mb.field[h->mb.i_mb_top_xy] )
-            {
-                h->mb.i_mb_top_xy += h->mb.i_mb_stride;
-                h->mb.i_mb_top_y++;
-            }
-            if( mb_x && h->mb.field[h->mb.i_mb_xy - 1] != MB_INTERLACED )
-                h->mb.i_mb_left_xy[1] += h->mb.i_mb_stride;
-        }
-    }
 
     if( mb_x > 0 && (deblock_on_slice_edges ||
         h->mb.slice_table[h->mb.i_mb_left_xy[0]] == h->mb.slice_table[h->mb.i_mb_xy]) )
         h->mb.i_neighbour |= MB_LEFT;
-    if( mb_y > MB_INTERLACED && (deblock_on_slice_edges
+    if( mb_y > 0 && (deblock_on_slice_edges
         || h->mb.slice_table[h->mb.i_mb_top_xy] == h->mb.slice_table[h->mb.i_mb_xy]) )
         h->mb.i_neighbour |= MB_TOP;
 }
 
 void x264_frame_deblock_row( x264_t *h, int mb_y )
 {
-    int b_interlaced = SLICE_MBAFF;
     int a = h->sh.i_alpha_c0_offset - QP_BD_OFFSET;
     int b = h->sh.i_beta_offset - QP_BD_OFFSET;
     int qp_thresh = 15 - X264_MIN( a, b ) - X264_MAX( 0, h->pps->i_chroma_qp_index_offset );
@@ -385,7 +366,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
     int strideuv  = h->fdec->i_stride[1];
     int chroma_height = 16 >> CHROMA_V_SHIFT;
 
-    for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x += (~b_interlaced | mb_y)&1, mb_y ^= b_interlaced )
+    for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x += 1 )
     {
         x264_prefetch_fenc( h, h->fdec, mb_x, mb_y );
         macroblock_cache_load_neighbours_deblock( h, mb_x, mb_y );
@@ -398,14 +379,8 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
         pixel *pixy = h->fdec->plane[0] + 16*mb_y*stridey  + 16*mb_x;
         pixel *pixuv = h->fdec->plane[1] + chroma_height*mb_y*strideuv + 16*mb_x;
 
-        if( mb_y & MB_INTERLACED )
-        {
-            pixy -= 15*stridey;
-            pixuv -= (chroma_height-1)*strideuv;
-        }
-
-        int stride2y  = stridey << MB_INTERLACED;
-        int stride2uv = strideuv << MB_INTERLACED;
+        int stride2y  = stridey;
+        int stride2uv = strideuv;
         int qp = h->mb.qp[mb_xy];
         int qpc = h->chroma_qp_table[qp];
         int first_edge_only = (h->mb.partition[mb_xy] == D_16x16 && !h->mb.cbp[mb_xy] && !intra_cur) || qp <= qp_thresh;
@@ -429,69 +404,26 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
 
         if( h->mb.i_neighbour & MB_LEFT )
         {
-            if( b_interlaced && h->mb.field[h->mb.i_mb_left_xy[0]] != MB_INTERLACED )
+            int qpl = h->mb.qp[h->mb.i_mb_xy-1];
+            int qp_left = (qp + qpl + 1) >> 1;
+            int qpc_left = (qpc + h->chroma_qp_table[qpl] + 1) >> 1;
+            int intra_left = IS_INTRA( h->mb.type[h->mb.i_mb_xy-1] );
+            int intra_deblock = intra_cur || intra_left;
+
+            /* Any MB that was coded, or that analysis decided to skip, has quality commensurate with its QP.
+                * But if deblocking affects neighboring MBs that were force-skipped, blur might accumulate there.
+                * So reset their effective QP to max, to indicate that lack of guarantee. */
+            if( h->fdec->mb_info && M32( bs[0][0] ) )
             {
-                int luma_qp[2];
-                int chroma_qp[2];
-                int left_qp[2];
-                x264_deblock_inter_t luma_deblock = h->loopf.deblock_luma_mbaff;
-                x264_deblock_inter_t chroma_deblock = h->loopf.deblock_chroma_mbaff;
-                x264_deblock_intra_t luma_intra_deblock = h->loopf.deblock_luma_intra_mbaff;
-                x264_deblock_intra_t chroma_intra_deblock = h->loopf.deblock_chroma_intra_mbaff;
-
-                left_qp[0] = h->mb.qp[h->mb.i_mb_left_xy[0]];
-                luma_qp[0] = (qp + left_qp[0] + 1) >> 1;
-                chroma_qp[0] = (qpc + h->chroma_qp_table[left_qp[0]] + 1) >> 1;
-                if( intra_cur || IS_INTRA( h->mb.type[h->mb.i_mb_left_xy[0]] ) )
-                {
-                    deblock_edge_intra( h, pixy,           2*stridey,  bs[0][0], luma_qp[0],   a, b, 0, luma_intra_deblock );
-                    deblock_edge_intra( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, 1, chroma_intra_deblock );
-                }
-                else
-                {
-                    deblock_edge( h, pixy,           2*stridey,  bs[0][0], luma_qp[0],   a, b, 0, luma_deblock );
-                    deblock_edge( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, 1, chroma_deblock );
-                }
-
-                int offy = MB_INTERLACED ? 4 : 0;
-                int offuv = MB_INTERLACED ? 4-CHROMA_V_SHIFT : 0;
-                left_qp[1] = h->mb.qp[h->mb.i_mb_left_xy[1]];
-                luma_qp[1] = (qp + left_qp[1] + 1) >> 1;
-                chroma_qp[1] = (qpc + h->chroma_qp_table[left_qp[1]] + 1) >> 1;
-                if( intra_cur || IS_INTRA( h->mb.type[h->mb.i_mb_left_xy[1]] ) )
-                {
-                    deblock_edge_intra( h, pixy           + (stridey<<offy),   2*stridey,  bs[0][4], luma_qp[1],   a, b, 0, luma_intra_deblock );
-                    deblock_edge_intra( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, 1, chroma_intra_deblock );
-                }
-                else
-                {
-                    deblock_edge( h, pixy           + (stridey<<offy),   2*stridey,  bs[0][4], luma_qp[1],   a, b, 0, luma_deblock );
-                    deblock_edge( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, 1, chroma_deblock );
-                }
-            }
-            else
-            {
-                int qpl = h->mb.qp[h->mb.i_mb_xy-1];
-                int qp_left = (qp + qpl + 1) >> 1;
-                int qpc_left = (qpc + h->chroma_qp_table[qpl] + 1) >> 1;
-                int intra_left = IS_INTRA( h->mb.type[h->mb.i_mb_xy-1] );
-                int intra_deblock = intra_cur || intra_left;
-
-                /* Any MB that was coded, or that analysis decided to skip, has quality commensurate with its QP.
-                 * But if deblocking affects neighboring MBs that were force-skipped, blur might accumulate there.
-                 * So reset their effective QP to max, to indicate that lack of guarantee. */
-                if( h->fdec->mb_info && M32( bs[0][0] ) )
-                {
 #define RESET_EFFECTIVE_QP(xy) h->fdec->effective_qp[xy] |= 0xff * !!(h->fdec->mb_info[xy] & X264_MBINFO_CONSTANT);
-                    RESET_EFFECTIVE_QP(mb_xy);
-                    RESET_EFFECTIVE_QP(h->mb.i_mb_left_xy[0]);
-                }
-
-                if( intra_deblock )
-                    FILTER( _intra, 0, 0, qp_left, qpc_left );
-                else
-                    FILTER(       , 0, 0, qp_left, qpc_left );
+                RESET_EFFECTIVE_QP(mb_xy);
+                RESET_EFFECTIVE_QP(h->mb.i_mb_left_xy[0]);
             }
+
+            if( intra_deblock )
+                FILTER( _intra, 0, 0, qp_left, qpc_left );
+            else
+                FILTER(       , 0, 0, qp_left, qpc_left );
         }
         if( !first_edge_only )
         {
@@ -502,49 +434,28 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
 
         if( h->mb.i_neighbour & MB_TOP )
         {
-            if( b_interlaced && !(mb_y&1) && !MB_INTERLACED && h->mb.field[h->mb.i_mb_top_xy] )
+            int qpt = h->mb.qp[h->mb.i_mb_top_xy];
+            int qp_top = (qp + qpt + 1) >> 1;
+            int qpc_top = (qpc + h->chroma_qp_table[qpt] + 1) >> 1;
+            int intra_top = IS_INTRA( h->mb.type[h->mb.i_mb_top_xy] );
+            int intra_deblock = intra_cur || intra_top;
+
+            /* This edge has been modified, reset effective qp to max. */
+            if( h->fdec->mb_info && M32( bs[1][0] ) )
             {
-                int mbn_xy = mb_xy - 2 * h->mb.i_mb_stride;
+                RESET_EFFECTIVE_QP(mb_xy);
+                RESET_EFFECTIVE_QP(h->mb.i_mb_top_xy);
+            }
 
-                for( int j = 0; j < 2; j++, mbn_xy += h->mb.i_mb_stride )
-                {
-                    int qpt = h->mb.qp[mbn_xy];
-                    int qp_top = (qp + qpt + 1) >> 1;
-                    int qpc_top = (qpc + h->chroma_qp_table[qpt] + 1) >> 1;
-                    int intra_top = IS_INTRA( h->mb.type[mbn_xy] );
-                    if( intra_cur || intra_top )
-                        M32( bs[1][4*j] ) = 0x03030303;
-
-                    // deblock the first horizontal edge of the even rows, then the first horizontal edge of the odd rows
-                    deblock_edge( h, pixy      + j*stridey,  2* stridey, bs[1][4*j], qp_top, a, b, 0, h->loopf.deblock_luma[1] );
-                    deblock_edge( h, pixuv     + j*strideuv, 2*strideuv, bs[1][4*j], qpc_top, a, b, 1, h->loopf.deblock_chroma[1] );
-                }
+            if( intra_deblock )
+            {
+                FILTER( _intra, 1, 0, qp_top, qpc_top );
             }
             else
             {
-                int qpt = h->mb.qp[h->mb.i_mb_top_xy];
-                int qp_top = (qp + qpt + 1) >> 1;
-                int qpc_top = (qpc + h->chroma_qp_table[qpt] + 1) >> 1;
-                int intra_top = IS_INTRA( h->mb.type[h->mb.i_mb_top_xy] );
-                int intra_deblock = intra_cur || intra_top;
-
-                /* This edge has been modified, reset effective qp to max. */
-                if( h->fdec->mb_info && M32( bs[1][0] ) )
-                {
-                    RESET_EFFECTIVE_QP(mb_xy);
-                    RESET_EFFECTIVE_QP(h->mb.i_mb_top_xy);
-                }
-
-                if( (!b_interlaced || (!MB_INTERLACED && !h->mb.field[h->mb.i_mb_top_xy])) && intra_deblock )
-                {
-                    FILTER( _intra, 1, 0, qp_top, qpc_top );
-                }
-                else
-                {
-                    if( intra_deblock )
-                        M32( bs[1][0] ) = 0x03030303;
-                    FILTER(       , 1, 0, qp_top, qpc_top );
-                }
+                if( intra_deblock )
+                    M32( bs[1][0] ) = 0x03030303;
+                FILTER(       , 1, 0, qp_top, qpc_top );
             }
         }
 
@@ -586,7 +497,7 @@ void x264_macroblock_deblock( x264_t *h )
     }
     else
         h->loopf.deblock_strength( h->mb.cache.non_zero_count, h->mb.cache.ref, h->mb.cache.mv,
-                                   bs, 4 >> MB_INTERLACED, h->sh.i_type == SLICE_TYPE_B );
+                                   bs, 4, h->sh.i_type == SLICE_TYPE_B );
 
     int transform_8x8 = h->mb.b_transform_8x8;
 
@@ -625,7 +536,7 @@ void x264_macroblock_deblock( x264_t *h )
 #include "mips/deblock.h"
 #endif
 
-void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
+void x264_deblock_init( int cpu, x264_deblock_function_t *pf )
 {
     pf->deblock_luma[1] = deblock_v_luma_c;
     pf->deblock_luma[0] = deblock_h_luma_c;

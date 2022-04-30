@@ -736,11 +736,6 @@ static void zigzag_scan_8x8_frame( dctcoef level[64], dctcoef dct[64] )
     ZIGZAG8_FRAME
 }
 
-static void zigzag_scan_8x8_field( dctcoef level[64], dctcoef dct[64] )
-{
-    ZIGZAG8_FIELD
-}
-
 #undef ZIG
 #define ZIG(i,y,x) level[i] = dct[x*4+y];
 #define ZIGDC(i,y,x) ZIG(i,y,x)
@@ -748,13 +743,6 @@ static void zigzag_scan_8x8_field( dctcoef level[64], dctcoef dct[64] )
 static void zigzag_scan_4x4_frame( dctcoef level[16], dctcoef dct[16] )
 {
     ZIGZAG4_FRAME
-}
-
-static void zigzag_scan_4x4_field( dctcoef level[16], dctcoef dct[16] )
-{
-    memcpy( level, dct, 2 * sizeof(dctcoef) );
-    ZIG(2,0,1) ZIG(3,2,0) ZIG(4,3,0) ZIG(5,1,1)
-    memcpy( level+6, dct+6, 10 * sizeof(dctcoef) );
 }
 
 #undef ZIG
@@ -788,14 +776,6 @@ static int zigzag_sub_4x4_frame( dctcoef level[16], const pixel *p_src, pixel *p
     return !!nz;
 }
 
-static int zigzag_sub_4x4_field( dctcoef level[16], const pixel *p_src, pixel *p_dst )
-{
-    int nz = 0;
-    ZIGZAG4_FIELD
-    COPY4x4
-    return !!nz;
-}
-
 #undef ZIGDC
 #define ZIGDC(i,y,x) {\
     int oe = x+y*FENC_STRIDE;\
@@ -812,25 +792,10 @@ static int zigzag_sub_4x4ac_frame( dctcoef level[16], const pixel *p_src, pixel 
     return !!nz;
 }
 
-static int zigzag_sub_4x4ac_field( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc )
-{
-    int nz = 0;
-    ZIGZAG4_FIELD
-    COPY4x4
-    return !!nz;
-}
-
 static int zigzag_sub_8x8_frame( dctcoef level[64], const pixel *p_src, pixel *p_dst )
 {
     int nz = 0;
     ZIGZAG8_FRAME
-    COPY8x8
-    return !!nz;
-}
-static int zigzag_sub_8x8_field( dctcoef level[64], const pixel *p_src, pixel *p_dst )
-{
-    int nz = 0;
-    ZIGZAG8_FIELD
     COPY8x8
     return !!nz;
 }
@@ -852,17 +817,12 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
     }
 }
 
-void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
+void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive )
 {
-    pf_interlaced->scan_8x8   = zigzag_scan_8x8_field;
     pf_progressive->scan_8x8  = zigzag_scan_8x8_frame;
-    pf_interlaced->scan_4x4   = zigzag_scan_4x4_field;
     pf_progressive->scan_4x4  = zigzag_scan_4x4_frame;
-    pf_interlaced->sub_8x8    = zigzag_sub_8x8_field;
     pf_progressive->sub_8x8   = zigzag_sub_8x8_frame;
-    pf_interlaced->sub_4x4    = zigzag_sub_4x4_field;
     pf_progressive->sub_4x4   = zigzag_sub_4x4_frame;
-    pf_interlaced->sub_4x4ac  = zigzag_sub_4x4ac_field;
     pf_progressive->sub_4x4ac = zigzag_sub_4x4ac_frame;
 
 #if HAVE_MMX
@@ -870,18 +830,14 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_mmx;
     if( cpu&X264_CPU_MMX2 )
     {
-        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_mmx2;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_mmx2;
     }
     if( cpu&X264_CPU_SSE )
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_sse;
     if( cpu&X264_CPU_SSE2_IS_FAST )
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_sse2;
     if( cpu&X264_CPU_SSSE3 )
     {
-        pf_interlaced->sub_4x4   = x264_zigzag_sub_4x4_field_ssse3;
         pf_progressive->sub_4x4  = x264_zigzag_sub_4x4_frame_ssse3;
-        pf_interlaced->sub_4x4ac = x264_zigzag_sub_4x4ac_field_ssse3;
         pf_progressive->sub_4x4ac= x264_zigzag_sub_4x4ac_frame_ssse3;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_ssse3;
         if( !(cpu&X264_CPU_SLOW_SHUFFLE) )
@@ -889,10 +845,8 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     }
     if( cpu&X264_CPU_AVX )
     {
-        pf_interlaced->sub_4x4   = x264_zigzag_sub_4x4_field_avx;
         pf_progressive->sub_4x4  = x264_zigzag_sub_4x4_frame_avx;
 #if ARCH_X86_64
-        pf_interlaced->sub_4x4ac = x264_zigzag_sub_4x4ac_field_avx;
         pf_progressive->sub_4x4ac= x264_zigzag_sub_4x4ac_frame_avx;
 #endif
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx;
@@ -901,13 +855,10 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     {
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_xop;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_xop;
-        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_xop;
     }
     if( cpu&X264_CPU_AVX512 )
     {
-        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
-        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_avx512;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
 #endif // HAVE_MMX
@@ -937,34 +888,28 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     }
 #endif // HAVE_ARMV6 || HAVE_AARCH64
 
-    pf_interlaced->interleave_8x8_cavlc =
     pf_progressive->interleave_8x8_cavlc = zigzag_interleave_8x8_cavlc;
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX )
     {
-        pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_mmx;
     }
     if( (cpu&X264_CPU_SSE2) && !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SSE2_IS_SLOW)) )
     {
-        pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_sse2;
     }
 
     if( cpu&X264_CPU_AVX )
     {
-        pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx;
     }
 
     if( cpu&X264_CPU_AVX2 )
     {
-        pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     }
     if( cpu&X264_CPU_AVX512 )
     {
-        pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx512;
     }
 #endif

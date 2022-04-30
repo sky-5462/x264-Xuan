@@ -373,7 +373,7 @@ gpl="yes"
 thread="auto"
 swscale="auto"
 asm="auto"
-interlaced="yes"
+interlaced="no"
 lto="no"
 debug="no"
 gprof="no"
@@ -441,9 +441,6 @@ for opt do
             ;;
         --disable-asm)
             asm="no"
-            ;;
-        --disable-interlaced)
-            interlaced="no"
             ;;
         --disable-gpl)
             gpl="no"
