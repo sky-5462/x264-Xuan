@@ -593,22 +593,21 @@ void x264_frame_expand_border_filtered( x264_t *h, x264_frame_t *frame, int mb_y
     int height = b_end ? (16*(h->mb.i_mb_height - mb_y) >> SLICE_MBAFF) + 16 : 16;
     int padh = PADH - 4;
     int padv = PADV - 8;
-    for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
-        for( int i = 1; i < 4; i++ )
+    for( int i = 1; i < 4; i++ )
+    {
+        int stride = frame->i_stride[0];
+        // buffer: 8 luma, to match the hpel filter
+        pixel *pix;
+        if( SLICE_MBAFF )
         {
-            int stride = frame->i_stride[p];
-            // buffer: 8 luma, to match the hpel filter
-            pixel *pix;
-            if( SLICE_MBAFF )
-            {
-                pix = frame->filtered_fld[p][i] + (16*mb_y - 16) * stride - 4;
-                plane_expand_border( pix, stride*2, width, height, padh, padv, b_start, b_end, 0 );
-                plane_expand_border( pix+stride, stride*2, width, height, padh, padv, b_start, b_end, 0 );
-            }
-
-            pix = frame->filtered[p][i] + (16*mb_y - 8) * stride - 4;
-            plane_expand_border( pix, stride, width, height << SLICE_MBAFF, padh, padv, b_start, b_end, 0 );
+            pix = frame->filtered_fld[0][i] + (16*mb_y - 16) * stride - 4;
+            plane_expand_border( pix, stride*2, width, height, padh, padv, b_start, b_end, 0 );
+            plane_expand_border( pix+stride, stride*2, width, height, padh, padv, b_start, b_end, 0 );
         }
+
+        pix = frame->filtered[0][i] + (16*mb_y - 8) * stride - 4;
+        plane_expand_border( pix, stride, width, height << SLICE_MBAFF, padh, padv, b_start, b_end, 0 );
+    }
 }
 
 void x264_frame_expand_border_lowres( x264_frame_t *frame )

@@ -704,35 +704,34 @@ void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
     if( mb_y & b_interlaced )
         return;
 
-    for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
     {
-        int stride = frame->i_stride[p];
-        const int width = frame->i_width[p];
+        int stride = frame->i_stride[0];
+        const int width = frame->i_width[0];
         int offs = start*stride - 8; // buffer = 3 for 6tap, aligned to 8 for simd
 
         if( !b_interlaced || h->mb.b_adaptive_mbaff )
             h->mc.hpel_filter(
-                frame->filtered[p][1] + offs,
-                frame->filtered[p][2] + offs,
-                frame->filtered[p][3] + offs,
-                frame->plane[p] + offs,
+                frame->filtered[0][1] + offs,
+                frame->filtered[0][2] + offs,
+                frame->filtered[0][3] + offs,
+                frame->plane[0] + offs,
                 stride, width + 16, height - start,
                 h->scratch_buffer );
 
         if( b_interlaced )
         {
             /* MC must happen between pixels in the same field. */
-            stride = frame->i_stride[p] << 1;
+            stride = frame->i_stride[0] << 1;
             start = (mb_y*16 >> 1) - 8;
-            int height_fld = ((b_end ? frame->i_lines[p] : mb_y*16) >> 1) + 8;
+            int height_fld = ((b_end ? frame->i_lines[0] : mb_y*16) >> 1) + 8;
             offs = start*stride - 8;
-            for( int i = 0; i < 2; i++, offs += frame->i_stride[p] )
+            for( int i = 0; i < 2; i++, offs += frame->i_stride[0] )
             {
                 h->mc.hpel_filter(
-                    frame->filtered_fld[p][1] + offs,
-                    frame->filtered_fld[p][2] + offs,
-                    frame->filtered_fld[p][3] + offs,
-                    frame->plane_fld[p] + offs,
+                    frame->filtered_fld[0][1] + offs,
+                    frame->filtered_fld[0][2] + offs,
+                    frame->filtered_fld[0][3] + offs,
+                    frame->plane_fld[0] + offs,
                     stride, width + 16, height_fld - start,
                     h->scratch_buffer );
             }

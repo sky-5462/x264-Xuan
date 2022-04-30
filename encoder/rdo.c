@@ -69,7 +69,7 @@ static uint16_t cabac_size_5ones[128];
 #include "cabac.c"
 
 #define COPY_CABAC h->mc.memcpy_aligned( &cabac_tmp.f8_bits_encoded, &h->cabac.f8_bits_encoded, \
-        sizeof(int) + (CHROMA444 ? 1024+12 : 460) )
+        sizeof(int) + (460) )
 #define COPY_CABAC_PART( pos, size ) memcpy( &cb->state[pos], &h->cabac.state[pos], size )
 
 static ALWAYS_INLINE uint64_t cached_hadamard( x264_t *h, int size, int x, int y )
@@ -149,12 +149,9 @@ static inline int ssd_plane( x264_t *h, int size, int p, int x, int y )
 static inline int ssd_mb( x264_t *h )
 {
     int i_ssd = ssd_plane( h, PIXEL_16x16, 0, 0, 0 );
-    if( CHROMA_FORMAT )
-    {
-        int chroma_size = h->luma2chroma_pixel[PIXEL_16x16];
-        int chroma_ssd = ssd_plane( h, chroma_size, 1, 0, 0 ) + ssd_plane( h, chroma_size, 2, 0, 0 );
-        i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-    }
+    int chroma_size = h->luma2chroma_pixel[PIXEL_16x16];
+    int chroma_ssd = ssd_plane( h, chroma_size, 1, 0, 0 ) + ssd_plane( h, chroma_size, 2, 0, 0 );
+    i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
     return i_ssd;
 }
 
@@ -208,13 +205,6 @@ static uint64_t rd_cost_subpart( x264_t *h, int i_lambda2, int i4, int i_pixel )
         x264_macroblock_encode_p4x4( h, i4+2 );
 
     i_ssd = ssd_plane( h, i_pixel, 0, block_idx_x[i4]*4, block_idx_y[i4]*4 );
-    if( CHROMA444 )
-    {
-        int chromassd = ssd_plane( h, i_pixel, 1, block_idx_x[i4]*4, block_idx_y[i4]*4 )
-                      + ssd_plane( h, i_pixel, 2, block_idx_x[i4]*4, block_idx_y[i4]*4 );
-        chromassd = ((uint64_t)chromassd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-        i_ssd += chromassd;
-    }
 
     if( h->param.b_cabac )
     {
@@ -254,13 +244,10 @@ uint64_t x264_rd_cost_part( x264_t *h, int i_lambda2, int i4, int i_pixel )
     int ssd_x = 8*(i8&1);
     int ssd_y = 8*(i8>>1);
     i_ssd = ssd_plane( h, i_pixel, 0, ssd_x, ssd_y );
-    if( CHROMA_FORMAT )
-    {
-        int chroma_size = h->luma2chroma_pixel[i_pixel];
-        int chroma_ssd = ssd_plane( h, chroma_size, 1, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT )
-                       + ssd_plane( h, chroma_size, 2, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT );
-        i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-    }
+    int chroma_size = h->luma2chroma_pixel[i_pixel];
+    int chroma_ssd = ssd_plane( h, chroma_size, 1, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT )
+                    + ssd_plane( h, chroma_size, 2, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT );
+    i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
 
     if( h->param.b_cabac )
     {
@@ -278,7 +265,7 @@ uint64_t x264_rd_cost_part( x264_t *h, int i_lambda2, int i4, int i_pixel )
 static uint64_t rd_cost_i8x8( x264_t *h, int i_lambda2, int i8, int i_mode, pixel edge[4][32] )
 {
     uint64_t i_ssd, i_bits;
-    int plane_count = CHROMA444 ? 3 : 1;
+    int plane_count = 1;
     int i_qp = h->mb.i_qp;
     h->mb.i_cbp_luma &= ~(1<<i8);
     h->mb.b_transform_8x8 = 1;
@@ -290,13 +277,6 @@ static uint64_t rd_cost_i8x8( x264_t *h, int i_lambda2, int i8, int i_mode, pixe
     }
 
     i_ssd = ssd_plane( h, PIXEL_8x8, 0, (i8&1)*8, (i8>>1)*8 );
-    if( CHROMA444 )
-    {
-        int chromassd = ssd_plane( h, PIXEL_8x8, 1, (i8&1)*8, (i8>>1)*8 )
-                      + ssd_plane( h, PIXEL_8x8, 2, (i8&1)*8, (i8>>1)*8 );
-        chromassd = ((uint64_t)chromassd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-        i_ssd += chromassd;
-    }
 
     if( h->param.b_cabac )
     {
@@ -314,7 +294,7 @@ static uint64_t rd_cost_i8x8( x264_t *h, int i_lambda2, int i8, int i_mode, pixe
 static uint64_t rd_cost_i4x4( x264_t *h, int i_lambda2, int i4, int i_mode )
 {
     uint64_t i_ssd, i_bits;
-    int plane_count = CHROMA444 ? 3 : 1;
+    int plane_count = 1;
     int i_qp = h->mb.i_qp;
 
     for( int p = 0; p < plane_count; p++ )
@@ -324,13 +304,6 @@ static uint64_t rd_cost_i4x4( x264_t *h, int i_lambda2, int i4, int i_mode )
     }
 
     i_ssd = ssd_plane( h, PIXEL_4x4, 0, block_idx_x[i4]*4, block_idx_y[i4]*4 );
-    if( CHROMA444 )
-    {
-        int chromassd = ssd_plane( h, PIXEL_4x4, 1, block_idx_x[i4]*4, block_idx_y[i4]*4 )
-                      + ssd_plane( h, PIXEL_4x4, 2, block_idx_x[i4]*4, block_idx_y[i4]*4 );
-        chromassd = ((uint64_t)chromassd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-        i_ssd += chromassd;
-    }
 
     if( h->param.b_cabac )
     {
@@ -1111,16 +1084,8 @@ int x264_quant_chroma_dc_trellis( x264_t *h, dctcoef *dct, int i_qp, int b_intra
     int num_coefs;
     int quant_cat = CQM_4IC+1 - b_intra;
 
-    if( CHROMA_FORMAT == CHROMA_422 )
-    {
-        zigzag = zigzag_scan2x4;
-        num_coefs = 8;
-    }
-    else
-    {
-        zigzag = zigzag_scan2x2;
-        num_coefs = 4;
-    }
+    zigzag = zigzag_scan2x2;
+    num_coefs = 4;
 
     if( h->param.b_cabac )
         return quant_trellis_cabac( h, dct,

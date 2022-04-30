@@ -205,7 +205,7 @@ int x264_cqm_init( x264_t *h )
     x264_emms();
     CHECKED_MALLOC( h->nr_offset_emergency, sizeof(*h->nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
     for( int q = 0; q < QP_MAX - QP_MAX_SPEC; q++ )
-        for( int cat = 0; cat < 3 + CHROMA444; cat++ )
+        for( int cat = 0; cat < 3; cat++ )
         {
             int dct8x8 = cat&1;
             if( !h->param.analyse.b_transform_8x8 && dct8x8 )
@@ -296,7 +296,7 @@ fail:
 void x264_cqm_delete( x264_t *h )
 {
     CQM_DELETE( 4, 4 );
-    CQM_DELETE( 8, CHROMA444 ? 4 : 2 );
+    CQM_DELETE( 8, 2 );
     x264_free( h->nr_offset_emergency );
 }
 
@@ -367,11 +367,6 @@ int x264_cqm_parse_file( x264_t *h, const char *filename )
     b_error |= cqm_parse_jmlist( h, buf, "INTER4X4_CHROMA", h->param.cqm_4pc, x264_cqm_jvt4p, 16 );
     b_error |= cqm_parse_jmlist( h, buf, "INTRA8X8_LUMA",   h->param.cqm_8iy, x264_cqm_jvt8i, 64 );
     b_error |= cqm_parse_jmlist( h, buf, "INTER8X8_LUMA",   h->param.cqm_8py, x264_cqm_jvt8p, 64 );
-    if( CHROMA444 )
-    {
-        b_error |= cqm_parse_jmlist( h, buf, "INTRA8X8_CHROMA", h->param.cqm_8ic, x264_cqm_jvt8i, 64 );
-        b_error |= cqm_parse_jmlist( h, buf, "INTER8X8_CHROMA", h->param.cqm_8pc, x264_cqm_jvt8p, 64 );
-    }
 
     x264_free( buf );
     return b_error;

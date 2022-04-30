@@ -383,10 +383,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
     int qp_thresh = 15 - X264_MIN( a, b ) - X264_MAX( 0, h->pps->i_chroma_qp_index_offset );
     int stridey   = h->fdec->i_stride[0];
     int strideuv  = h->fdec->i_stride[1];
-    int chroma_format = CHROMA_FORMAT;
-    int chroma444 = CHROMA444;
     int chroma_height = 16 >> CHROMA_V_SHIFT;
-    intptr_t uvdiff = chroma444 ? h->fdec->plane[2] - h->fdec->plane[1] : 1;
 
     for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x += (~b_interlaced | mb_y)&1, mb_y ^= b_interlaced )
     {
@@ -421,27 +418,12 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
                 deblock_edge##intra( h, pixy + 4*edge*(dir?stride2y:1),\
                                      stride2y, bs[dir][edge], qp, a, b, 0,\
                                      h->loopf.deblock_luma##intra[dir] );\
-                if( chroma_format == CHROMA_444 )\
-                {\
-                    deblock_edge##intra( h, pixuv          + 4*edge*(dir?stride2uv:1),\
-                                         stride2uv, bs[dir][edge], chroma_qp, a, b, 0,\
-                                         h->loopf.deblock_luma##intra[dir] );\
-                    deblock_edge##intra( h, pixuv + uvdiff + 4*edge*(dir?stride2uv:1),\
-                                         stride2uv, bs[dir][edge], chroma_qp, a, b, 0,\
-                                         h->loopf.deblock_luma##intra[dir] );\
-                }\
-                else if( chroma_format == CHROMA_420 && !(edge & 1) )\
+                if( !(edge & 1) )\
                 {\
                     deblock_edge##intra( h, pixuv + edge*(dir?2*stride2uv:4),\
                                          stride2uv, bs[dir][edge], chroma_qp, a, b, 1,\
                                          h->loopf.deblock_chroma##intra[dir] );\
                 }\
-            }\
-            if( chroma_format == CHROMA_422 && (dir || !(edge & 1)) )\
-            {\
-                deblock_edge##intra( h, pixuv + edge*(dir?4*stride2uv:4),\
-                                     stride2uv, bs[dir][edge], chroma_qp, a, b, 1,\
-                                     h->loopf.deblock_chroma##intra[dir] );\
             }\
         } while( 0 )
 
@@ -456,7 +438,6 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
                 x264_deblock_inter_t chroma_deblock = h->loopf.deblock_chroma_mbaff;
                 x264_deblock_intra_t luma_intra_deblock = h->loopf.deblock_luma_intra_mbaff;
                 x264_deblock_intra_t chroma_intra_deblock = h->loopf.deblock_chroma_intra_mbaff;
-                int c = chroma444 ? 0 : 1;
 
                 left_qp[0] = h->mb.qp[h->mb.i_mb_left_xy[0]];
                 luma_qp[0] = (qp + left_qp[0] + 1) >> 1;
@@ -464,22 +445,12 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
                 if( intra_cur || IS_INTRA( h->mb.type[h->mb.i_mb_left_xy[0]] ) )
                 {
                     deblock_edge_intra( h, pixy,           2*stridey,  bs[0][0], luma_qp[0],   a, b, 0, luma_intra_deblock );
-                    if( chroma_format )
-                    {
-                        deblock_edge_intra( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, c, chroma_intra_deblock );
-                        if( chroma444 )
-                            deblock_edge_intra( h, pixuv + uvdiff, 2*strideuv, bs[0][0], chroma_qp[0], a, b, c, chroma_intra_deblock );
-                    }
+                    deblock_edge_intra( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, 1, chroma_intra_deblock );
                 }
                 else
                 {
                     deblock_edge( h, pixy,           2*stridey,  bs[0][0], luma_qp[0],   a, b, 0, luma_deblock );
-                    if( chroma_format )
-                    {
-                        deblock_edge( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, c, chroma_deblock );
-                        if( chroma444 )
-                            deblock_edge( h, pixuv + uvdiff, 2*strideuv, bs[0][0], chroma_qp[0], a, b, c, chroma_deblock );
-                    }
+                    deblock_edge( h, pixuv,          2*strideuv, bs[0][0], chroma_qp[0], a, b, 1, chroma_deblock );
                 }
 
                 int offy = MB_INTERLACED ? 4 : 0;
@@ -490,22 +461,12 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
                 if( intra_cur || IS_INTRA( h->mb.type[h->mb.i_mb_left_xy[1]] ) )
                 {
                     deblock_edge_intra( h, pixy           + (stridey<<offy),   2*stridey,  bs[0][4], luma_qp[1],   a, b, 0, luma_intra_deblock );
-                    if( chroma_format )
-                    {
-                        deblock_edge_intra( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, c, chroma_intra_deblock );
-                        if( chroma444 )
-                            deblock_edge_intra( h, pixuv + uvdiff + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, c, chroma_intra_deblock );
-                    }
+                    deblock_edge_intra( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, 1, chroma_intra_deblock );
                 }
                 else
                 {
                     deblock_edge( h, pixy           + (stridey<<offy),   2*stridey,  bs[0][4], luma_qp[1],   a, b, 0, luma_deblock );
-                    if( chroma_format )
-                    {
-                        deblock_edge( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, c, chroma_deblock );
-                        if( chroma444 )
-                            deblock_edge( h, pixuv + uvdiff + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, c, chroma_deblock );
-                    }
+                    deblock_edge( h, pixuv          + (strideuv<<offuv), 2*strideuv, bs[0][4], chroma_qp[1], a, b, 1, chroma_deblock );
                 }
             }
             else
@@ -556,13 +517,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
 
                     // deblock the first horizontal edge of the even rows, then the first horizontal edge of the odd rows
                     deblock_edge( h, pixy      + j*stridey,  2* stridey, bs[1][4*j], qp_top, a, b, 0, h->loopf.deblock_luma[1] );
-                    if( chroma444 )
-                    {
-                        deblock_edge( h, pixuv          + j*strideuv, 2*strideuv, bs[1][4*j], qpc_top, a, b, 0, h->loopf.deblock_luma[1] );
-                        deblock_edge( h, pixuv + uvdiff + j*strideuv, 2*strideuv, bs[1][4*j], qpc_top, a, b, 0, h->loopf.deblock_luma[1] );
-                    }
-                    else if( chroma_format )
-                        deblock_edge( h, pixuv          + j*strideuv, 2*strideuv, bs[1][4*j], qpc_top, a, b, 1, h->loopf.deblock_chroma[1] );
+                    deblock_edge( h, pixuv     + j*strideuv, 2*strideuv, bs[1][4*j], qpc_top, a, b, 1, h->loopf.deblock_chroma[1] );
                 }
             }
             else
@@ -618,7 +573,6 @@ void x264_macroblock_deblock( x264_t *h )
     int qp_thresh = 15 - X264_MIN( a, b ) - X264_MAX( 0, h->pps->i_chroma_qp_index_offset );
     int intra_cur = IS_INTRA( h->mb.i_type );
     int qp = h->mb.i_qp;
-    int qpc = h->mb.i_chroma_qp;
     if( (h->mb.i_partition == D_16x16 && !h->mb.i_cbp_luma && !intra_cur) || qp <= qp_thresh )
         return;
 
@@ -642,15 +596,6 @@ void x264_macroblock_deblock( x264_t *h )
         deblock_edge( h, h->mb.pic.p_fdec[0] + 4*edge*(dir?FDEC_STRIDE:1),\
                       FDEC_STRIDE, bs[dir][edge], qp, a, b, 0,\
                       h->loopf.deblock_luma[dir] );\
-        if( CHROMA444 )\
-        {\
-            deblock_edge( h, h->mb.pic.p_fdec[1] + 4*edge*(dir?FDEC_STRIDE:1),\
-                          FDEC_STRIDE, bs[dir][edge], qpc, a, b, 0,\
-                          h->loopf.deblock_luma[dir] );\
-            deblock_edge( h, h->mb.pic.p_fdec[2] + 4*edge*(dir?FDEC_STRIDE:1),\
-                          FDEC_STRIDE, bs[dir][edge], qpc, a, b, 0,\
-                          h->loopf.deblock_luma[dir] );\
-        }\
     } while( 0 )
 
     if( !transform_8x8 ) FILTER( 0, 1 );

@@ -175,32 +175,14 @@ const char * const x264_range_names[] = { "auto", "tv", "pc", 0 };
 
 const char * const x264_output_csp_names[] =
 {
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I400
-    "i400",
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "i420",
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
-    "i422",
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I444
-    "i444", "rgb",
-#endif
     0
 };
 
 const char * const x264_valid_profile_names[] =
 {
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "baseline", "main",
-#endif
     "high",
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
-   "high422",
-#endif
    "high444", 0
 };
 
@@ -561,8 +543,6 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --profile <string>      Force the limits of an H.264 profile\n"
         "                                  Overrides all settings.\n" );
     H2(
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
         "                                    --cqm flat --weightp 0\n"
@@ -571,16 +551,8 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - main:\n"
         "                                    --no-8x8dct --cqm flat\n"
         "                                    No lossless.\n"
-#endif
         "                                  - high:\n"
         "                                    No lossless.\n"
-#endif
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
-        "                                  - high422:\n"
-        "                                    No lossless.\n"
-        "                                    Support for bit depth 8-10.\n"
-        "                                    Support for 4:2:0/4:2:2 chroma subsampling.\n"
-#endif
         "                                  - high444:\n"
         "                                    Support for bit depth 8-10.\n"
         "                                    Support for 4:2:0/4:2:2/4:4:4 chroma subsampling.\n" );
@@ -894,11 +866,7 @@ static void help( x264_param_t *defaults, int longhelp )
     print_csp_names( longhelp );
     H1( "      --output-csp <string>   Specify output colorspace [\"%s\"]\n"
         "                                  - %s\n",
-#if X264_CHROMA_FORMAT
         x264_output_csp_names[0],
-#else
-        "i420",
-#endif
         stringify_names( buf, x264_output_csp_names ) );
     H1( "      --input-depth <integer> Specify input bit depth for raw input\n" );
     H1( "      --output-depth <integer> Specify output bit depth\n" );
@@ -1552,11 +1520,7 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
             case OPT_OUTPUT_CSP:
                 FAIL_IF_ERROR( parse_enum_value( optarg, x264_output_csp_names, &output_csp ), "Unknown output csp `%s'\n", optarg );
                 // correct the parsed value to the libx264 csp value
-#if X264_CHROMA_FORMAT
                 static const uint8_t output_csp_fix[] = { X264_CHROMA_FORMAT, X264_CSP_RGB };
-#else
-                static const uint8_t output_csp_fix[] = { X264_CSP_I400, X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
-#endif
                 param->i_csp = output_csp = output_csp_fix[output_csp];
                 break;
             case OPT_INPUT_RANGE:
