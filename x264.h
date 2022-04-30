@@ -674,12 +674,6 @@ static const char * const x264_tune_names[] = { "film", "animation", "grain", "s
  *      returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
 X264_API int x264_param_default_preset( x264_param_t *, const char *preset, const char *tune );
 
-/* x264_param_apply_fastfirstpass:
- *      If first-pass mode is set (rc.b_stat_read == 0, rc.b_stat_write == 1),
- *      modify the encoder settings to disable options generally not useful on
- *      the first pass. */
-X264_API void x264_param_apply_fastfirstpass( x264_param_t * );
-
 /* x264_param_apply_profile:
  *      Applies the restrictions of the given profile.
  *      Currently available profiles are, from most to least restrictive: */

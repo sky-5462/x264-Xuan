@@ -646,21 +646,6 @@ REALIGN_STACK int x264_param_default_preset( x264_param_t *param, const char *pr
     return 0;
 }
 
-REALIGN_STACK void x264_param_apply_fastfirstpass( x264_param_t *param )
-{
-    /* Set faster options in case of turbo firstpass. */
-    if( param->rc.b_stat_write && !param->rc.b_stat_read )
-    {
-        param->i_frame_reference = 1;
-        param->analyse.b_transform_8x8 = 0;
-        param->analyse.inter = 0;
-        param->analyse.i_me_method = X264_ME_DIA;
-        param->analyse.i_subpel_refine = X264_MIN( 2, param->analyse.i_subpel_refine );
-        param->analyse.i_trellis = 0;
-        param->analyse.b_fast_pskip = 1;
-    }
-}
-
 static int profile_string_to_int( const char *str )
 {
     if( !strcasecmp( str, "baseline" ) )

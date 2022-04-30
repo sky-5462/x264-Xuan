@@ -200,7 +200,6 @@ static const char * const opts_standalone[] =
     "--psnr",
     "--quiet",
     "--sliced-threads",
-    "--slow-firstpass",
     "--ssim",
     "--stitchable",
     "--tff",

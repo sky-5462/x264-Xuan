@@ -1253,7 +1253,6 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
     char *profile = NULL;
     char *vid_filters = NULL;
     int b_thread_input = 0;
-    int b_turbo = 1;
     int b_user_ref = 0;
     int b_user_fps = 0;
     int b_user_interlaced = 0;
@@ -1285,9 +1284,6 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
         else if( c == '?' )
             return -1;
     }
-
-    if( preset && !strcasecmp( preset, "placebo" ) )
-        b_turbo = 0;
 
     if( x264_param_default_preset( param, preset, tune ) < 0 )
         return -1;
@@ -1373,7 +1369,6 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
                 profile = optarg;
                 break;
             case OPT_SLOWFIRSTPASS:
-                b_turbo = 0;
                 break;
             case 'r':
                 b_user_ref = 1;
@@ -1462,10 +1457,6 @@ generic_option:
             return -1;
         }
     }
-
-    /* If first pass mode is used, apply faster settings. */
-    if( b_turbo )
-        x264_param_apply_fastfirstpass( param );
 
     /* Apply profile restrictions. */
     if( x264_param_apply_profile( param, profile ) < 0 )
