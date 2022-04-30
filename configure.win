@@ -363,11 +363,11 @@ cli="yes"
 cli_libx264="internal"
 shared="no"
 static="no"
-avs="auto"
-lavf="auto"
-ffms="auto"
-gpac="auto"
-lsmash="auto"
+avs="no"
+lavf="no"
+ffms="no"
+gpac="no"
+lsmash="no"
 mp4="no"
 gpl="yes"
 thread="auto"
@@ -444,21 +444,6 @@ for opt do
             ;;
         --disable-interlaced)
             interlaced="no"
-            ;;
-        --disable-avs)
-            avs="no"
-            ;;
-        --disable-lavf)
-            lavf="no"
-            ;;
-        --disable-ffms)
-            ffms="no"
-            ;;
-        --disable-gpac)
-            gpac="no"
-            ;;
-        --disable-lsmash)
-            lsmash="no"
             ;;
         --disable-gpl)
             gpl="no"

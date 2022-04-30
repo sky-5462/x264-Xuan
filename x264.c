@@ -49,20 +49,9 @@
 
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "x264", __VA_ARGS__ )
 
-#if HAVE_LAVF
-#undef DECLARE_ALIGNED
-#include <libavformat/avformat.h>
-#include <libavutil/pixfmt.h>
-#include <libavutil/pixdesc.h>
-#endif
-
 #if HAVE_SWSCALE
 #undef DECLARE_ALIGNED
 #include <libswscale/swscale.h>
-#endif
-
-#if HAVE_FFMS
-#include <ffms.h>
 #endif
 
 #ifdef _WIN32
@@ -189,24 +178,12 @@ const char * const x264_valid_profile_names[] =
 const char * const x264_demuxer_names[] =
 {
     "auto", "raw", "y4m",
-#if HAVE_AVS
-    "avs",
-#endif
-#if HAVE_LAVF
-    "lavf",
-#endif
-#if HAVE_FFMS
-    "ffms",
-#endif
     0
 };
 
 const char * const x264_muxer_names[] =
 {
     "auto", "raw", "mkv", "flv",
-#if HAVE_GPAC || HAVE_LSMASH
-    "mp4",
-#endif
     0
 };
 
@@ -316,12 +293,6 @@ static void print_version_info( void )
 #if HAVE_SWSCALE
     printf( "(libswscale %d.%d.%d)\n", LIBSWSCALE_VERSION_MAJOR, LIBSWSCALE_VERSION_MINOR, LIBSWSCALE_VERSION_MICRO );
 #endif
-#if HAVE_LAVF
-    printf( "(libavformat %d.%d.%d)\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO );
-#endif
-#if HAVE_FFMS
-    printf( "(ffmpegsource %d.%d.%d.%d)\n", FFMS_VERSION >> 24, (FFMS_VERSION & 0xff0000) >> 16, (FFMS_VERSION & 0xff00) >> 8, FFMS_VERSION & 0xff );
-#endif
     printf( "built on " __DATE__ ", " );
 #ifdef __INTEL_COMPILER
     printf( "intel: %.2f (%d)\n", __INTEL_COMPILER / 100.f, __INTEL_COMPILER_BUILD_DATE );
@@ -342,7 +313,7 @@ static void print_version_info( void )
 #endif
 #if HAVE_SWSCALE
     const char *license = swscale_license();
-    printf( "libswscale%s%s license: %s\n", HAVE_LAVF ? "/libavformat" : "", HAVE_FFMS ? "/ffmpegsource" : "" , license );
+    printf( "libswscale%s%s license: %s\n", "", "" , license );
     if( !strcmp( license, "nonfree and unredistributable" ) ||
        (!HAVE_GPL && (!strcmp( license, "GPL version 2 or later" )
                   ||  !strcmp( license, "GPL version 3 or later" ))))
@@ -458,14 +429,6 @@ static void print_csp_names( int longhelp )
     size_t line_len = INDENT_LEN;
     for( int i = X264_CSP_NONE+1; i < X264_CSP_CLI_MAX; i++ )
         print_csp_name_internal( x264_cli_csps[i].name, &line_len, i == X264_CSP_CLI_MAX-1 );
-#if HAVE_LAVF
-    printf( "\n" );
-    printf( "                              - valid csps for `lavf' demuxer:\n" );
-    printf( INDENT );
-    line_len = INDENT_LEN;
-    for( enum AVPixelFormat i = AV_PIX_FMT_NONE+1; i < AV_PIX_FMT_NB; i++ )
-        print_csp_name_internal( av_get_pix_fmt_name( i ), &line_len, i == AV_PIX_FMT_NB-1 );
-#endif
     printf( "\n" );
 }
 
@@ -496,28 +459,10 @@ static void help( x264_param_t *defaults, int longhelp )
         "      --fullhelp              List all options\n"
         "\n",
         X264_BUILD, X264_VERSION,
-#if HAVE_AVS
-        "yes",
-#else
         "no",
-#endif
-#if HAVE_LAVF
-        "yes",
-#else
         "no",
-#endif
-#if HAVE_FFMS
-        "yes",
-#else
         "no",
-#endif
-#if HAVE_GPAC
-        "gpac",
-#elif HAVE_LSMASH
-        "lsmash",
-#else
         "no",
-#endif
         "8"
       );
     H0( "Example usage:\n" );
@@ -1147,19 +1092,8 @@ static int select_output( const char *muxer, char *filename, x264_param_t *param
 
     if( !strcasecmp( ext, "mp4" ) )
     {
-#if HAVE_GPAC || HAVE_LSMASH
-        cli_output = mp4_output;
-        param->b_annexb = 0;
-        param->b_repeat_headers = 0;
-        if( param->i_nal_hrd == X264_NAL_HRD_CBR )
-        {
-            x264_cli_log( "x264", X264_LOG_WARNING, "cbr nal-hrd is not compatible with mp4\n" );
-            param->i_nal_hrd = X264_NAL_HRD_VBR;
-        }
-#else
         x264_cli_log( "x264", X264_LOG_ERROR, "not compiled with MP4 output support\n" );
         return -1;
-#endif
     }
     else if( !strcasecmp( ext, "mkv" ) )
     {
@@ -1200,13 +1134,8 @@ static int select_input( const char *demuxer, char *used_demuxer, char *filename
 
     if( !strcasecmp( module, "avs" ) || !strcasecmp( ext, "d2v" ) || !strcasecmp( ext, "dga" ) )
     {
-#if HAVE_AVS
-        cli_input = avs_input;
-        module = "avs";
-#else
         x264_cli_log( "x264", X264_LOG_ERROR, "not compiled with AVS input support\n" );
         return -1;
-#endif
     }
     else if( !strcasecmp( module, "y4m" ) )
         cli_input = y4m_input;
@@ -1214,33 +1143,6 @@ static int select_input( const char *demuxer, char *used_demuxer, char *filename
         cli_input = raw_input;
     else
     {
-#if HAVE_FFMS
-        if( b_regular && (b_auto || !strcasecmp( demuxer, "ffms" )) &&
-            !ffms_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "ffms";
-            b_auto = 0;
-            cli_input = ffms_input;
-        }
-#endif
-#if HAVE_LAVF
-        if( (b_auto || !strcasecmp( demuxer, "lavf" )) &&
-            !lavf_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "lavf";
-            b_auto = 0;
-            cli_input = lavf_input;
-        }
-#endif
-#if HAVE_AVS
-        if( b_regular && (b_auto || !strcasecmp( demuxer, "avs" )) &&
-            !avs_input.open_file( filename, p_handle, info, opt ) )
-        {
-            module = "avs";
-            b_auto = 0;
-            cli_input = avs_input;
-        }
-#endif
         if( b_auto && !raw_input.open_file( filename, p_handle, info, opt ) )
         {
             module = "raw";

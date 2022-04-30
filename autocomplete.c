@@ -26,12 +26,6 @@
 #include "x264cli.h"
 #include "input/input.h"
 
-#if HAVE_LAVF
-#undef DECLARE_ALIGNED
-#include <libavformat/avformat.h>
-#include <libavutil/pixdesc.h>
-#endif
-
 static const char * const level_names[] =
 {
     "1", "1.1", "1.2", "1.3", "1b",
@@ -261,23 +255,6 @@ static void suggest_num_range( int start, int end, const char *cur, int cur_len 
     }
 }
 
-#if HAVE_LAVF
-/* Suggest each token in a string separated by delimiters. */
-static void suggest_token( const char *s, int delim, const char *cur, int cur_len )
-{
-    if( s && *s )
-    {
-        for( const char *tok_end; (tok_end = strchr( s, delim )); s = tok_end + 1 )
-        {
-            int tok_len = tok_end - s;
-            if( tok_len && tok_len >= cur_len && !strncmp( s, cur, cur_len ) )
-                printf( "%.*s\n", tok_len, s );
-        }
-        suggest( s, cur, cur_len );
-    }
-}
-#endif
-
 #define OPT( opt ) else if( !strcmp( prev, opt ) )
 #define OPT2( opt1, opt2 ) else if( !strcmp( prev, opt1 ) || !strcmp( prev, opt2 ) )
 #define OPT_TYPE( type ) list_contains( opts_##type, prev )
@@ -323,18 +300,9 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
     {
         for( int i = X264_CSP_NONE+1; i < X264_CSP_CLI_MAX; i++ )
             suggest( x264_cli_csps[i].name );
-#if HAVE_LAVF
-        for( const AVPixFmtDescriptor *d = NULL; (d = av_pix_fmt_desc_next( d )); )
-            suggest( d->name );
-#endif
     }
     OPT( "--input-fmt" )
     {
-#if HAVE_LAVF
-        av_register_all();
-        for( const AVInputFormat *f = NULL; (f = av_iformat_next( f )); )
-            suggest_token( f->name, ',' );
-#endif
     }
     OPT( "--input-range" )
         suggest_list( x264_range_names );

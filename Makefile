@@ -56,11 +56,6 @@ OBJEXAMPLE =
 
 CONFIG := $(shell cat config.h)
 
-# Optional module sources
-ifneq ($(findstring HAVE_AVS 1, $(CONFIG)),)
-SRCCLI += input/avs.c
-endif
-
 ifneq ($(findstring HAVE_THREAD 1, $(CONFIG)),)
 SRCS_X   += common/threadpool.c
 SRCCLI_X += input/thread.c
@@ -68,22 +63,6 @@ endif
 
 ifneq ($(findstring HAVE_WIN32THREAD 1, $(CONFIG)),)
 SRCS += common/win32thread.c
-endif
-
-ifneq ($(findstring HAVE_LAVF 1, $(CONFIG)),)
-SRCCLI += input/lavf.c
-endif
-
-ifneq ($(findstring HAVE_FFMS 1, $(CONFIG)),)
-SRCCLI += input/ffms.c
-endif
-
-ifneq ($(findstring HAVE_GPAC 1, $(CONFIG)),)
-SRCCLI += output/mp4.c
-endif
-
-ifneq ($(findstring HAVE_LSMASH 1, $(CONFIG)),)
-SRCCLI += output/mp4_lsmash.c
 endif
 
 ifneq ($(AS),)
