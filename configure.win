@@ -383,7 +383,7 @@ bit_depth="8"
 chroma_format="420"
 compiler="GNU"
 compiler_style="GNU"
-opencl="yes"
+opencl="no"
 vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
@@ -506,9 +506,6 @@ for opt do
             ;;
         --disable-vsx)
             vsx="no"
-            ;;
-        --disable-opencl)
-            opencl="no"
             ;;
         --cross-prefix=*)
             cross_prefix="$optarg"

@@ -38,10 +38,6 @@ static int slicetype_frame_cost( x264_t *h, x264_mb_analysis_t *a,
 #define x264_weights_analyse x264_template(weights_analyse)
 void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int b_lookahead );
 
-#if HAVE_OPENCL
-#include "slicetype-cl.h"
-#endif
-
 static void lowres_context_init( x264_t *h, x264_mb_analysis_t *a )
 {
     a->i_qp = X264_LOOKAHEAD_QP;
@@ -801,28 +797,6 @@ static int slicetype_frame_cost( x264_t *h, x264_mb_analysis_t *a,
         output_inter[0] = h->scratch_buffer2;
         output_intra[0] = output_inter[0] + output_buf_size;
 
-#if HAVE_OPENCL
-        if( h->param.b_opencl )
-        {
-            x264_opencl_lowres_init(h, fenc, a->i_lambda );
-            if( do_search[0] )
-            {
-                x264_opencl_lowres_init( h, frames[p0], a->i_lambda );
-                x264_opencl_motionsearch( h, frames, b, p0, 0, a->i_lambda, w );
-            }
-            if( do_search[1] )
-            {
-                x264_opencl_lowres_init( h, frames[p1], a->i_lambda );
-                x264_opencl_motionsearch( h, frames, b, p1, 1, a->i_lambda, NULL );
-            }
-            if( b != p0 )
-                x264_opencl_finalize_cost( h, a->i_lambda, frames, p0, p1, b, dist_scale_factor );
-            x264_opencl_flush( h );
-
-            i_score = fenc->i_cost_est[b-p0][p1-b];
-        }
-        else
-#endif
         {
             if( h->param.i_lookahead_threads > 1 )
             {
@@ -1453,10 +1427,6 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
         return;
     }
 
-#if HAVE_OPENCL
-    x264_opencl_slicetype_prep( h, frames, num_frames, a.i_lambda );
-#endif
-
     /* Replace forced keyframes with I/IDR-frames */
     for( int j = 1; j <= num_frames; j++ )
     {
@@ -1662,10 +1632,6 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
     /* Restore frametypes for all frames that haven't actually been decided yet. */
     for( int j = reset_start; j <= num_frames; j++ )
         frames[j]->i_type = frames[j]->i_forced_type;
-
-#if HAVE_OPENCL
-    x264_opencl_slicetype_end( h );
-#endif
 }
 
 void x264_slicetype_decide( x264_t *h )
